@@ -3,15 +3,13 @@ import threading
 
 HOST = '127.0.0.1'
 PORT = 12345
-SHIFT = 1  # zmienna klucz szyfru (przesunięcie)
-client_counter = 1  # globalna liczba klientów (serwer ma 0)
+SHIFT = 1 
+client_counter = 1 
 
-# Dodajemy listę klientów oraz blokadę do synchronizacji
 clients = []
-client_nicknames = {}  # nowy słownik mapujący połączenie na nickname
+client_nicknames = {}
 clients_lock = threading.Lock()
 
-# Nowe funkcje szyfrujące (Caesar +1)
 def caesar_encrypt(text):
     result = ""
     for ch in text:
@@ -46,11 +44,11 @@ def broadcast(msg, sender_conn):
 def handle_client(conn, addr):
     global client_counter
     with clients_lock:
-        client_nicknames[conn] = str(client_counter)  # przypisanie domyślnego nicka wg kolejności
+        client_nicknames[conn] = str(client_counter)
         default_nick = client_nicknames[conn]
         client_counter += 1
         clients.append(conn)
-    print(f"Połączono z ({addr[0]}, {default_nick})")  # zmodyfikowany komunikat
+    print(f"Połączono z ({addr[0]}, {default_nick})") 
     try:
         while True:
             data = conn.recv(1024)
@@ -61,7 +59,6 @@ def handle_client(conn, addr):
             except:
                 header_candidate = ""
             if header_candidate.startswith("AUDIO|"):
-                # Wysyłamy nagłówek do pozostałych klientów
                 broadcast(data, conn)
                 parts = header_candidate.split("|")
                 if len(parts) >= 3:
@@ -81,7 +78,6 @@ def handle_client(conn, addr):
                 continue
             decrypted = caesar_decrypt(data.decode())
             
-            # Obsługa zmiany nicka
             if decrypted.startswith("NICK|"):
                 newnick = decrypted.split("|", 1)[1].strip()
                 with clients_lock:
@@ -89,7 +85,6 @@ def handle_client(conn, addr):
                 print(f"Zaktualizowano nazwę klienta na {newnick}")
                 continue
 
-            # Obsługa wiadomości prywatnych
             if decrypted.startswith("PRIVATE|"):
                 parts = decrypted.split("|", 2)
                 if len(parts) < 3:
@@ -111,7 +106,6 @@ def handle_client(conn, addr):
                         print(f"Nie znaleziono klienta o nazwie {target_nick}")
                 continue
 
-            # Zmieniony komunikat - wyświetlamy nick klienta
             print(f"Otrzymano wiadomość od Klient {client_nicknames[conn]}:")
             print(f"  Zaszyfrowana: {data.decode()}")
             if decrypted.startswith("Klient"):
@@ -120,7 +114,6 @@ def handle_client(conn, addr):
             else:
                 content = decrypted
             print(f"  Odszyfrowana: {content}")
-            # Modyfikacja: dodajemy prefiks "Klient " dla wiadomości wysyłanych przez klienta
             message = f"Klient {client_nicknames[conn]}: {decrypted}"
             encrypted_message = caesar_encrypt(message)
             broadcast(encrypted_message.encode(), conn)
@@ -138,9 +131,8 @@ def handle_server_send():
     while True:
         try:
             msg = input()
-        except (KeyboardInterrupt, EOFError):  # obsługa wyjątków, aby uniknąć błędów przy ctrl+c
+        except (KeyboardInterrupt, EOFError):
             break
-        # Szyfrujemy wiadomość serwera przed wysłaniem
         encrypted_msg = caesar_encrypt(msg)
         with clients_lock:
             for client in clients:
@@ -155,11 +147,9 @@ def main():
     s.listen()
     print("Serwer nasłuchuje...")
     
-    # Uruchamiamy wątek do wysyłania danych od serwera
     threading.Thread(target=handle_server_send).start()
     
     try:
-        # Przyjmujemy wiele połączeń w pętli
         while True:
             conn, addr = s.accept()
             threading.Thread(target=handle_client, args=(conn, addr)).start()

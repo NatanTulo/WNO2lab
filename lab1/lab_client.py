@@ -1,10 +1,10 @@
 import socket
 import threading
-import os  # nowy import dla obsługi plików
+import os
 
 HOST = '127.0.0.1'
 PORT = 12345
-SHIFT = 1  # zmienna klucz szyfru (przesunięcie)
+SHIFT = 1
 
 def caesar_encrypt(text):
     result = ""
@@ -35,14 +35,13 @@ def send_audio(s, filepath):
         filename = os.path.basename(filepath)
         filesize = len(file_data)
         header = f"AUDIO|{filename}|{filesize}\n"
-        s.sendall(header.encode())  # wysyłamy nagłówek (plain text)
-        s.sendall(file_data)          # wysyłamy dane audio
+        s.sendall(header.encode())
+        s.sendall(file_data)
         print(f"Wysłano plik audio: {filename}")
     except Exception as e:
         print("Błąd wysyłania pliku audio:", e)
 
 def receive_audio(s, header):
-    # header: "AUDIO|<filename>|<filesize>"
     parts = header.split("|")
     if len(parts) != 3:
         return
@@ -77,15 +76,24 @@ def handle_recv(s):
                 continue
             encrypted = data.decode()
             plaintext = caesar_decrypt(encrypted)
-            if plaintext.startswith("Klient"):
+            encrypted_output = encrypted.split(":", 1)[1].strip() if ":" in encrypted else encrypted
+            if plaintext.startswith("Prywatna wiadomość od "):
+                parts = plaintext.split(":", 1)
+                sender = parts[0].replace("Prywatna wiadomość od ", "").strip()
+                content = parts[1].strip() if len(parts) > 1 else ""
+                print(f"Otrzymano wiadomość prywatną od {sender}:")
+                print(f"  Zaszyfrowana: {encrypted_output}")
+            elif plaintext.startswith("Klient"):
                 parts = plaintext.split(":", 1)
                 sender = parts[0].strip()
                 content = parts[1].strip() if len(parts) > 1 else ""
+                print(f"Otrzymano wiadomość od {sender}:")
+                print(f"  Zaszyfrowana: {encrypted_output}")
             else:
                 sender = "Serwer"
                 content = plaintext
-            print(f"Otrzymano wiadomość od {sender}:")
-            print(f"  Zaszyfrowana: {encrypted}")
+                print(f"Otrzymano wiadomość od {sender}:")
+                print(f"  Zaszyfrowana: {encrypted_output}")
             print(f"  Odszyfrowana: {content}")
         except:
             break
