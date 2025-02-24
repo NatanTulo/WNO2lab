@@ -50,18 +50,38 @@ def handle_client(conn, addr):
             data = conn.recv(1024)
             if not data:
                 break
-            encrypted_received = data.decode()
+            try:
+                header_candidate = data.decode(errors="ignore")
+            except:
+                header_candidate = ""
+            if header_candidate.startswith("AUDIO|"):
+                # Wysyłamy nagłówek do pozostałych klientów
+                broadcast(data, conn)
+                parts = header_candidate.split("|")
+                if len(parts) >= 3:
+                    try:
+                        filesize = int(parts[2].strip())
+                    except:
+                        filesize = 0
+                else:
+                    filesize = 0
+                remaining = filesize
+                while remaining > 0:
+                    chunk = conn.recv(min(1024, remaining))
+                    if not chunk:
+                        break
+                    remaining -= len(chunk)
+                    broadcast(chunk, conn)
+                continue
             print(f"Odebrano od {addr}:")
-            print(f"  Zaszyfrowana: {encrypted_received}")
-            decrypted = caesar_decrypt(encrypted_received)
-            # Jeśli odszyfrowana wiadomość zaczyna się od "Klient", usuwamy nagłówek
+            print(f"  Zaszyfrowana: {data.decode()}")
+            decrypted = caesar_decrypt(data.decode())
             if decrypted.startswith("Klient"):
                 parts = decrypted.split(":", 1)
                 content = parts[1].strip() if len(parts) > 1 else ""
             else:
                 content = decrypted
             print(f"  Odszyfrowana: {content}")
-            # Przygotowujemy pełną wiadomość z nagłówkiem dla broadcastu
             message = f"Klient {addr}: " + decrypted
             encrypted_message = caesar_encrypt(message)
             broadcast(encrypted_message.encode(), conn)
