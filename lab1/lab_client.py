@@ -96,10 +96,29 @@ def handle_send(s):
             msg = input()
         except (KeyboardInterrupt, EOFError):
             break
-        # Jeśli wiadomość zaczyna się od "sendaudio " – wysyłamy plik
-        if msg.startswith("sendaudio "):
+        if msg.startswith("/send "):
             filepath = msg.split(" ", 1)[1].strip()
             send_audio(s, filepath)
+        elif msg.startswith("/nick "):
+            new_nick = msg.split(" ", 1)[1].strip()
+            cmd = "NICK|" + new_nick
+            try:
+                encrypted_msg = caesar_encrypt(cmd)
+                s.sendall(encrypted_msg.encode())
+            except:
+                break
+        elif msg.startswith("/me "):
+            parts = msg.split(" ", 2)
+            if len(parts) < 3:
+                continue
+            target_nick = parts[1].strip()
+            message = parts[2].strip()
+            cmd = "PRIVATE|" + target_nick + "|" + message
+            try:
+                encrypted_msg = caesar_encrypt(cmd)
+                s.sendall(encrypted_msg.encode())
+            except:
+                break
         else:
             try:
                 encrypted_msg = caesar_encrypt(msg)
