@@ -3,16 +3,36 @@ import smtplib
 import poplib
 import imaplib
 import email
+import os
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
 from email.header import decode_header
 import sys
 sys.stdout.reconfigure(encoding='utf-8')  # Dodaj, aby wyjście używało UTF-8
 
-def send_email(smtp_server, smtp_port, username, password, recipient, subject, body):
-    msg = MIMEText(body)
+def send_email(smtp_server, smtp_port, username, password, recipient, subject, body, attachments=None):
+    # Używamy MIMEMultipart zamiast MIMEText, aby obsłużyć załączniki
+    msg = MIMEMultipart()
     msg['From'] = username
     msg['To'] = recipient
     msg['Subject'] = subject
+    
+    # Dodajemy treść wiadomości
+    msg.attach(MIMEText(body))
+    
+    # Dodajemy załączniki, jeśli istnieją
+    if attachments:
+        for attachment_path in attachments:
+            if os.path.isfile(attachment_path):
+                try:
+                    with open(attachment_path, 'rb') as attachment_file:
+                        part = MIMEApplication(attachment_file.read(), Name=os.path.basename(attachment_path))
+                    part['Content-Disposition'] = f'attachment; filename="{os.path.basename(attachment_path)}"'
+                    msg.attach(part)
+                except Exception as e:
+                    print(f"Nie udało się dołączyć załącznika {attachment_path}: {e}")
+    
     with smtplib.SMTP(smtp_server, smtp_port) as server:
         server.starttls()
         server.login(username, password)
@@ -41,10 +61,16 @@ def fetch_pop3(pop3_server, pop3_port, username, password, page_size=10):
         server.pass_(password)
         num_messages = len(server.list()[1])
         print("Łączna liczba wiadomości:", num_messages)
+        
+        # Oblicz zakres indeksów wiadomości (od najnowszych)
+        start_index = max(1, num_messages - page_size + 1)
+        end_index = num_messages + 1
         page_messages = min(page_size, num_messages)
-        print(f"Pobieram {page_messages} wiadomości...")
+        print(f"Pobieram {page_messages} najnowszych wiadomości...")
+        
         results = []
-        for i in range(1, page_messages + 1):
+        # Pobieraj wiadomości od najnowszych (odwrócona kolejność)
+        for i in range(end_index - 1, start_index - 1, -1):
             resp, lines, octets = server.retr(i)
             if resp.startswith(b'-ERR'):
                 raise Exception("Błąd autoryzacji POP3. Upewnij się, że używasz poprawnych danych logowania (dla Gmaila – hasło aplikacji).")
@@ -65,8 +91,12 @@ def fetch_imap(imap_server, imap_port, username, password, page_size=10):
         ids = data[0].split()
         total = len(ids)
         print("Łączna liczba wiadomości:", total)
+        
+        # Odwróć listę ID, aby najnowsze były na początku
+        ids = list(reversed(ids))
         page_ids = ids[:page_size]
-        print(f"Pobieram {len(page_ids)} wiadomości...")
+        print(f"Pobieram {len(page_ids)} najnowszych wiadomości...")
+        
         results = []
         for num in page_ids:
             typ, data = mail.fetch(num, '(BODY[HEADER.FIELDS (SUBJECT)])')
@@ -148,6 +178,18 @@ def main():
         recipient = input("Podaj odbiorcę: ").strip()
         subject = input("Podaj temat wiadomości: ").strip()
         body = input("Podaj treść wiadomości: ").strip()
+        
+        # Dodajemy opcję dołączania załączników
+        attachments = []
+        while True:
+            attachment = input("Podaj ścieżkę do załącznika (lub pozostaw puste, aby zakończyć): ").strip()
+            if not attachment:
+                break
+            if os.path.isfile(attachment):
+                attachments.append(attachment)
+            else:
+                print(f"Plik {attachment} nie istnieje.")
+                
     elif protocol == 'pop3':
         default_server, default_port = 'pop.gmail.com', 995
     elif protocol == 'imap':
@@ -165,7 +207,7 @@ def main():
         page_size = int(page_size_input) if page_size_input in ['10','25','50'] else 10
 
     if protocol == 'smtp':
-        send_email(server, port, username, password, recipient, subject, body)
+        send_email(server, port, username, password, recipient, subject, body, attachments if attachments else None)
     elif protocol == 'pop3':
         fetch_pop3(server, port, username, password, page_size)
     elif protocol == 'imap':
