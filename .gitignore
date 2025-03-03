@@ -2,3 +2,8 @@
 */Lib
 */Scripts
 */pyvenv.cfg
+.idea
+*/bin
+*/lib
+*/lib64
+*/__pycache__
