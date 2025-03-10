@@ -54,6 +54,10 @@ class MainWindow(QMainWindow):
         send_layout.addRow("Odbiorca:", self.recipient_le)
         self.subject_le = QLineEdit()
         send_layout.addRow("Temat:", self.subject_le)
+        # Dodanie pola wyboru potwierdzenia przeczytania maila
+        self.read_receipt_cb = QCheckBox("Dodaj potwierdzenie przeczytania maila")
+        self.read_receipt_cb.setChecked(True)
+        send_layout.addRow("", self.read_receipt_cb)
         self.body_te = QTextEdit()
         send_layout.addRow("Treść:", self.body_te)
         mail_layout.addLayout(form_layout)
@@ -181,7 +185,7 @@ class MainWindow(QMainWindow):
                     QMessageBox.warning(self, "Błąd", "Dla SMTP wymagane są odbiorca, temat i treść.")
                     return
                 attachments_list = self.attachments if self.attachments else None
-                send_email(server, port, username, password, recipient, subject, body, attachments_list)
+                send_email(server, port, username, password, recipient, subject, body, attachments_list, read_receipt=self.read_receipt_cb.isChecked())
                 self.output_te.append("Email wysłany.")
                 if attachments_list:
                     self.output_te.append(f"Wysłano {len(attachments_list)} załączników.")

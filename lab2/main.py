@@ -10,12 +10,16 @@ from email.header import decode_header
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-def send_email(smtp_server, smtp_port, username, password, recipient, subject, body, attachments=None):
+def send_email(smtp_server, smtp_port, username, password, recipient, subject, body, attachments=None, read_receipt=True):
     # Przygotowanie wiadomości email z opcjonalnymi załącznikami
     msg = MIMEMultipart()
     msg['From'] = username
     msg['To'] = recipient
     msg['Subject'] = subject
+    # Dodane nagłówki potwierdzenia przeczytania, jeśli zaznaczono
+    if read_receipt:
+        msg['Disposition-Notification-To'] = username
+        msg['Return-Receipt-To'] = username
     msg.attach(MIMEText(body))
     if attachments:
         for attachment_path in attachments:
