@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import QGraphicsScene, QMenu, QMessageBox
 from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
 from PyQt5.QtGui import QPainter, QColor, QPen, QRadialGradient, QFont, QTransform, QCursor
 import math
+import json
+import os
 from game_objects import CellUnit, CellConnection
 
 class GameScene(QGraphicsScene):
@@ -39,8 +41,54 @@ class GameScene(QGraphicsScene):
         self.clear()
         self.cells = []
         self.connections = []
+        self.current_level = level_number
         
-        # Example level setup - you would load actual level data from a file
+        # Load level data from file
+        level_data = self.load_level_data(level_number)
+        
+        if level_data:
+            # Create cells based on level data
+            for cell_data in level_data.get("cells", []):
+                cell = CellUnit(
+                    cell_data.get("x", 0),
+                    cell_data.get("y", 0),
+                    cell_data.get("type", "neutral"),
+                    cell_data.get("points", 2)
+                )
+                self.cells.append(cell)
+                self.addItem(cell)
+            
+            # Create connections based on level data
+            for conn_data in level_data.get("connections", []):
+                source_idx = conn_data.get("source", 0)
+                target_idx = conn_data.get("target", 0)
+                conn_type = conn_data.get("type", "neutral")
+                
+                if 0 <= source_idx < len(self.cells) and 0 <= target_idx < len(self.cells):
+                    source = self.cells[source_idx]
+                    target = self.cells[target_idx]
+                    connection = self.create_connection(source, target, conn_type)
+                    connection.cost = conn_data.get("cost", 0)
+        else:
+            # Fallback to hardcoded level if loading fails
+            self._initialize_default_level(level_number)
+
+    def load_level_data(self, level_number):
+        """Load level data from file"""
+        try:
+            levels_path = os.path.join(os.path.dirname(__file__), 'levels.json')
+            with open(levels_path, 'r') as f:
+                levels = json.load(f)
+                
+            if 1 <= level_number <= len(levels):
+                return levels[level_number - 1]
+            return None
+        except Exception as e:
+            print(f"Błąd wczytywania poziomu {level_number}: {e}")
+            return None
+
+    def _initialize_default_level(self, level_number):
+        """Fallback method with hardcoded level data"""
         if level_number == 1:
             # Create player cells
             player_cell1 = CellUnit(200, 300, "player", 30)
@@ -236,6 +284,22 @@ class GameScene(QGraphicsScene):
         self.game_over_text = "Wygrana!" if victory else "Przegrana!"
         self.update()
         
+        # Dodanie przycisku powrotu do menu po 2 sekundach
+        QTimer.singleShot(2000, self.show_return_button)
+    
+    def show_return_button(self):
+        # Dodanie przycisku powrotu do menu
+        if self.game_over_text:
+            from PyQt5.QtWidgets import QPushButton
+            parent_widget = self.views()[0] if self.views() else None
+            if parent_widget and parent_widget.parent():
+                msgBox = QMessageBox(parent_widget)
+                msgBox.setWindowTitle("Koniec gry")
+                msgBox.setText(self.game_over_text)
+                msgBox.setStandardButtons(QMessageBox.Ok)
+                msgBox.buttonClicked.connect(lambda btn: parent_widget.parent().show_menu())
+                msgBox.exec_()
+        
     def add_points(self):
         """Dodaje 1 punkt do każdej komórki (oprócz neutralnych) co sekundę oraz przesyła kropki przez mosty gracza"""
         for cell in self.cells:
@@ -305,6 +369,18 @@ class GameScene(QGraphicsScene):
             painter.drawText(text_rect, Qt.AlignCenter, text)
 
     def keyPressEvent(self, event):
+        # Obsługa klawisza Escape - powrót do menu
+        if event.key() == Qt.Key_Escape:
+            # Zatrzymanie timerów
+            self.timer.stop()
+            self.points_timer.stop()
+            
+            # Powrót do menu głównego
+            if self.views() and self.views()[0].parent():
+                self.views()[0].parent().show_menu()
+            event.accept()
+            return
+            
         # Dodajemy menu kontekstowe po wciśnięciu "i"
         if event.key() == Qt.Key_I:
             if self.views():
