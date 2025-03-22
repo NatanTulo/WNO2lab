@@ -15,7 +15,14 @@ class CellUnit(QGraphicsItem):
         self.points = points  # punkty to podstawowa waluta
         self.strength = (self.points // 10) + 1  # strength wynika z punktów
         self.connections = []  # List of connected cells
+        self.highlighted = False  # Nowy atrybut określający czy komórka jest podświetlona
         
+    def setHighlighted(self, highlighted):
+        """Ustawia stan podświetlenia komórki"""
+        if self.highlighted != highlighted:
+            self.highlighted = highlighted
+            self.update()  # Odświeża wygląd komórki
+    
     def boundingRect(self):
         """Define the bounding rectangle for the cell"""
         effective_radius = self.radius * (1 + 0.2 * (self.strength - 1))  # łagodniejszy wzrost promienia
@@ -48,7 +55,12 @@ class CellUnit(QGraphicsItem):
         gradient.setColorAt(1, base_color.darker(150))
         
         # Draw cell
-        painter.setPen(QPen(Qt.white, 2))
+        if self.highlighted:
+            # Jeśli komórka jest podświetlona, rysujemy jasną obwódkę
+            painter.setPen(QPen(Qt.yellow, 4))
+        else:
+            painter.setPen(QPen(Qt.white, 2))
+            
         painter.setBrush(gradient)
         painter.drawEllipse(QRectF(self.x - effective_radius, self.y - effective_radius, 
                                    effective_radius * 2, effective_radius * 2))

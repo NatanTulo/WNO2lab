@@ -19,6 +19,7 @@ class GameScene(QGraphicsScene):
         self.timer.timeout.connect(self.update_game)
         self.drag_start_cell = None  
         self.drag_current_pos = None
+        self.reachable_cells = []  # Nowy atrybut do przechowywania komórek, do których możemy stworzyć most
         
         # Nowy timer do dodawania punktów co 2000 ms
         self.points_timer = QTimer()
@@ -147,16 +148,56 @@ class GameScene(QGraphicsScene):
         # Check win/lose conditions
         self.check_game_state()
                 
+    def calculate_reachable_cells(self):
+        """Oblicza i oznacza komórki, do których można stworzyć most"""
+        if not self.drag_start_cell:
+            return
+            
+        self.reachable_cells = []
+        available_points = self.drag_start_cell.points
+        
+        for cell in self.cells:
+            if cell == self.drag_start_cell:
+                continue  # Pomijamy komórkę źródłową
+                
+            # Sprawdzamy czy już istnieje połączenie między tymi komórkami
+            exists = any(((conn.source_cell == self.drag_start_cell and conn.target_cell == cell) or
+                         (conn.source_cell == cell and conn.target_cell == self.drag_start_cell))
+                         for conn in self.connections)
+            if exists:
+                continue  # Pomijamy jeśli połączenie już istnieje
+                
+            # Obliczamy koszt połączenia
+            dx = cell.x - self.drag_start_cell.x
+            dy = cell.y - self.drag_start_cell.y
+            distance = math.hypot(dx, dy)
+            cost = int(distance / 20)
+            
+            # Jeśli mamy wystarczająco punktów, dodajemy do listy dostępnych
+            if cost <= available_points:
+                self.reachable_cells.append(cell)
+                cell.setHighlighted(True)  # Oznaczamy komórkę jako możliwą do połączenia
+            
+        self.update()  # Odświeżamy scenę, aby pokazać zmiany
+
     def mousePressEvent(self, event):
         clicked_item = self.itemAt(event.scenePos(), QTransform())
+        
+        # Najpierw resetujemy poprzednie podświetlenia
+        for cell in self.reachable_cells:
+            cell.setHighlighted(False)
+        self.reachable_cells = []
+        
         if event.button() == Qt.LeftButton:
             if isinstance(clicked_item, CellUnit) and clicked_item.cell_type == "player":
                 self.drag_start_cell = clicked_item
+                self.calculate_reachable_cells()  # Obliczamy możliwe komórki docelowe
             else:
                 self.drag_start_cell = None
         elif event.button() == Qt.RightButton:
             if isinstance(clicked_item, CellUnit) and clicked_item.cell_type == "enemy":
                 self.drag_start_cell = clicked_item
+                self.calculate_reachable_cells()  # Obliczamy możliwe komórki docelowe
             else:
                 self.drag_start_cell = None
         super().mousePressEvent(event)
@@ -235,6 +276,11 @@ class GameScene(QGraphicsScene):
     def mouseReleaseEvent(self, event):
         """Na zakończenie przeciągania sprawdza, czy zwolniono przycisk nad inną komórką tego samego typu.
            Dla LPM mosty tworzy komórka gracza, a dla PPM – tymczasowo mosty przeciwnika."""
+        # Resetujemy podświetlenie komórek
+        for cell in self.reachable_cells:
+            cell.setHighlighted(False)
+        self.reachable_cells = []
+        
         if self.drag_start_cell is None:
             return
         release_item = self.itemAt(event.scenePos(), QTransform())
@@ -274,6 +320,7 @@ class GameScene(QGraphicsScene):
                         new_conn.cost = cost
         self.drag_start_cell = None
         self.drag_current_pos = None  # Reset pozycji kursora
+        self.update()
         
     def check_game_state(self):
         """Check if player has won or lost the level"""
@@ -314,6 +361,16 @@ class GameScene(QGraphicsScene):
         for cell in self.cells:
             if cell.cell_type != "neutral":
                 cell.add_point()
+                
+                if self.drag_start_cell == cell:
+                    # Najpierw resetujemy poprzednie podświetlenia
+                    for reach_cell in self.reachable_cells:
+                        reach_cell.setHighlighted(False)
+                    self.reachable_cells = []
+                    
+                    # Następnie obliczamy nowe podświetlenia
+                    self.calculate_reachable_cells()
+        
         # Dla każdego mostu gracza przesyłamy kropkę, jeśli komórka źródłowa ma wystarczająco punktów
         for conn in self.connections:
             if conn.connection_type in ["player", "enemy"]:
@@ -322,6 +379,17 @@ class GameScene(QGraphicsScene):
                     conn.source_cell.strength = (conn.source_cell.points // 10) + 1
                     conn.source_cell.update()
                     conn.dots.append(0)  # nowa kropka z postępem 0
+                    
+                    # Jeśli ta komórka jest komórką źródłową mostu, który jest w trakcie budowy,
+                    # ponownie obliczamy dostępne komórki po odjęciu punktu
+                    if self.drag_start_cell == conn.source_cell:
+                        # Najpierw resetujemy poprzednie podświetlenia
+                        for reach_cell in self.reachable_cells:
+                            reach_cell.setHighlighted(False)
+                        self.reachable_cells = []
+                        
+                        # Następnie obliczamy nowe podświetlenia
+                        self.calculate_reachable_cells()
 
     def drawForeground(self, painter, rect):
         if self.drag_start_cell and self.drag_current_pos:
