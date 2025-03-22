@@ -1,8 +1,8 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QGraphicsScene, QGraphicsView, QGraphicsItem, QMainWindow
+from PyQt5.QtWidgets import QApplication, QGraphicsScene, QGraphicsView, QGraphicsItem, QMainWindow, QMenu, QMessageBox
 from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
-from PyQt5.QtGui import QPainter, QColor, QPen, QRadialGradient, QFont, QTransform  # dodany import
-import math  # dodany import
+from PyQt5.QtGui import QPainter, QColor, QPen, QRadialGradient, QFont, QTransform, QCursor
+import math
 
 class CellUnit(QGraphicsItem):
     """Base class for all cell units in the game"""
@@ -22,6 +22,14 @@ class CellUnit(QGraphicsItem):
         effective_radius = self.radius * (1 + 0.2 * (self.strength - 1))  # łagodniejszy wzrost promienia
         return QRectF(self.x - effective_radius - 10, self.y - effective_radius - 10, 
                       effective_radius * 2 + 20, effective_radius * 2 + 20)
+    
+    def shape(self):
+        # Zwracamy ścieżkę będącą okręgiem o promieniu effective_radius
+        from PyQt5.QtGui import QPainterPath
+        path = QPainterPath()
+        effective_radius = self.radius * (1 + 0.2 * (self.strength - 1))
+        path.addEllipse(QPointF(self.x, self.y), effective_radius, effective_radius)
+        return path
     
     def paint(self, painter, option, widget):
         """Draw the cell with proper color and effects"""
@@ -57,23 +65,35 @@ class CellUnit(QGraphicsItem):
         text_rect = QRectF(self.x - effective_radius, self.y - effective_radius, effective_radius * 2, effective_radius * 2)
         painter.drawText(text_rect, Qt.AlignCenter, str(self.points))
         
-        # Nowe rysowanie wskaźników siły (kropki) umieszczonych niżej, nie wychodzących poza obrys komórki
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(Qt.white)
-        n_dots = min(self.strength, 9)
-        rows = math.ceil(n_dots / 3)
+        # Rysowanie wskaźników siły (kropki) z uwzględnieniem stanu mostu:
+        # Każda kropka reprezentuje jeden poziom siły (maksymalnie 9).
+        # Jeśli most został już rozpoczęty, rysujemy obrys zamiast wypełnienia.
+        used_dots = sum(1 for conn in self.connections if conn.source_cell is self)
+        total_dots = min(self.strength, 9)
+        rows = math.ceil(total_dots / 3)
+        effective_radius = self.radius * (1 + 0.2 * (self.strength - 1))
         dot_radius = effective_radius / 10
         spacing = effective_radius / 3
+        count_dot = 0
         for row in range(rows):
-            row_dots = 3 if row < rows - 1 else n_dots - row * 3
-            y_dotted = self.y + effective_radius * (0.5 + row * 0.15)  # pozycja w pionie przesunięta w dół
-            # Upewnij się, że kropki nie wyjdą poza dolny obrys
+            row_dots = 3 if row < rows - 1 else total_dots - row * 3
+            y_dotted = self.y + effective_radius * (0.5 + row * 0.15)
             if y_dotted + dot_radius > self.y + effective_radius:
                 y_dotted = self.y + effective_radius - dot_radius
             for col in range(row_dots):
                 x_dotted = self.x + (col - (row_dots - 1) / 2) * spacing
-                painter.drawEllipse(QRectF(x_dotted - dot_radius, y_dotted - dot_radius,
-                                           dot_radius * 2, dot_radius * 2))
+                # Jeśli count_dot >= total_dots - used_dots, to rysujemy obrys (most od prawej)
+                if count_dot >= total_dots - used_dots:
+                    painter.setPen(QPen(Qt.white, 1))
+                    painter.setBrush(Qt.NoBrush)
+                    painter.drawEllipse(QRectF(x_dotted - dot_radius, y_dotted - dot_radius,
+                                               dot_radius * 2, dot_radius * 2))
+                else:
+                    painter.setPen(Qt.NoPen)
+                    painter.setBrush(Qt.white)
+                    painter.drawEllipse(QRectF(x_dotted - dot_radius, y_dotted - dot_radius,
+                                               dot_radius * 2, dot_radius * 2))
+                count_dot += 1
 
     def add_point(self):
         """Dodaje punkt do komórki oraz aktualizuje siłę"""
@@ -129,15 +149,15 @@ class GameScene(QGraphicsScene):
         # Example level setup - you would load actual level data from a file
         if level_number == 1:
             # Create player cells
-            player_cell1 = CellUnit(200, 300, "player", 6)
+            player_cell1 = CellUnit(200, 300, "player", 30)
             player_cell2 = CellUnit(150, 450, "player", 2)
             
             # Create enemy cells
-            enemy_cell1 = CellUnit(600, 250, "enemy", 3)
+            enemy_cell1 = CellUnit(600, 250, "enemy", 30)
             enemy_cell2 = CellUnit(500, 400, "enemy", 2)
             
             # Create neutral cells
-            neutral_cell = CellUnit(350, 350, "player", 2)
+            neutral_cell = CellUnit(350, 350, "neutral", 2)
             
             # Add cells to scene
             for cell in [player_cell1, player_cell2, enemy_cell1, enemy_cell2, neutral_cell]:
@@ -166,8 +186,16 @@ class GameScene(QGraphicsScene):
                 for i in range(len(conn.dots)):
                     conn.dots[i] += 0.016  # przybliżony przyrost dla 60 FPS
                     if conn.dots[i] >= 1.0:
-                        # Po dotarciu kropki do celu dodajemy 1 punkt do komórki docelowej
-                        conn.target_cell.points += 1
+                        # Jeśli typ mostu jest zgodny z typem docelowej komórki - dodaj punkt,
+                        # w przeciwnym wypadku odejmij punkt.
+                        if conn.connection_type == conn.target_cell.cell_type:
+                            conn.target_cell.points += 1
+                        else:
+                            conn.target_cell.points -= 1
+                            if conn.target_cell.points <= 0:
+                                conn.target_cell.cell_type = conn.connection_type
+                                conn.target_cell.points = 1
+                        conn.target_cell.strength = (conn.target_cell.points // 10) + 1
                         conn.target_cell.update()
                         finished.append(i)
                 # Usuwanie kropek, które zakończyły podróż
@@ -214,6 +242,7 @@ class GameScene(QGraphicsScene):
                     Qx = A.x() + t * AB.x()
                     Qy = A.y() + t * AB.y()
                     if math.hypot(P.x() - Qx, P.y() - Qy) < 5:
+                        # Usuwamy most
                         if conn in self.connections:
                             self.connections.remove(conn)
                         if conn in conn.source_cell.connections:
@@ -223,8 +252,27 @@ class GameScene(QGraphicsScene):
                         cost = getattr(conn, "cost", 0)
                         source_points = round(t * cost)
                         target_points = cost - source_points
-                        conn.source_cell.points += source_points
-                        conn.target_cell.points += target_points
+                        # Rozdzielenie punktów dla mostu "player" lub "enemy"
+                        if conn.connection_type == "player":
+                            if conn.target_cell.cell_type != "player":
+                                conn.source_cell.points += source_points
+                                conn.target_cell.points -= target_points
+                                if conn.target_cell.points <= 0:
+                                    conn.target_cell.cell_type = "player"
+                                    conn.target_cell.points = abs(conn.target_cell.points)
+                            else:
+                                conn.source_cell.points += source_points
+                                conn.target_cell.points += target_points
+                        elif conn.connection_type == "enemy":
+                            if conn.target_cell.cell_type != "enemy":
+                                conn.source_cell.points += source_points
+                                conn.target_cell.points -= target_points
+                                if conn.target_cell.points <= 0:
+                                    conn.target_cell.cell_type = "enemy"
+                                    conn.target_cell.points = abs(conn.target_cell.points)
+                            else:
+                                conn.source_cell.points += source_points
+                                conn.target_cell.points += target_points
                         conn.source_cell.strength = (conn.source_cell.points // 10) + 1
                         conn.target_cell.strength = (conn.target_cell.points // 10) + 1
                         conn.source_cell.update()
@@ -240,9 +288,8 @@ class GameScene(QGraphicsScene):
             return
         release_item = self.itemAt(event.scenePos(), QTransform())
         if event.button() == Qt.LeftButton:
-            if (isinstance(release_item, CellUnit) and
-                release_item.cell_type == "player" and
-                release_item != self.drag_start_cell):
+            # Zmodyfikowano: akceptujemy każdą komórkę (o ile nie jest identyczna z komórką początkową)
+            if isinstance(release_item, CellUnit) and release_item != self.drag_start_cell:
                 dx = release_item.x - self.drag_start_cell.x
                 dy = release_item.y - self.drag_start_cell.y
                 distance = math.hypot(dx, dy)
@@ -258,9 +305,8 @@ class GameScene(QGraphicsScene):
                         new_conn = self.create_connection(self.drag_start_cell, release_item, "player")
                         new_conn.cost = cost
         elif event.button() == Qt.RightButton:
-            if (isinstance(release_item, CellUnit) and
-                release_item.cell_type == "enemy" and
-                release_item != self.drag_start_cell):
+            # Zmieniony warunek: akceptujemy dowolną komórkę, która nie jest komórką początkową
+            if isinstance(release_item, CellUnit) and release_item != self.drag_start_cell:
                 dx = release_item.x - self.drag_start_cell.x
                 dy = release_item.y - self.drag_start_cell.y
                 distance = math.hypot(dx, dy)
@@ -291,8 +337,8 @@ class GameScene(QGraphicsScene):
             self.game_over(True)
     
     def game_over(self, victory):
-        """Handle end of game"""
         self.timer.stop()
+        self.points_timer.stop()  # Dodano, aby zapauzować grę po zakończeniu
         self.game_over_text = "Wygrana!" if victory else "Przegrana!"
         self.update()
         
@@ -363,6 +409,52 @@ class GameScene(QGraphicsScene):
                 painter.drawText(text_rect.translated(dx, dy), Qt.AlignCenter, text)
             painter.setPen(QPen(Qt.white, 2))
             painter.drawText(text_rect, Qt.AlignCenter, text)
+
+    def keyPressEvent(self, event):
+        # Dodajemy menu kontekstowe po wciśnięciu "i"
+        if event.key() == Qt.Key_I:
+            if self.views():
+                view = self.views()[0]
+                scene_pos = view.mapToScene(view.mapFromGlobal(QCursor.pos()))
+            else:
+                return super().keyPressEvent(event)
+            item = self.itemAt(scene_pos, QTransform())
+            if item and isinstance(item, CellUnit):
+                menu = QMenu()
+                action_info = menu.addAction("Informacje o komórce")
+                action = menu.exec_(QCursor.pos())
+                if action == action_info:
+                    QMessageBox.information(None, "Komórka", 
+                        f"Typ: {item.cell_type}\nPunkty: {item.points}\nSiła: {item.strength}")
+            else:
+                found_conn = None
+                for conn in self.connections:
+                    A = QPointF(conn.source_cell.x, conn.source_cell.y)
+                    B = QPointF(conn.target_cell.x, conn.target_cell.y)
+                    AP = QPointF(scene_pos.x() - A.x(), scene_pos.y() - A.y())
+                    AB = QPointF(B.x() - A.x(), B.y() - A.y())
+                    ab2 = AB.x() ** 2 + AB.y() ** 2
+                    if ab2 == 0:
+                        continue
+                    t = (AP.x() * AB.x() + AP.y() * AB.y()) / ab2
+                    if t < 0 or t > 1:
+                        continue
+                    Qx = A.x() + t * AB.x()
+                    Qy = A.y() + t * AB.y()
+                    if math.hypot(scene_pos.x() - Qx, scene_pos.y() - Qy) < 5:
+                        found_conn = conn
+                        break
+                if found_conn:
+                    menu = QMenu()
+                    action_info = menu.addAction("Informacje o moście")
+                    action = menu.exec_(QCursor.pos())
+                    if action == action_info:
+                        cost = getattr(found_conn, "cost", 0)
+                        QMessageBox.information(None, "Most", 
+                            f"Typ: {found_conn.connection_type}\nKoszt: {cost}")
+            event.accept()
+        else:
+            super().keyPressEvent(event)
 
 class GameWindow(QMainWindow):
     """Main game window"""
