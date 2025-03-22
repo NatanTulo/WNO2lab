@@ -463,17 +463,86 @@ class GameScene(QGraphicsScene):
             source_point = QPointF(self.hint_source.x, self.hint_source.y)
             target_point = QPointF(self.hint_target.x, self.hint_target.y)
             
-            # Rysowanie pulsującej linii podpowiedzi
+            # Rysowanie pulsującej linii podpowiedzi ze strzałką wskazującą kierunek
             hint_pen = QPen(QColor(255, 215, 0), 3, Qt.DashLine)  # Złota, przerywana linia
             painter.setPen(hint_pen)
             painter.drawLine(source_point, target_point)
             
-            # Dodajemy okręgi wokół komórek, które podpowiedź sugeruje połączyć
+            # Dodajemy strzałkę wskazującą kierunek mostu
+            arrow_size = 15
+            dx = target_point.x() - source_point.x()
+            dy = target_point.y() - source_point.y()
+            length = math.sqrt(dx * dx + dy * dy)
+            if length > 0:
+                # Normalizacja wektora kierunku
+                dx, dy = dx / length, dy / length
+                
+                # Punkt na linii, gdzie rysujemy strzałkę (70% odległości)
+                arrow_point_x = source_point.x() + dx * length * 0.7
+                arrow_point_y = source_point.y() + dy * length * 0.7
+                
+                # Rysowanie strzałki
+                painter.setBrush(QColor(255, 215, 0))
+                points = [
+                    QPointF(arrow_point_x, arrow_point_y),
+                    QPointF(arrow_point_x - arrow_size * (dx + dy * 0.5), arrow_point_y - arrow_size * (dy - dx * 0.5)),
+                    QPointF(arrow_point_x - arrow_size * (dx - dy * 0.5), arrow_point_y - arrow_size * (dy + dx * 0.5))
+                ]
+                painter.drawPolygon(points)
+            
+            # Dodajemy okręgi wokół komórek z różnymi kolorami dla źródła i celu
+            source_color = QColor(255, 215, 0)  # Złoty dla źródła
+            target_color = QColor(255, 100, 0)  # Pomarańczowy dla celu
             highlight_radius = 40
-            painter.setPen(QPen(QColor(255, 215, 0), 2, Qt.DashLine))
+            
+            # Okrąg źródłowy
+            painter.setPen(QPen(source_color, 3, Qt.DashLine))
             painter.setBrush(Qt.NoBrush)
             painter.drawEllipse(source_point, highlight_radius, highlight_radius)
+            
+            # Okrąg docelowy
+            painter.setPen(QPen(target_color, 3, Qt.DashLine))
             painter.drawEllipse(target_point, highlight_radius, highlight_radius)
+            
+            # Dodajemy etykiety "OD" i "DO"
+            font = QFont("Arial", 12, QFont.Bold)
+            painter.setFont(font)
+            
+            # Etykieta "OD" przy źródle
+            label_width = 40
+            label_height = 25
+            
+            # Pozycja etykiety "OD" (nad komórką źródłową)
+            source_label_rect = QRectF(
+                source_point.x() - label_width/2, 
+                source_point.y() - highlight_radius - label_height - 5,
+                label_width, label_height
+            )
+            
+            # Tło etykiety
+            painter.setBrush(source_color)
+            painter.setPen(Qt.NoPen)
+            painter.drawRoundedRect(source_label_rect, 5, 5)
+            
+            # Tekst etykiety
+            painter.setPen(Qt.black)
+            painter.drawText(source_label_rect, Qt.AlignCenter, "OD")
+            
+            # Etykieta "DO" przy celu
+            target_label_rect = QRectF(
+                target_point.x() - label_width/2, 
+                target_point.y() - highlight_radius - label_height - 5,
+                label_width, label_height
+            )
+            
+            # Tło etykiety
+            painter.setBrush(target_color)
+            painter.setPen(Qt.NoPen)
+            painter.drawRoundedRect(target_label_rect, 5, 5)
+            
+            # Tekst etykiety
+            painter.setPen(Qt.black)
+            painter.drawText(target_label_rect, Qt.AlignCenter, "DO")
             
             # Dodajemy napis z kosztem na środku linii
             if self.hint_cost > 0:
