@@ -5,6 +5,7 @@ import math
 import json
 import os
 from game_objects import CellUnit, CellConnection
+from game_ai import GameAI  # Nowy import
 
 class GameScene(QGraphicsScene):
     """Main game scene class"""
@@ -26,6 +27,18 @@ class GameScene(QGraphicsScene):
         self.points_timer.timeout.connect(self.add_points)
         self.points_timer.start(2000)
         self.game_over_text = None  # Dodano atrybut na komunikat końca gry
+        
+        # Nowy kod: Inicjalizacja AI i atrybutów do podpowiedzi
+        self.game_ai = GameAI(self)
+        self.hint_active = False
+        self.hint_source = None
+        self.hint_target = None
+        self.hint_cost = 0
+        self.hint_timer = QTimer()
+        self.hint_timer.timeout.connect(self.update_hint_animation)
+        self.hint_timer.start(500)  # Miganie co 500ms
+        self.hint_visible = False
+        self.hint_blink_count = 0  # Licznik mrugnięć
 
     def drawBackground(self, painter, rect):
         # Ustawienie radialnego gradientu: środek jasny fiolent, krawędzie ciemny fiolent
@@ -444,8 +457,91 @@ class GameScene(QGraphicsScene):
                 painter.drawText(text_rect.translated(dx, dy), Qt.AlignCenter, text)
             painter.setPen(QPen(Qt.white, 2))
             painter.drawText(text_rect, Qt.AlignCenter, text)
+        
+        # Rysowanie podpowiedzi, jeśli jest aktywna i widoczna
+        if self.hint_active and self.hint_visible and self.hint_source and self.hint_target:
+            source_point = QPointF(self.hint_source.x, self.hint_source.y)
+            target_point = QPointF(self.hint_target.x, self.hint_target.y)
+            
+            # Rysowanie pulsującej linii podpowiedzi
+            hint_pen = QPen(QColor(255, 215, 0), 3, Qt.DashLine)  # Złota, przerywana linia
+            painter.setPen(hint_pen)
+            painter.drawLine(source_point, target_point)
+            
+            # Dodajemy okręgi wokół komórek, które podpowiedź sugeruje połączyć
+            highlight_radius = 40
+            painter.setPen(QPen(QColor(255, 215, 0), 2, Qt.DashLine))
+            painter.setBrush(Qt.NoBrush)
+            painter.drawEllipse(source_point, highlight_radius, highlight_radius)
+            painter.drawEllipse(target_point, highlight_radius, highlight_radius)
+            
+            # Dodajemy napis z kosztem na środku linii
+            if self.hint_cost > 0:
+                mid_x = (self.hint_source.x + self.hint_target.x) / 2
+                mid_y = (self.hint_source.y + self.hint_target.y) / 2
+                
+                font = QFont("Arial", 12, QFont.Bold)
+                painter.setFont(font)
+                cost_text = f"Koszt: {self.hint_cost}"
+                
+                # Poprawione rysowanie tekstu używając QRectF zamiast współrzędnych float
+                text_width = 80  # przybliżona szerokość tekstu
+                text_height = 20  # przybliżona wysokość tekstu
+                
+                # Biały tekst z czarnym cieniem
+                painter.setPen(QPen(Qt.black, 2))
+                for dx, dy in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+                    text_rect = QRectF(mid_x + dx - text_width/2, mid_y + dy - text_height/2, text_width, text_height)
+                    painter.drawText(text_rect, Qt.AlignCenter, cost_text)
+                
+                painter.setPen(QPen(Qt.white, 1))
+                text_rect = QRectF(mid_x - text_width/2, mid_y - text_height/2, text_width, text_height)
+                painter.drawText(text_rect, Qt.AlignCenter, cost_text)
+
+    def update_hint_animation(self):
+        """Aktualizacja animacji dla podpowiedzi (miganie)"""
+        if self.hint_active:
+            self.hint_visible = not self.hint_visible
+            self.update()
+            
+            # Jeśli podpowiedź jest niewidoczna, zwiększ licznik (liczenie pełnych cykli)
+            if not self.hint_visible:
+                self.hint_blink_count += 1
+                
+            # Po 2 pełnych cyklach (2 razy zaświecenie i wygaszenie) wyłącz podpowiedź
+            if self.hint_blink_count >= 2:
+                self.hint_active = False
+                self.hint_visible = False
+                self.hint_blink_count = 0
+                self.update()
+
+    def show_hint(self):
+        """Pokazuje podpowiedź strategiczną od AI"""
+        best_move = self.game_ai.analyze_best_move()
+        
+        if best_move:
+            self.hint_source, self.hint_target, self.hint_cost = best_move
+            self.hint_active = True
+            self.hint_visible = True  # Rozpocznij od widocznej podpowiedzi
+            self.hint_blink_count = 0  # Resetuj licznik mrugnięć
+            QMessageBox.information(None, "Podpowiedź", 
+                f"Sugerowany ruch: Połącz komórkę z {self.hint_source.points} punktami "
+                f"z komórką typu {self.hint_target.cell_type}. Koszt: {self.hint_cost}")
+        else:
+            self.hint_active = False
+            self.hint_visible = False
+            self.hint_blink_count = 0
+            QMessageBox.information(None, "Podpowiedź", "Brak sugerowanych ruchów.")
+        
+        self.update()  # Odświeżenie sceny, aby pokazać podpowiedź
 
     def keyPressEvent(self, event):
+        # Obsługa klawisza H - pokaż podpowiedź
+        if event.key() == Qt.Key_H:
+            self.show_hint()
+            event.accept()
+            return
+        
         # Obsługa klawisza Escape - powrót do menu
         if event.key() == Qt.Key_Escape:
             # Zatrzymanie timerów
