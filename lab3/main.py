@@ -16,7 +16,6 @@ class CellUnit(QGraphicsItem):
         self.points = points  # punkty to podstawowa waluta
         self.strength = (self.points // 10) + 1  # strength wynika z punktów
         self.connections = []  # List of connected cells
-        self.pulse_animation = 0  # For pulsing effect
         
     def boundingRect(self):
         """Define the bounding rectangle for the cell"""
@@ -73,20 +72,7 @@ class CellUnit(QGraphicsItem):
                 x_dotted = self.x + (col - (row_dots - 1) / 2) * spacing
                 painter.drawEllipse(QRectF(x_dotted - dot_radius, y_dotted - dot_radius,
                                            dot_radius * 2, dot_radius * 2))
-    
-    def update_animation(self):
-        """Update pulse animation state"""
-        self.pulse_animation = (self.pulse_animation + 1) % 60
-        self.update()
-        
-    def increase_strength(self):
-        """Increase cell's strength"""
-        self.strength += 1
-        
-    def decrease_strength(self):
-        """Decrease cell's strength"""
-        self.strength = max(0, self.strength - 1)
-        
+
     def add_point(self):
         """Dodaje punkt do komórki oraz aktualizuje siłę"""
         self.points += 1
@@ -101,16 +87,7 @@ class CellConnection:
         self.source_cell = source_cell
         self.target_cell = target_cell
         self.connection_type = connection_type  # "player", "enemy", "neutral"
-        self.flow_animation = 0
-        self.active = False
-        # Dodano listę dla animowanych kropek w mostach
         self.dots = []
-        
-    def update_animation(self):
-        """Update flow animation state"""
-        if self.active:
-            self.flow_animation = (self.flow_animation + 1) % 60
-
 
 class GameScene(QGraphicsScene):
     """Main game scene class"""
@@ -124,12 +101,13 @@ class GameScene(QGraphicsScene):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_game)
         self.drag_start_cell = None  
-        self.drag_current_pos = None  # Nowa zmienna do śledzenia pozycji kursora podczas przeciągania
+        self.drag_current_pos = None
         
         # Nowy timer do dodawania punktów co 1000 ms
         self.points_timer = QTimer()
         self.points_timer.timeout.connect(self.add_points)
         self.points_timer.start(1000)
+        self.game_over_text = None  # Dodano atrybut na komunikat końca gry
         
     def drawBackground(self, painter, rect):
         # Ustawienie radialnego gradientu: środek jasny fiolent, krawędzie ciemny fiolent
@@ -150,7 +128,7 @@ class GameScene(QGraphicsScene):
         # Example level setup - you would load actual level data from a file
         if level_number == 1:
             # Create player cells
-            player_cell1 = CellUnit(200, 300, 40, "player", 3)
+            player_cell1 = CellUnit(200, 300, 40, "player", 6)
             player_cell2 = CellUnit(150, 450, 30, "player", 2)
             
             # Create enemy cells
@@ -158,14 +136,13 @@ class GameScene(QGraphicsScene):
             enemy_cell2 = CellUnit(500, 400, 30, "enemy", 2)
             
             # Create neutral cells
-            neutral_cell = CellUnit(350, 350, 35, "neutral", 2)
+            neutral_cell = CellUnit(350, 350, 35, "player", 2)
             
             # Add cells to scene
             for cell in [player_cell1, player_cell2, enemy_cell1, enemy_cell2, neutral_cell]:
                 self.cells.append(cell)
                 self.addItem(cell)
                 
-            
     def create_connection(self, source, target, conn_type):
         """Create a connection between two cells"""
         connection = CellConnection(source, target, conn_type)
@@ -178,15 +155,11 @@ class GameScene(QGraphicsScene):
         """Main game update loop"""
         # Update cell animations
         for cell in self.cells:
-            cell.update_animation()
+            cell.update()
             
         # Update connection animations and handle unit transfers
         for conn in self.connections:
-            conn.update_animation()
-            if conn.active:
-                # Transfer units logic would go here
-                pass
-            if conn.connection_type == "player":
+            if conn.connection_type in ["player", "enemy"]:
                 # Aktualizacja postępu każdej kropki
                 finished = []
                 for i in range(len(conn.dots)):
@@ -205,51 +178,91 @@ class GameScene(QGraphicsScene):
                 
     def mousePressEvent(self, event):
         clicked_item = self.itemAt(event.scenePos(), QTransform())
-        if isinstance(clicked_item, CellUnit) and clicked_item.cell_type == "player":
-            self.drag_start_cell = clicked_item
-        else:
-            # Naciśnięcie lpm poza komórką – próba przecięcia mostu
-            P = event.scenePos()
-            for conn in self.connections:
-                if conn.connection_type == "player":
-                    A = QPointF(conn.source_cell.x, conn.source_cell.y)
-                    B = QPointF(conn.target_cell.x, conn.target_cell.y)
-                    AB = QPointF(B.x() - A.x(), B.y() - A.y())
-                    AP = QPointF(P.x() - A.x(), P.y() - A.y())
-                    ab2 = AB.x() ** 2 + AB.y() ** 2
-                    if ab2 == 0:
-                        continue
-                    t = (AP.x() * AB.x() + AP.y() * AB.y()) / ab2
-                    if t < 0 or t > 1:
-                        continue
-                    Qx = A.x() + t * AB.x()
-                    Qy = A.y() + t * AB.y()
-                    dist = math.hypot(P.x() - Qx, P.y() - Qy)
-                    if dist < 5:  # próg wykrywania przecięcia
-                        if conn in self.connections:
-                            self.connections.remove(conn)
-                        if conn in conn.source_cell.connections:
-                            conn.source_cell.connections.remove(conn)
-                        if conn in conn.target_cell.connections:
-                            conn.target_cell.connections.remove(conn)
-                        cost = getattr(conn, "cost", 0)
-                        source_points = round(t * cost)
-                        target_points = cost - source_points
-                        conn.source_cell.points += source_points
-                        conn.target_cell.points += target_points
-                        conn.source_cell.strength = (conn.source_cell.points // 10) + 1
-                        conn.target_cell.strength = (conn.target_cell.points // 10) + 1
-                        conn.source_cell.update()
-                        conn.target_cell.update()
-                        break
+        if event.button() == Qt.LeftButton:
+            if isinstance(clicked_item, CellUnit) and clicked_item.cell_type == "player":
+                self.drag_start_cell = clicked_item
+            else:
+                # Naciśnięcie lpm poza komórką – próba przecięcia mostu
+                P = event.scenePos()
+                for conn in self.connections:
+                    if conn.connection_type in ["player","enemy"]:
+                        A = QPointF(conn.source_cell.x, conn.source_cell.y)
+                        B = QPointF(conn.target_cell.x, conn.target_cell.y)
+                        AB = QPointF(B.x() - A.x(), B.y() - A.y())
+                        AP = QPointF(P.x() - A.x(), P.y() - A.y())
+                        ab2 = AB.x() ** 2 + AB.y() ** 2
+                        if ab2 == 0:
+                            continue
+                        t = (AP.x() * AB.x() + AP.y() * AB.y()) / ab2
+                        if t < 0 or t > 1:
+                            continue
+                        Qx = A.x() + t * AB.x()
+                        Qy = A.y() + t * AB.y()
+                        dist = math.hypot(P.x() - Qx, P.y() - Qy)
+                        if dist < 5:  # próg wykrywania przecięcia
+                            if conn in self.connections:
+                                self.connections.remove(conn)
+                            if conn in conn.source_cell.connections:
+                                conn.source_cell.connections.remove(conn)
+                            if conn in conn.target_cell.connections:
+                                conn.target_cell.connections.remove(conn)
+                            cost = getattr(conn, "cost", 0)
+                            source_points = round(t * cost)
+                            target_points = cost - source_points
+                            conn.source_cell.points += source_points
+                            conn.target_cell.points += target_points
+                            conn.source_cell.strength = (conn.source_cell.points // 10) + 1
+                            conn.target_cell.strength = (conn.target_cell.points // 10) + 1
+                            conn.source_cell.update()
+                            conn.target_cell.update()
+                            break
+        elif event.button() == Qt.RightButton:
+            # Tymczasowo umożliwiamy tworzenie mostów przeciwnika przez gracza
+            if isinstance(clicked_item, CellUnit) and clicked_item.cell_type == "enemy":
+                self.drag_start_cell = clicked_item
+            else:
+                # Obsługa próby rozłączenia mostu przeciwnika z użyciem PPM
+                P = event.scenePos()
+                for conn in self.connections:
+                    if conn.connection_type in ["player", "enemy"]:
+                        A = QPointF(conn.source_cell.x, conn.source_cell.y)
+                        B = QPointF(conn.target_cell.x, conn.target_cell.y)
+                        AB = QPointF(B.x() - A.x(), B.y() - A.y())
+                        AP = QPointF(P.x() - A.x(), P.y() - A.y())
+                        ab2 = AB.x() ** 2 + AB.y() ** 2
+                        if ab2 == 0:
+                            continue
+                        t = (AP.x() * AB.x() + AP.y() * AB.y()) / ab2
+                        if t < 0 or t > 1:
+                            continue
+                        Qx = A.x() + t * AB.x()
+                        Qy = A.y() + t * AB.y()
+                        dist = math.hypot(P.x() - Qx, P.y() - Qy)
+                        if dist < 5:
+                            if conn in self.connections:
+                                self.connections.remove(conn)
+                            if conn in conn.source_cell.connections:
+                                conn.source_cell.connections.remove(conn)
+                            if conn in conn.target_cell.connections:
+                                conn.target_cell.connections.remove(conn)
+                            cost = getattr(conn, "cost", 0)
+                            source_points = round(t * cost)
+                            target_points = cost - source_points
+                            conn.source_cell.points += source_points
+                            conn.target_cell.points += target_points
+                            conn.source_cell.strength = (conn.source_cell.points // 10) + 1
+                            conn.target_cell.strength = (conn.target_cell.points // 10) + 1
+                            conn.source_cell.update()
+                            conn.target_cell.update()
+                            break
         super().mousePressEvent(event)
         
     def mouseMoveEvent(self, event):
         if self.drag_start_cell:
             self.drag_current_pos = event.scenePos()
-            # Sprawdzenie przecięcia kursorem dowolnego mostu gracza
+            # Sprawdzenie przecięcia kursorem dowolnego mostu danego typu
             for conn in self.connections:
-                if conn.connection_type == "player":
+                if conn.connection_type == self.drag_start_cell.cell_type:
                     A = QPointF(conn.source_cell.x, conn.source_cell.y)
                     B = QPointF(conn.target_cell.x, conn.target_cell.y)
                     P = self.drag_current_pos
@@ -265,7 +278,6 @@ class GameScene(QGraphicsScene):
                     Qy = A.y() + t * AB.y()
                     dist = math.hypot(P.x() - Qx, P.y() - Qy)
                     if dist < 5:  # próg wykrywania przecięcia
-                        # Usunięcie mostu
                         if conn in self.connections:
                             self.connections.remove(conn)
                         if conn in conn.source_cell.connections:
@@ -273,7 +285,6 @@ class GameScene(QGraphicsScene):
                         if conn in conn.target_cell.connections:
                             conn.target_cell.connections.remove(conn)
                         cost = getattr(conn, "cost", 0)
-                        # Rozdzielenie punktów proporcjonalnie do pozycji przecięcia
                         source_points = round(t * cost)
                         target_points = cost - source_points
                         conn.source_cell.points += source_points
@@ -289,31 +300,47 @@ class GameScene(QGraphicsScene):
         super().mouseMoveEvent(event)
         
     def mouseReleaseEvent(self, event):
-        """Na zakończenie przeciągania sprawdza, czy zwolniono LPM nad inną własną komórką.
-           Koszt budowy mostu jest zależny od odległości między komórkami."""
+        """Na zakończenie przeciągania sprawdza, czy zwolniono przycisk nad inną komórką tego samego typu.
+           Dla LPM mosty tworzy komórka gracza, a dla PPM – tymczasowo mosty przeciwnika."""
         if self.drag_start_cell is None:
             return
         release_item = self.itemAt(event.scenePos(), QTransform())
-        if (isinstance(release_item, CellUnit) and
-            release_item.cell_type == "player" and
-            release_item != self.drag_start_cell):
-            # Oblicz dystans między komórkami
-            dx = release_item.x - self.drag_start_cell.x
-            dy = release_item.y - self.drag_start_cell.y
-            distance = math.hypot(dx, dy)
-            cost = int(distance / 20)  # zmieniono obliczanie kosztu - usunięto minimalną wartość
-            if self.drag_start_cell.points >= cost:
-                # Odejmij punkty i zaktualizuj siłę
-                self.drag_start_cell.points -= cost
-                self.drag_start_cell.strength = (self.drag_start_cell.points // 10) + 1
-                self.drag_start_cell.update()
-                # Jeśli połączenie już istnieje, nie tworzymy nowego
-                exists = any(((conn.source_cell == self.drag_start_cell and conn.target_cell == release_item) or
-                              (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
-                              for conn in self.connections)
-                if not exists:
-                    new_conn = self.create_connection(self.drag_start_cell, release_item, "player")
-                    new_conn.cost = cost  # zapis kosztu budowy mostu
+        if event.button() == Qt.LeftButton:
+            if (isinstance(release_item, CellUnit) and
+                release_item.cell_type == "player" and
+                release_item != self.drag_start_cell):
+                dx = release_item.x - self.drag_start_cell.x
+                dy = release_item.y - self.drag_start_cell.y
+                distance = math.hypot(dx, dy)
+                cost = int(distance / 20)
+                if self.drag_start_cell.points >= cost:
+                    self.drag_start_cell.points -= cost
+                    self.drag_start_cell.strength = (self.drag_start_cell.points // 10) + 1
+                    self.drag_start_cell.update()
+                    exists = any(((conn.source_cell == self.drag_start_cell and conn.target_cell == release_item) or
+                                  (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
+                                  for conn in self.connections)
+                    if not exists:
+                        new_conn = self.create_connection(self.drag_start_cell, release_item, "player")
+                        new_conn.cost = cost
+        elif event.button() == Qt.RightButton:
+            if (isinstance(release_item, CellUnit) and
+                release_item.cell_type == "enemy" and
+                release_item != self.drag_start_cell):
+                dx = release_item.x - self.drag_start_cell.x
+                dy = release_item.y - self.drag_start_cell.y
+                distance = math.hypot(dx, dy)
+                cost = int(distance / 20)
+                if self.drag_start_cell.points >= cost:
+                    self.drag_start_cell.points -= cost
+                    self.drag_start_cell.strength = (self.drag_start_cell.points // 10) + 1
+                    self.drag_start_cell.update()
+                    exists = any(((conn.source_cell == self.drag_start_cell and conn.target_cell == release_item) or
+                                  (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
+                                  for conn in self.connections)
+                    if not exists:
+                        new_conn = self.create_connection(self.drag_start_cell, release_item, "enemy")
+                        new_conn.cost = cost
         self.drag_start_cell = None
         self.drag_current_pos = None  # Reset pozycji kursora
         
@@ -332,7 +359,8 @@ class GameScene(QGraphicsScene):
     def game_over(self, victory):
         """Handle end of game"""
         self.timer.stop()
-        # Display victory/defeat message and options to retry or go to next level
+        self.game_over_text = "Wygrana!" if victory else "Przegrana!"
+        self.update()
         
     def add_points(self):
         """Dodaje 1 punkt do każdej komórki (oprócz neutralnych) co sekundę oraz przesyła kropki przez mosty gracza"""
@@ -341,7 +369,7 @@ class GameScene(QGraphicsScene):
                 cell.add_point()
         # Dla każdego mostu gracza przesyłamy kropkę, jeśli komórka źródłowa ma wystarczająco punktów
         for conn in self.connections:
-            if conn.connection_type == "player":
+            if conn.connection_type in ["player", "enemy"]:
                 if conn.source_cell.points >= 1:
                     conn.source_cell.points -= 1
                     conn.source_cell.strength = (conn.source_cell.points // 10) + 1
@@ -350,28 +378,57 @@ class GameScene(QGraphicsScene):
 
     def drawForeground(self, painter, rect):
         if self.drag_start_cell and self.drag_current_pos:
-            dx = self.drag_current_pos.x() - self.drag_start_cell.x
-            dy = self.drag_current_pos.y() - self.drag_start_cell.y
+            target_item = self.itemAt(self.drag_current_pos, QTransform())
+            if isinstance(target_item, CellUnit) and target_item.cell_type == self.drag_start_cell.cell_type and target_item != self.drag_start_cell:
+                target_point = QPointF(target_item.x, target_item.y)
+            else:
+                target_point = self.drag_current_pos
+            dx = target_point.x() - self.drag_start_cell.x
+            dy = target_point.y() - self.drag_start_cell.y
             distance = math.hypot(dx, dy)
             cost = int(distance / 20)
-            color = QColor(0, 255, 0) if self.drag_start_cell.points >= cost else QColor(255, 0, 0)
+            if self.drag_start_cell.cell_type == "player":
+                line_color = QColor(0, 255, 0)
+            else:
+                line_color = QColor(139, 0, 0)  # ciemno czerwony
+            color = line_color if self.drag_start_cell.points >= cost else QColor(255, 0, 0)
             painter.setPen(QPen(color, 2))
-            painter.drawLine(QPointF(self.drag_start_cell.x, self.drag_start_cell.y), self.drag_current_pos)
+            painter.drawLine(QPointF(self.drag_start_cell.x, self.drag_start_cell.y), target_point)
         # Rysowanie wszystkich mostów jako ciemnozielone linie
         for conn in self.connections:
             source = QPointF(conn.source_cell.x, conn.source_cell.y)
             target = QPointF(conn.target_cell.x, conn.target_cell.y)
-            painter.setPen(QPen(QColor(0,100,0), 3))
+            if conn.connection_type == "player":
+                painter.setPen(QPen(QColor(0,100,0), 3))
+            else:
+                painter.setPen(QPen(QColor(139,0,0), 3))  # ciemno czerwony
             painter.drawLine(source, target)
             # Rysujemy animowane, jaśniejsze zielone kropki tylko dla mostów budowanych przez gracza
             if conn.connection_type == "player":
-                for progress in conn.dots:
-                    x = conn.source_cell.x + progress * (conn.target_cell.x - conn.source_cell.x)
-                    y = conn.source_cell.y + progress * (conn.target_cell.y - conn.source_cell.y)
-                    dot_radius = 4  # promień kropki
-                    painter.setPen(Qt.NoPen)
-                    painter.setBrush(QColor(144,238,144))
-                    painter.drawEllipse(QRectF(x - dot_radius, y - dot_radius, dot_radius * 2, dot_radius * 2))
+                dot_color = QColor(144,238,144)
+            else:
+                dot_color = QColor(255,99,71)  # jasno czerwony
+            for progress in conn.dots:
+                x = conn.source_cell.x + progress * (conn.target_cell.x - conn.source_cell.x)
+                y = conn.source_cell.y + progress * (conn.target_cell.y - conn.source_cell.y)
+                dot_radius = 4  # promień kropki
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(dot_color)
+                painter.drawEllipse(QRectF(x - dot_radius, y - dot_radius, dot_radius * 2, dot_radius * 2))
+        # Dodano rysowanie komunikatu końca gry
+        if self.game_over_text is not None:
+            font = QFont("Arial", 36, QFont.Bold)
+            painter.setFont(font)
+            text = self.game_over_text
+            scene_rect = self.sceneRect()
+            text_rect = painter.boundingRect(scene_rect, Qt.AlignCenter, text)
+            # Rysowanie obramowania: czarne przesunięcia
+            offsets = [(-2, -2), (-2, 2), (2, -2), (2, 2)]
+            painter.setPen(QPen(Qt.black, 2))
+            for dx, dy in offsets:
+                painter.drawText(text_rect.translated(dx, dy), Qt.AlignCenter, text)
+            painter.setPen(QPen(Qt.white, 2))
+            painter.drawText(text_rect, Qt.AlignCenter, text)
 
 
 class GameWindow(QMainWindow):
