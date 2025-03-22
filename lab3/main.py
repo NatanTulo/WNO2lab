@@ -7,7 +7,7 @@ import math  # dodany import
 class CellUnit(QGraphicsItem):
     """Base class for all cell units in the game"""
     
-    def __init__(self, x, y, radius, cell_type, points=10):  # zmieniono "strength" na "points" i ustawiono domyślnie na 10
+    def __init__(self, x, y, cell_type, points=10, radius = 30):  # zmieniono "strength" na "points" i ustawiono domyślnie na 10
         super().__init__()
         self.x = x
         self.y = y
@@ -19,11 +19,13 @@ class CellUnit(QGraphicsItem):
         
     def boundingRect(self):
         """Define the bounding rectangle for the cell"""
-        return QRectF(self.x - self.radius - 10, self.y - self.radius - 10, 
-                     self.radius * 2 + 20, self.radius * 2 + 20)
+        effective_radius = self.radius * (1 + 0.2 * (self.strength - 1))  # łagodniejszy wzrost promienia
+        return QRectF(self.x - effective_radius - 10, self.y - effective_radius - 10, 
+                      effective_radius * 2 + 20, effective_radius * 2 + 20)
     
     def paint(self, painter, option, widget):
         """Draw the cell with proper color and effects"""
+        effective_radius = self.radius * (1 + 0.2 * (self.strength - 1))  # łagodniejszy wzrost promienia
         # Set color based on cell type
         if self.cell_type == "player":
             base_color = QColor(0, 200, 100)  # Green for player
@@ -33,7 +35,7 @@ class CellUnit(QGraphicsItem):
             base_color = QColor(200, 150, 0)  # Yellow/orange for neutral
             
         # Create gradient for cell
-        gradient = QRadialGradient(self.x, self.y, self.radius)
+        gradient = QRadialGradient(self.x, self.y, effective_radius)
         gradient.setColorAt(0, base_color.lighter(150))
         gradient.setColorAt(0.8, base_color)
         gradient.setColorAt(1, base_color.darker(150))
@@ -41,18 +43,18 @@ class CellUnit(QGraphicsItem):
         # Draw cell
         painter.setPen(QPen(Qt.white, 2))
         painter.setBrush(gradient)
-        painter.drawEllipse(self.x - self.radius, self.y - self.radius, 
-                           self.radius * 2, self.radius * 2)
+        painter.drawEllipse(QRectF(self.x - effective_radius, self.y - effective_radius, 
+                                   effective_radius * 2, effective_radius * 2))
         
         # Rysowanie dużego, białego napisu z liczbą punktów wyśrodkowanego w całej komórce
         # Oblicz dynamicznie rozmiar czcionki w zależności od liczby cyfr w punktach
-        font_size = int(self.radius / 1.5)
+        font_size = int(effective_radius / 1.5)
         if len(str(self.points)) > 2:
-            font_size = int(self.radius / 2)
+            font_size = int(effective_radius / 2)
         font = QFont('Arial', font_size)
         painter.setFont(font)
         painter.setPen(Qt.white)
-        text_rect = QRectF(self.x - self.radius, self.y - self.radius, self.radius * 2, self.radius * 2)
+        text_rect = QRectF(self.x - effective_radius, self.y - effective_radius, effective_radius * 2, effective_radius * 2)
         painter.drawText(text_rect, Qt.AlignCenter, str(self.points))
         
         # Nowe rysowanie wskaźników siły (kropki) umieszczonych niżej, nie wychodzących poza obrys komórki
@@ -60,14 +62,14 @@ class CellUnit(QGraphicsItem):
         painter.setBrush(Qt.white)
         n_dots = min(self.strength, 9)
         rows = math.ceil(n_dots / 3)
-        dot_radius = self.radius / 10
-        spacing = self.radius / 3
+        dot_radius = effective_radius / 10
+        spacing = effective_radius / 3
         for row in range(rows):
             row_dots = 3 if row < rows - 1 else n_dots - row * 3
-            y_dotted = self.y + self.radius * (0.5 + row * 0.15)  # pozycja w pionie przesunięta w dół
+            y_dotted = self.y + effective_radius * (0.5 + row * 0.15)  # pozycja w pionie przesunięta w dół
             # Upewnij się, że kropki nie wyjdą poza dolny obrys
-            if y_dotted + dot_radius > self.y + self.radius:
-                y_dotted = self.y + self.radius - dot_radius
+            if y_dotted + dot_radius > self.y + effective_radius:
+                y_dotted = self.y + effective_radius - dot_radius
             for col in range(row_dots):
                 x_dotted = self.x + (col - (row_dots - 1) / 2) * spacing
                 painter.drawEllipse(QRectF(x_dotted - dot_radius, y_dotted - dot_radius,
@@ -102,10 +104,10 @@ class GameScene(QGraphicsScene):
         self.drag_start_cell = None  
         self.drag_current_pos = None
         
-        # Nowy timer do dodawania punktów co 1000 ms
+        # Nowy timer do dodawania punktów co 2000 ms
         self.points_timer = QTimer()
         self.points_timer.timeout.connect(self.add_points)
-        self.points_timer.start(1000)
+        self.points_timer.start(2000)
         self.game_over_text = None  # Dodano atrybut na komunikat końca gry
 
     def drawBackground(self, painter, rect):
@@ -127,15 +129,15 @@ class GameScene(QGraphicsScene):
         # Example level setup - you would load actual level data from a file
         if level_number == 1:
             # Create player cells
-            player_cell1 = CellUnit(200, 300, 40, "player", 6)
-            player_cell2 = CellUnit(150, 450, 30, "player", 2)
+            player_cell1 = CellUnit(200, 300, "player", 6)
+            player_cell2 = CellUnit(150, 450, "player", 2)
             
             # Create enemy cells
-            enemy_cell1 = CellUnit(600, 250, 40, "enemy", 3)
-            enemy_cell2 = CellUnit(500, 400, 30, "enemy", 2)
+            enemy_cell1 = CellUnit(600, 250, "enemy", 3)
+            enemy_cell2 = CellUnit(500, 400, "enemy", 2)
             
             # Create neutral cells
-            neutral_cell = CellUnit(350, 350, 35, "player", 2)
+            neutral_cell = CellUnit(350, 350, "player", 2)
             
             # Add cells to scene
             for cell in [player_cell1, player_cell2, enemy_cell1, enemy_cell2, neutral_cell]:
