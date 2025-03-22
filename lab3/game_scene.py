@@ -167,10 +167,19 @@ class GameScene(QGraphicsScene):
             # Jeśli tworzymy nowy most, nie sprawdzamy przecięcia i nie usuwamy istniejących mostów.
             self.update()
         else:
-            # Gdy LPM/PPM zostało naciśnięte poza komórką, sprawdzamy przecięcie mostu.
+            buttons = event.buttons()
+            # Przeprowadzamy sprawdzenie przecięcia tylko gdy wciśnięty jest odpowiedni przycisk
+            if buttons & Qt.LeftButton:
+                connection_filter = "player"
+            elif buttons & Qt.RightButton:
+                connection_filter = "enemy"
+            else:
+                # Jeśli żaden przycisk nie jest wciśnięty, nie sprawdzamy przecięcia
+                return super().mouseMoveEvent(event)
+            
             P = event.scenePos()
             for conn in self.connections:
-                if conn.connection_type in ["player", "enemy"]:
+                if conn.connection_type == connection_filter:
                     A = QPointF(conn.source_cell.x, conn.source_cell.y)
                     B = QPointF(conn.target_cell.x, conn.target_cell.y)
                     AB = QPointF(B.x() - A.x(), B.y() - A.y())

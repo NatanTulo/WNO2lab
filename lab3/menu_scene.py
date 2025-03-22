@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem
 from PyQt5.QtCore import Qt, QRectF
-from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient
+from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap
 import json
 import os
 
@@ -54,39 +54,58 @@ class MenuScene(QGraphicsScene):
             button_text = f"Poziom {i+1}: {level_name}"
             
             button = self.create_button(button_text, button_x, y_pos, button_width)
-            button.level_id = i + 1
+            button.left_rect.level_id = i + 1  # przypisujemy identyfikator poziomu tylko do lewego obszaru
             self.level_buttons.append(button)
             y_pos += 60
     
     def create_button(self, text, x, y, width=200):
-        class Button(QGraphicsRectItem):
+        # Podział przycisku na lewą część z tekstem i prawą z ikoną
+        class Button(QGraphicsItemGroup):
             def __init__(self, text, x, y, width, parent=None):
-                super().__init__(x, y, width, 50, parent)
-                self.setBrush(QBrush(QColor(50, 50, 150)))
-                self.setPen(QPen(Qt.white, 2))
+                super().__init__(parent)
+                self.setFiltersChildEvents(False)  # zmienione z setHandlesChildEvents(False)
+                height = 50
+                right_width = height  # prawa część jako kwadrat
+                left_width = width - right_width  # lewa część rozszerzona
 
-                # Dodanie tekstu
-                self.text_item = QGraphicsTextItem(text, self)
+                # Lewa część z tekstem
+                self.left_rect = QGraphicsRectItem(x, y, left_width, height)
+                self.left_rect.setBrush(QBrush(QColor(50, 50, 150)))
+                self.left_rect.setPen(QPen(Qt.white, 2))
+                self.left_rect.level_id = 0  # zostanie ustawione na konkretny poziom
+                self.addToGroup(self.left_rect)
+
+                self.text_item = QGraphicsTextItem(text, self.left_rect)
                 self.text_item.setDefaultTextColor(Qt.white)
                 self.text_item.setFont(QFont("Arial", 14))
+                self.update_text_position(x, y, left_width, height)
 
-                # **Poprawione centrowanie tekstu**
-                self.update_text_position()
+                # Dodajemy utworzenie prawego prostokąta z ikoną
+                self.right_rect = QGraphicsRectItem(x + left_width, y, right_width, height)
+                self.right_rect.setBrush(QBrush(QColor(80, 80, 180)))
+                self.right_rect.setPen(QPen(Qt.white, 2))
+                self.addToGroup(self.right_rect)
 
-                # Ustawienie kursora
-                self.setCursor(Qt.PointingHandCursor)
+                # Prawa część z ikoną (placeholder)
+                pixmap_path = os.path.join(os.path.dirname(__file__), 'olowek.png')
+                self.icon_item = QGraphicsPixmapItem(QPixmap(pixmap_path), self.right_rect)
+                self.update_icon_position(x + left_width, y, right_width, height)
 
-            def update_text_position(self):
-                """Poprawne centrowanie tekstu po dodaniu do przycisku"""
+                for item in [self.left_rect, self.right_rect]:
+                    item.setCursor(Qt.PointingHandCursor)
+
+            def update_text_position(self, x, y, width, height):
                 text_rect = self.text_item.boundingRect()
-                button_rect = self.rect()
+                text_x = (width - text_rect.width()) / 2
+                text_y = (height - text_rect.height()) / 2
+                self.text_item.setPos(x + text_x, y + text_y)
 
-                text_x = (button_rect.width() - text_rect.width()) / 2
-                text_y = (button_rect.height() - text_rect.height()) / 2
+            def update_icon_position(self, x, y, width, height):
+                icon_rect = self.icon_item.boundingRect()
+                icon_x = (width - icon_rect.width()) / 2
+                icon_y = (height - icon_rect.height()) / 2
+                self.icon_item.setPos(x + icon_x, y + icon_y)
 
-                self.text_item.setPos(self.rect().x() + text_x, self.rect().y() + text_y)
-
-        
         button = Button(text, x, y, width)
         self.addItem(button)
         return button

@@ -11,7 +11,7 @@
     "connections": []
   },
   {
-    "name": "Pierwsze wyzwanie",
+    "name": "Plansza 1",
     "cells": [
       {"x": 150, "y": 150, "type": "player", "points": 20},
       {"x": 650, "y": 150, "type": "enemy", "points": 20},
@@ -22,7 +22,7 @@
     "connections": []
   },
   {
-    "name": "Zaawansowana walka",
+    "name": "Plansza 2",
     "cells": [
       {"x": 100, "y": 300, "type": "player", "points": 15},
       {"x": 700, "y": 300, "type": "enemy", "points": 15},
