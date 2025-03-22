@@ -12,6 +12,7 @@ class MenuScene(QGraphicsScene):
         self.levels_data = []
         self.load_levels()
         self.setup_menu()
+        self.editor_selected = None  # Nowy sygnał dla edytora
         
     def load_levels(self):
         try:
@@ -55,6 +56,8 @@ class MenuScene(QGraphicsScene):
             
             button = self.create_button(button_text, button_x, y_pos, button_width)
             button.left_rect.level_id = i + 1  # przypisujemy identyfikator poziomu tylko do lewego obszaru
+            button.right_rect.level_id = i + 1  # przypisujemy również do prawego obszaru
+            button.right_rect.is_edit_button = True  # oznaczamy jako przycisk edycji
             self.level_buttons.append(button)
             y_pos += 60
     
@@ -84,6 +87,8 @@ class MenuScene(QGraphicsScene):
                 self.right_rect = QGraphicsRectItem(x + left_width, y, right_width, height)
                 self.right_rect.setBrush(QBrush(QColor(80, 80, 180)))
                 self.right_rect.setPen(QPen(Qt.white, 2))
+                self.right_rect.level_id = 0  # zostanie ustawione na konkretny poziom
+                self.right_rect.is_edit_button = False  # domyślnie nie jest przyciskiem edycji
                 self.addToGroup(self.right_rect)
 
                 # Prawa część z ikoną (placeholder)
@@ -117,7 +122,12 @@ class MenuScene(QGraphicsScene):
             
             for item in clicked_items:
                 if isinstance(item, QGraphicsRectItem) and hasattr(item, 'level_id') and item.level_id > 0:
-                    self.level_selected(item.level_id)
+                    # Sprawdzenie czy kliknięcie jest na części lewej (graj) czy prawej (edytuj)
+                    if hasattr(item, 'is_edit_button') and item.is_edit_button:
+                        if self.editor_selected:
+                            self.editor_selected(item.level_id)
+                    else:
+                        self.level_selected(item.level_id)
                     return
         
         super().mousePressEvent(event)

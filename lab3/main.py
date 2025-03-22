@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow
 from PyQt5.QtCore import Qt
 from game_scene import GameScene
 from menu_scene import MenuScene
+from level_editor_scene import LevelEditorScene  # Nowy import
 
 class GameWindow(QMainWindow):
     def __init__(self):
@@ -12,6 +13,7 @@ class GameWindow(QMainWindow):
         # Tworzenie scen
         self.menu_scene = MenuScene()
         self.game_scene = None
+        self.editor_scene = None  # Nowy atrybut dla sceny edytora
         
         # Konfiguracja widoku
         self.view = QGraphicsView()
@@ -22,6 +24,7 @@ class GameWindow(QMainWindow):
         
         # Połączenie sygnałów z menu
         self.menu_scene.level_selected = self.start_game
+        self.menu_scene.editor_selected = self.start_editor  # Nowe połączenie dla edytora
         
         # Rozpoczęcie od menu
         self.show_menu()
@@ -41,6 +44,11 @@ class GameWindow(QMainWindow):
         self.game_scene.initialize_level(level_id)
         self.game_scene.timer.start(16)
         self.game_scene.points_timer.start(2000)
+        
+    def start_editor(self, level_id):
+        # Tworzenie i wyświetlanie edytora poziomów
+        self.editor_scene = LevelEditorScene(level_id)
+        self.view.setScene(self.editor_scene)
 
 def main():
     app = QApplication(sys.argv)
