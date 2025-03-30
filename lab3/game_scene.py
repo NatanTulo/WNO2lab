@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
 from PyQt5.QtGui import QColor, QPen, QRadialGradient, QFont, QTransform, QCursor
 from PyQt5.QtWidgets import QGraphicsScene, QMenu, QMessageBox, QGraphicsTextItem, QGraphicsDropShadowEffect, QGraphicsItem
 
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS, TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE, GAME_OVER_FONT_SIZE, FREEZE_DURATION_SECONDS, POWERUP_FREEZE, POWERUP_TAKEOVER, POWERUP_ADD_POINTS, POWERUP_NEW_CELL, NEW_CELL_COPY_RANGE_FACTOR
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS, TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE, GAME_OVER_FONT_SIZE, FREEZE_DURATION_SECONDS, POWERUP_FREEZE, POWERUP_TAKEOVER, POWERUP_ADD_POINTS, POWERUP_NEW_CELL, NEW_CELL_COPY_RANGE_FACTOR, POINTS_PER_STRENGTH
 from game_ai import GameAI
 from game_objects import CellUnit, CellConnection
 
@@ -195,6 +195,11 @@ class GameScene(QGraphicsScene):
             return
 
         if self.turn_based_mode and self.drag_start_cell.cell_type != self.current_turn:
+            return
+            
+        if not self.drag_start_cell.can_create_new_connection():
+            if self.logger:
+                self.logger.log(f"GameScene: Komórka osiągnęła maksymalną liczbę mostów ({self.drag_start_cell.strength}).")
             return
 
         self.reachable_cells = []
@@ -385,6 +390,15 @@ class GameScene(QGraphicsScene):
 
     def mouseMoveEvent(self, event):
         if self.drag_start_cell:
+            if not self.drag_start_cell.can_create_new_connection():
+                self.drag_start_cell = None
+                self.drag_current_pos = None
+                for cell in self.reachable_cells:
+                    cell.setHighlighted(False)
+                self.reachable_cells = []
+                self.update()
+                return
+                
             self.drag_current_pos = event.scenePos()
             self.update()
         else:
@@ -461,6 +475,13 @@ class GameScene(QGraphicsScene):
 
         if self.drag_start_cell is None:
             return
+            
+        if not self.drag_start_cell.can_create_new_connection():
+            self.drag_start_cell = None
+            self.drag_current_pos = None
+            self.update()
+            return
+            
         release_item = self.itemAt(event.scenePos(), QTransform())
         if self.turn_based_mode:
             if event.button() == Qt.LeftButton and self.current_turn != "player":
@@ -474,13 +495,13 @@ class GameScene(QGraphicsScene):
                 distance = math.hypot(dx, dy)
                 cost = int(distance / 20)
                 if self.drag_start_cell.points >= cost:
-                    self.drag_start_cell.points -= cost
-                    self.drag_start_cell.strength = (self.drag_start_cell.points // 10) + 1
-                    self.drag_start_cell.update()
                     exists = any(((conn.source_cell == self.drag_start_cell and conn.target_cell == release_item) or
-                                  (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
-                                  for conn in self.connections)
+                                 (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
+                                 for conn in self.connections)
                     if not exists:
+                        self.drag_start_cell.points -= cost
+                        self.drag_start_cell.strength = (self.drag_start_cell.points // POINTS_PER_STRENGTH) + 1
+                        self.drag_start_cell.update()
                         new_conn = self.create_connection(self.drag_start_cell, release_item, "player", cost)
                         if self.turn_based_mode:
                             self.switch_turn()
@@ -491,13 +512,13 @@ class GameScene(QGraphicsScene):
                 distance = math.hypot(dx, dy)
                 cost = int(distance / 20)
                 if self.drag_start_cell.points >= cost:
-                    self.drag_start_cell.points -= cost
-                    self.drag_start_cell.strength = (self.drag_start_cell.points // 10) + 1
-                    self.drag_start_cell.update()
                     exists = any(((conn.source_cell == self.drag_start_cell and conn.target_cell == release_item) or
-                                  (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
-                                  for conn in self.connections)
+                                 (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
+                                 for conn in self.connections)
                     if not exists:
+                        self.drag_start_cell.points -= cost
+                        self.drag_start_cell.strength = (self.drag_start_cell.points // POINTS_PER_STRENGTH) + 1
+                        self.drag_start_cell.update()
                         new_conn = self.create_connection(self.drag_start_cell, release_item, "enemy", cost)
                         if self.turn_based_mode:
                             self.switch_turn()

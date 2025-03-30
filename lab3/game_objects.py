@@ -126,6 +126,14 @@ class CellUnit(QGraphicsItem):
         self.points += 1
         self.strength = (self.points // POINTS_PER_STRENGTH) + 1
         self.update()
+        
+    def get_outgoing_connections_count(self):
+        """Zwraca liczbę połączeń wychodzących z komórki"""
+        return sum(1 for conn in self.connections if conn.source_cell is self)
+        
+    def can_create_new_connection(self):
+        """Sprawdza czy komórka może utworzyć nowe połączenie"""
+        return self.get_outgoing_connections_count() < self.strength
 
 class CellConnection:
     """Class to represent connections between cells"""
