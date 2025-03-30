@@ -14,7 +14,7 @@ class Logger:
     def log(self, message):
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
         log_message = f"[{timestamp}] {message}"
-        print(log_message)  # logowanie do konsoli
+        print(log_message)
         self.lines.append(log_message)
         if len(self.lines) > self.max_lines:
             self.lines = self.lines[-self.max_lines:]

@@ -34,7 +34,7 @@ TURN_DURATION_SECONDS = 10
 # Ustawienia edytora
 EDITOR_GRID_SIZE = 50
 
-# Dodane ustawienia czcionek
+# Ustawienia czcionek
 FONT_FAMILY = "Arial"
 BUTTON_FONT_SIZE = 14
 EDITOR_TITLE_FONT_SIZE = 24
@@ -43,13 +43,14 @@ EDITOR_INSTRUCTION_FONT_SIZE = 12
 GAME_TURN_FONT_SIZE = 16
 GAME_OVER_FONT_SIZE = 36
 
-FREEZE_DURATION_SECONDS = 10  # Czas trwania zamrożenia w sekundach
+# Czas trwania zamrożenia w sekundach
+FREEZE_DURATION_SECONDS = 10  
 
-# Dodane stałe powerupów
+# Nazwy powerupów wyświetlane w komunikacie o aktywowanym powerupie
 POWERUP_FREEZE = "mrożący"
 POWERUP_TAKEOVER = "przejmujący"
 POWERUP_ADD_POINTS = "punktujący"
-POWERUP_NEW_CELL = "stawiający"  # Nowy powerup do dodania nowej komórki
+POWERUP_NEW_CELL = "stawiający"
 
-# Dodana stała określająca maksymalną odległość dla kopiowania komórki 
-NEW_CELL_COPY_RANGE_FACTOR = 5  # Maksymalna odległość = 5 * promień komórki
+# Dodana stała określająca maksymalną odległość dla kopiowania komórki  //FACTOR*radius
+NEW_CELL_COPY_RANGE_FACTOR = 5

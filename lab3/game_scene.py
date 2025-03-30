@@ -13,7 +13,7 @@ from game_objects import CellUnit, CellConnection
 
 class GameScene(QGraphicsScene):
     """Main game scene class"""
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSceneRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -22,17 +22,15 @@ class GameScene(QGraphicsScene):
         self.current_level = 1
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_game)
-        self.drag_start_cell = None  
+        self.drag_start_cell = None
         self.drag_current_pos = None
-        self.reachable_cells = []  # Nowy atrybut do przechowywania komórek, do których możemy stworzyć most
-        
-        # Nowy timer do dodawania punktów co 2000 ms
+        self.reachable_cells = []
+
         self.points_timer = QTimer()
         self.points_timer.timeout.connect(self.add_points)
         self.points_timer.start(POINTS_INTERVAL_MS)
-        self.game_over_text = None  # Dodano atrybut na komunikat końca gry
-        
-        # Nowy kod: Inicjalizacja AI i atrybutów do podpowiedzi
+        self.game_over_text = None
+
         self.game_ai = GameAI(self)
         self.hint_active = False
         self.hint_source = None
@@ -40,46 +38,41 @@ class GameScene(QGraphicsScene):
         self.hint_cost = 0
         self.hint_timer = QTimer()
         self.hint_timer.timeout.connect(self.update_hint_animation)
-        self.hint_timer.start(500)  # Miganie co 500ms
+        self.hint_timer.start(500)
         self.hint_visible = False
-        self.hint_blink_count = 0  # Licznik mrugnięć
+        self.hint_blink_count = 0
 
-        # Nowe atrybuty dla trybu turowego
         self.turn_based_mode = False
-        self.current_turn = None  # "player" lub "enemy"
+        self.current_turn = None
         self.turn_duration = TURN_DURATION_SECONDS
         self.round_time_remaining = self.turn_duration
         self.turn_timer = QTimer()
 
-        self.logger = None  # dodany atrybut logger
-        self.powerup_active = None  # Nowy atrybut: typ aktywnego powerupu
-        self.copy_source = None  # Dla powerupu kopiowania komórki
+        self.logger = None
+        self.powerup_active = None
+        self.copy_source = None
 
     def drawBackground(self, painter, rect):
-        # Ustawienie radialnego gradientu: środek jasny fiolent, krawędzie ciemny fiolent
         center = self.sceneRect().center()
         radius = max(self.sceneRect().width(), self.sceneRect().height())
         gradient = QRadialGradient(center, radius)
-        gradient.setColorAt(0, QColor(230, 190, 255))  # Jasny fiolent
-        gradient.setColorAt(1, QColor(100, 0, 150))      # Ciemny fiolent
+        gradient.setColorAt(0, QColor(230, 190, 255))
+        gradient.setColorAt(1, QColor(100, 0, 150))
         painter.fillRect(rect, gradient)
 
     def initialize_level(self, level_number):
         """Set up cells and connections for a specific level"""
-        # Clear existing items
         self.clear()
         self.cells = []
         self.connections = []
         self.current_level = level_number
-        
-        # Load level data from file
+
         level_data = self.load_level_data(level_number)
-        
+
         if self.logger:
             self.logger.log(f"GameScene: Inicjalizacja poziomu {level_number}.")
 
         if level_data:
-            # Create cells based on level data
             for cell_data in level_data.get("cells", []):
                 cell = CellUnit(
                     cell_data.get("x", 0),
@@ -89,7 +82,6 @@ class GameScene(QGraphicsScene):
                 )
                 self.cells.append(cell)
                 self.addItem(cell)
-            # Wyśrodkowanie komórek na scenie
             if self.cells:
                 min_x = min(cell.x for cell in self.cells)
                 max_x = max(cell.x for cell in self.cells)
@@ -103,21 +95,18 @@ class GameScene(QGraphicsScene):
                     cell.x += offset_x
                     cell.y += offset_y
                     cell.update()
-            
-            # Create connections based on level data
+
             for conn_data in level_data.get("connections", []):
                 source_idx = conn_data.get("source", 0)
                 target_idx = conn_data.get("target", 0)
                 conn_type = conn_data.get("type", "neutral")
-                
+
                 if 0 <= source_idx < len(self.cells) and 0 <= target_idx < len(self.cells):
                     source = self.cells[source_idx]
                     target = self.cells[target_idx]
                     connection = self.create_connection(source, target, conn_type, cost=conn_data.get("cost", 0))
         else:
-            # Fallback to hardcoded level if loading fails
             self._initialize_default_level(level_number)
-            # Wyśrodkowanie komórek na scenie
             if self.cells:
                 min_x = min(cell.x for cell in self.cells)
                 max_x = max(cell.x for cell in self.cells)
@@ -138,7 +127,7 @@ class GameScene(QGraphicsScene):
             levels_path = os.path.join(os.path.dirname(__file__), 'levels.json')
             with open(levels_path, 'r') as f:
                 levels = json.load(f)
-                
+
             if 1 <= level_number <= len(levels):
                 return levels[level_number - 1]
             return None
@@ -149,22 +138,18 @@ class GameScene(QGraphicsScene):
     def _initialize_default_level(self, level_number):
         """Fallback method with hardcoded level data"""
         if level_number == 1:
-            # Create player cells
             player_cell1 = CellUnit(200, 300, "player", 30)
             player_cell2 = CellUnit(150, 450, "player", 2)
-            
-            # Create enemy cells
+
             enemy_cell1 = CellUnit(600, 250, "enemy", 30)
             enemy_cell2 = CellUnit(500, 400, "enemy", 2)
-            
-            # Create neutral cells
+
             neutral_cell = CellUnit(350, 350, "neutral", 2)
-            
-            # Add cells to scene
+
             for cell in [player_cell1, player_cell2, enemy_cell1, enemy_cell2, neutral_cell]:
                 self.cells.append(cell)
                 self.addItem(cell)
-                            
+
     def create_connection(self, source, target, conn_type, cost=0):
         """Create a connection between two cells"""
         connection = CellConnection(source, target, conn_type)
@@ -175,25 +160,20 @@ class GameScene(QGraphicsScene):
         if self.logger:
             self.logger.log(f"GameScene: Utworzono most między komórkami przy ({source.x:.0f}, {source.y:.0f}) i ({target.x:.0f}, {target.y:.0f}) o koszcie {connection.cost}.")
         return connection
-        
+
     def update_game(self):
         """Main game update loop"""
-        # Update cell animations
         for cell in self.cells:
             cell.update()
-            
-        # Update connection animations and handle unit transfers
+
         for conn in self.connections:
             if conn.connection_type in ["player", "enemy"]:
-                # Jeżeli którakolwiek komórka jest zamrożona, pomijamy animację mostu
                 if conn.source_cell.frozen or conn.target_cell.frozen:
                     continue
                 finished = []
                 for i in range(len(conn.dots)):
-                    conn.dots[i] += 0.016  # przybliżony przyrost dla 60 FPS
+                    conn.dots[i] += 0.016
                     if conn.dots[i] >= 1.0:
-                        # Jeśli typ mostu jest zgodny z typem docelowej komórki - dodaj punkt,
-                        # w przeciwnym wypadku odejmij punkt.
                         if conn.connection_type == conn.target_cell.cell_type:
                             conn.target_cell.points += 1
                         else:
@@ -204,61 +184,50 @@ class GameScene(QGraphicsScene):
                         conn.target_cell.strength = (conn.target_cell.points // 10) + 1
                         conn.target_cell.update()
                         finished.append(i)
-                # Usuwanie kropek, które zakończyły podróż
                 for index in sorted(finished, reverse=True):
                     del conn.dots[index]
-                
-        # Check win/lose conditions
+
         self.check_game_state()
-                
+
     def calculate_reachable_cells(self):
         """Oblicza i oznacza komórki, do których można stworzyć most"""
         if not self.drag_start_cell:
             return
-            
-        # Jeśli tryb turowy włączony i komórka źródłowa nie należy do aktywnej strony,
-        # nie obliczamy ani nie podświetlamy dostępnych komórek
+
         if self.turn_based_mode and self.drag_start_cell.cell_type != self.current_turn:
             return
-            
+
         self.reachable_cells = []
         available_points = self.drag_start_cell.points
-        
+
         for cell in self.cells:
             if cell == self.drag_start_cell:
-                continue  # Pomijamy komórkę źródłową
-                
-            # Sprawdzamy czy już istnieje połączenie między tymi komórkami
+                continue
+
             exists = any(((conn.source_cell == self.drag_start_cell and conn.target_cell == cell) or
                          (conn.source_cell == cell and conn.target_cell == self.drag_start_cell))
                          for conn in self.connections)
             if exists:
-                continue  # Pomijamy jeśli połączenie już istnieje
-                
-            # Obliczamy koszt połączenia
+                continue
+
             dx = cell.x - self.drag_start_cell.x
             dy = cell.y - self.drag_start_cell.y
             distance = math.hypot(dx, dy)
             cost = int(distance / 20)
-            
-            # Jeśli mamy wystarczająco punktów, dodajemy do listy dostępnych
+
             if cost <= available_points:
                 self.reachable_cells.append(cell)
-                cell.setHighlighted(True)  # Oznaczamy komórkę jako możliwą do połączenia
-            
-        self.update()  # Odświeżamy scenę, aby pokazać zmiany
+                cell.setHighlighted(True)
+
+        self.update()
 
     def mousePressEvent(self, event):
-        # Obsługa powerupu przed standardowym zachowaniem
         if self.powerup_active is not None:
             clicked_item = self.itemAt(event.scenePos(), QTransform())
-            # Powerup kopiowania komórki
             if self.powerup_active == POWERUP_NEW_CELL:
-                # Jeśli nie wybrano jeszcze komórki źródłowej
                 if self.copy_source is None:
                     if isinstance(clicked_item, CellUnit):
                         self.copy_source = clicked_item
-                        # Informujemy użytkownika, aby wybrał miejsce – minimalna odległość: 2*promień, maksymalna: NEW_CELL_COPY_RANGE_FACTOR*promień
                         if self.logger:
                             self.logger.log("GameScene: Komórka wybrana do kopiowania. Teraz wybierz miejsce, gdzie ją postawić.")
                         if hasattr(self, 'powerup_label'):
@@ -266,7 +235,6 @@ class GameScene(QGraphicsScene):
                         event.accept()
                         return
                     else:
-                        # Nie kliknięto na komórkę - komunikat
                         if self.powerup_label is None:
                             self.powerup_label = QGraphicsTextItem("Wybierz komórkę do skopiowania.")
                             self.powerup_label.setDefaultTextColor(Qt.white)
@@ -280,7 +248,6 @@ class GameScene(QGraphicsScene):
                         event.accept()
                         return
                 else:
-                    # Komórka źródłowa wybrana - sprawdzamy odległość miejsca kliknięcia
                     pos = event.scenePos()
                     dx = pos.x() - self.copy_source.x
                     dy = pos.y() - self.copy_source.y
@@ -301,13 +268,11 @@ class GameScene(QGraphicsScene):
                             self.powerup_label.setPlainText("Błędna odległość. Wybierz miejsce między {} a {} pikseli.".format(min_dist, max_dist))
                         event.accept()
                         return
-                    # Jeśli warunki spełnione: nowa komórka otrzymuje punkty równe wybranej komórce
                     new_cell = CellUnit(pos.x(), pos.y(), "player", self.copy_source.points)
                     self.cells.append(new_cell)
                     self.addItem(new_cell)
                     if self.logger:
                         self.logger.log("GameScene: Nowa komórka skopiowana z komórki o {} punktach.".format(self.copy_source.points))
-                    # Resetujemy stan
                     self.copy_source = None
                     self.powerup_active = None
                     if hasattr(self, 'powerup_label'):
@@ -316,7 +281,6 @@ class GameScene(QGraphicsScene):
                     self.update()
                     event.accept()
                     return
-            # Obsługa pozostałych powerupów
             elif isinstance(clicked_item, QGraphicsItem):
                 if self.powerup_active == POWERUP_FREEZE:
                     if isinstance(clicked_item, CellUnit):
@@ -398,24 +362,23 @@ class GameScene(QGraphicsScene):
             self.update()
             event.accept()
             return
-        
+
         clicked_item = self.itemAt(event.scenePos(), QTransform())
-        
-        # Najpierw resetujemy poprzednie podświetlenia
+
         for cell in self.reachable_cells:
             cell.setHighlighted(False)
         self.reachable_cells = []
-        
+
         if event.button() == Qt.LeftButton:
             if isinstance(clicked_item, CellUnit) and clicked_item.cell_type == "player":
                 self.drag_start_cell = clicked_item
-                self.calculate_reachable_cells()  # Obliczamy możliwe komórki docelowe
+                self.calculate_reachable_cells()
             else:
                 self.drag_start_cell = None
         elif event.button() == Qt.RightButton:
             if isinstance(clicked_item, CellUnit) and clicked_item.cell_type == "enemy":
                 self.drag_start_cell = clicked_item
-                self.calculate_reachable_cells()  # Obliczamy możliwe komórki docelowe
+                self.calculate_reachable_cells()
             else:
                 self.drag_start_cell = None
         super().mousePressEvent(event)
@@ -435,7 +398,6 @@ class GameScene(QGraphicsScene):
             P = event.scenePos()
             for conn in self.connections:
                 if conn.connection_type == connection_filter:
-                    # W trybie turowym pozwalamy na usunięcie tylko mostu aktywnej strony
                     if self.turn_based_mode and conn.connection_type != self.current_turn:
                         continue
                     A = QPointF(conn.source_cell.x, conn.source_cell.y)
@@ -484,32 +446,28 @@ class GameScene(QGraphicsScene):
                         conn.target_cell.strength = (conn.target_cell.points // 10) + 1
                         conn.source_cell.update()
                         conn.target_cell.update()
-                        # Po usunięciu mostu przełączamy turę
                         if self.turn_based_mode:
                             self.switch_turn()
                         break
             self.update()
         super().mouseMoveEvent(event)
-        
+
     def mouseReleaseEvent(self, event):
         """Na zakończenie przeciągania sprawdza, czy zwolniono przycisk nad inną komórką tego samego typu.
            Dla LPM mosty tworzy komórka gracza, a dla PPM – tymczasowo mosty przeciwnika."""
-        # Resetujemy podświetlenie komórek
         for cell in self.reachable_cells:
             cell.setHighlighted(False)
         self.reachable_cells = []
-        
+
         if self.drag_start_cell is None:
             return
         release_item = self.itemAt(event.scenePos(), QTransform())
-        # Sprawdzenie, czy wykonujący ruch to aktywny gracz
         if self.turn_based_mode:
             if event.button() == Qt.LeftButton and self.current_turn != "player":
                 return
             if event.button() == Qt.RightButton and self.current_turn != "enemy":
                 return
         if event.button() == Qt.LeftButton:
-            # Zmodyfikowano: akceptujemy każdą komórkę (o ile nie jest identyczna z komórką początkową)
             if isinstance(release_item, CellUnit) and release_item != self.drag_start_cell:
                 dx = release_item.x - self.drag_start_cell.x
                 dy = release_item.y - self.drag_start_cell.y
@@ -527,7 +485,6 @@ class GameScene(QGraphicsScene):
                         if self.turn_based_mode:
                             self.switch_turn()
         elif event.button() == Qt.RightButton:
-            # Zmieniony warunek: akceptujemy dowolną komórkę, która nie jest komórką początkową
             if isinstance(release_item, CellUnit) and release_item != self.drag_start_cell:
                 dx = release_item.x - self.drag_start_cell.x
                 dy = release_item.y - self.drag_start_cell.y
@@ -545,34 +502,30 @@ class GameScene(QGraphicsScene):
                         if self.turn_based_mode:
                             self.switch_turn()
         self.drag_start_cell = None
-        self.drag_current_pos = None  # Reset pozycji kursora
+        self.drag_current_pos = None
         self.update()
-        
+
     def check_game_state(self):
         """Check if player has won or lost the level"""
         player_cells = sum(1 for cell in self.cells if cell.cell_type == "player")
         enemy_cells = sum(1 for cell in self.cells if cell.cell_type == "enemy")
-        
+
         if player_cells == 0:
-            # Game over - player lost
             self.game_over(False)
         elif enemy_cells == 0:
-            # Game over - player won
             self.game_over(True)
-    
+
     def game_over(self, victory):
         self.timer.stop()
-        self.points_timer.stop()  # Dodano, aby zapauzować grę po zakończeniu
+        self.points_timer.stop()
         self.game_over_text = "Wygrana!" if victory else "Przegrana!"
         if self.logger:
             self.logger.log(f"GameScene: Gra zakończona - {self.game_over_text}.")
         self.update()
-        
-        # Dodanie przycisku powrotu do menu po 2 sekundach
+
         QTimer.singleShot(2000, self.show_return_button)
-    
+
     def show_return_button(self):
-        # Dodanie przycisku powrotu do menu
         if self.game_over_text:
             parent_widget = self.views()[0] if self.views() else None
             if parent_widget and parent_widget.parent():
@@ -582,57 +535,46 @@ class GameScene(QGraphicsScene):
                 msgBox.setStandardButtons(QMessageBox.Ok)
                 msgBox.buttonClicked.connect(lambda btn: parent_widget.parent().show_menu())
                 msgBox.exec_()
-        
+
     def add_points(self):
         """Dodaje 1 punkt do każdej komórki (oprócz neutralnych) co sekundę oraz przesyła kropki przez mosty gracza"""
         for cell in self.cells:
             if cell.cell_type != "neutral":
                 cell.add_point()
-                
+
                 if self.drag_start_cell == cell:
-                    # Najpierw resetujemy poprzednie podświetlenia
                     for reach_cell in self.reachable_cells:
                         reach_cell.setHighlighted(False)
                     self.reachable_cells = []
-                    
-                    # Następnie obliczamy nowe podświetlenia
+
                     self.calculate_reachable_cells()
-        
-        # Dla każdego mostu gracza przesyłamy kropkę, jeśli komórka źródłowa ma wystarczająco punktów
+
         for conn in self.connections:
             if conn.connection_type in ["player", "enemy"]:
-                # Jeżeli którakolwiek komórka jest zamrożona, pomijamy transfer punktów przez most
                 if conn.source_cell.frozen or conn.target_cell.frozen:
                     continue
                 if conn.source_cell.points >= 1:
                     conn.source_cell.points -= 1
                     conn.source_cell.strength = (conn.source_cell.points // 10) + 1
                     conn.source_cell.update()
-                    conn.dots.append(0)  # nowa kropka z postępem 0
-                    
-                    # Jeśli ta komórka jest komórką źródłową mostu, który jest w trakcie budowy,
-                    # ponownie obliczamy dostępne komórki po odjęciu punktu
+                    conn.dots.append(0)
+
                     if self.drag_start_cell == conn.source_cell:
-                        # Najpierw resetujemy poprzednie podświetlenia
                         for reach_cell in self.reachable_cells:
                             reach_cell.setHighlighted(False)
                         self.reachable_cells = []
-                        
-                        # Następnie obliczamy nowe podświetlenia
+
                         self.calculate_reachable_cells()
 
     def drawForeground(self, painter, rect):
-        # Rysowanie informacji o turze i czasie rundy
         if self.turn_based_mode and self.current_turn:
             info_text = f"Runda: {self.current_turn.upper()} - Pozostało: {self.round_time_remaining}s"
             font = QFont(FONT_FAMILY, GAME_TURN_FONT_SIZE, QFont.Bold)
             painter.setFont(font)
             painter.setPen(QPen(Qt.white))
             painter.drawText(rect.adjusted(10, 10, -10, -10), Qt.AlignTop | Qt.AlignHCenter, info_text)
-        # Rysowanie linii dynamicznej tylko, gdy to tura aktywnego gracza
         if self.drag_start_cell and self.drag_current_pos:
             if self.turn_based_mode and self.drag_start_cell.cell_type != self.current_turn:
-                # Nie rysujemy animacji mostu, bo to nie tura tej strony
                 pass
             else:
                 target_item = self.itemAt(self.drag_current_pos, QTransform())
@@ -647,70 +589,60 @@ class GameScene(QGraphicsScene):
                 if self.drag_start_cell.cell_type == "player":
                     line_color = QColor(0, 255, 0)
                 else:
-                    line_color = QColor(139, 0, 0)  # ciemno czerwony
+                    line_color = QColor(139, 0, 0)
                 color = line_color if self.drag_start_cell.points >= cost else QColor(255, 0, 0)
                 painter.setPen(QPen(color, 2))
                 painter.drawLine(QPointF(self.drag_start_cell.x, self.drag_start_cell.y), target_point)
-        # Rysowanie wszystkich mostów jako ciemnozielone linie
         for conn in self.connections:
             source = QPointF(conn.source_cell.x, conn.source_cell.y)
             target = QPointF(conn.target_cell.x, conn.target_cell.y)
             if conn.connection_type == "player":
                 painter.setPen(QPen(QColor(0,100,0), 3))
             else:
-                painter.setPen(QPen(QColor(139,0,0), 3))  # ciemno czerwony
+                painter.setPen(QPen(QColor(139,0,0), 3))
             painter.drawLine(source, target)
-            # Rysujemy animowane, jaśniejsze zielone kropki tylko dla mostów budowanych przez gracza
             if conn.connection_type == "player":
                 dot_color = QColor(144,238,144)
             else:
-                dot_color = QColor(255,99,71)  # jasno czerwony
+                dot_color = QColor(255,99,71)
             for progress in conn.dots:
                 x = conn.source_cell.x + progress * (conn.target_cell.x - conn.source_cell.x)
                 y = conn.source_cell.y + progress * (conn.target_cell.y - conn.source_cell.y)
-                dot_radius = 4  # promień kropki
+                dot_radius = 4
                 painter.setPen(Qt.NoPen)
                 painter.setBrush(dot_color)
                 painter.drawEllipse(QRectF(x - dot_radius, y - dot_radius, dot_radius * 2, dot_radius * 2))
-        # Dodano rysowanie komunikatu końca gry
         if self.game_over_text is not None:
             font = QFont(FONT_FAMILY, GAME_OVER_FONT_SIZE, QFont.Bold)
             painter.setFont(font)
             text = self.game_over_text
             scene_rect = self.sceneRect()
             text_rect = painter.boundingRect(scene_rect, Qt.AlignCenter, text)
-            # Rysowanie obramowania: czarne przesunięcia
             offsets = [(-2, -2), (-2, 2), (2, -2), (2, 2)]
             painter.setPen(QPen(Qt.black, 2))
             for dx, dy in offsets:
                 painter.drawText(text_rect.translated(dx, dy), Qt.AlignCenter, text)
             painter.setPen(QPen(Qt.white, 2))
             painter.drawText(text_rect, Qt.AlignCenter, text)
-        
-        # Rysowanie podpowiedzi, jeśli jest aktywna i widoczna
+
         if self.hint_active and self.hint_visible and self.hint_source and self.hint_target:
             source_point = QPointF(self.hint_source.x, self.hint_source.y)
             target_point = QPointF(self.hint_target.x, self.hint_target.y)
-            
-            # Rysowanie pulsującej linii podpowiedzi ze strzałką wskazującą kierunek
-            hint_pen = QPen(QColor(255, 215, 0), 3, Qt.DashLine)  # Złota, przerywana linia
+
+            hint_pen = QPen(QColor(255, 215, 0), 3, Qt.DashLine)
             painter.setPen(hint_pen)
             painter.drawLine(source_point, target_point)
-            
-            # Dodajemy strzałkę wskazującą kierunek mostu
+
             arrow_size = 15
             dx = target_point.x() - source_point.x()
             dy = target_point.y() - source_point.y()
             length = math.sqrt(dx * dx + dy * dy)
             if length > 0:
-                # Normalizacja wektora kierunku
                 dx, dy = dx / length, dy / length
-                
-                # Punkt na linii, gdzie rysujemy strzałkę (70% odległości)
+
                 arrow_point_x = source_point.x() + dx * length * 0.7
                 arrow_point_y = source_point.y() + dy * length * 0.7
-                
-                # Rysowanie strzałki
+
                 painter.setBrush(QColor(255, 215, 0))
                 points = [
                     QPointF(arrow_point_x, arrow_point_y),
@@ -718,80 +650,66 @@ class GameScene(QGraphicsScene):
                     QPointF(arrow_point_x - arrow_size * (dx - dy * 0.5), arrow_point_y - arrow_size * (dy + dx * 0.5))
                 ]
                 painter.drawPolygon(points)
-            
-            # Dodajemy okręgi wokół komórek z różnymi kolorami dla źródła i celu
-            source_color = QColor(255, 215, 0)  # Złoty dla źródła
-            target_color = QColor(255, 100, 0)  # Pomarańczowy dla celu
+
+            source_color = QColor(255, 215, 0)
+            target_color = QColor(255, 100, 0)
             highlight_radius = 40
-            
-            # Okrąg źródłowy
+
             painter.setPen(QPen(source_color, 3, Qt.DashLine))
             painter.setBrush(Qt.NoBrush)
             painter.drawEllipse(source_point, highlight_radius, highlight_radius)
-            
-            # Okrąg docelowy
+
             painter.setPen(QPen(target_color, 3, Qt.DashLine))
             painter.drawEllipse(target_point, highlight_radius, highlight_radius)
-            
-            # Dodajemy etykiety "OD" i "DO"
+
             font = QFont("Arial", 12, QFont.Bold)
             painter.setFont(font)
-            
-            # Etykieta "OD" przy źródle
+
             label_width = 40
             label_height = 25
-            
-            # Pozycja etykiety "OD" (nad komórką źródłową)
+
             source_label_rect = QRectF(
-                source_point.x() - label_width/2, 
+                source_point.x() - label_width/2,
                 source_point.y() - highlight_radius - label_height - 5,
                 label_width, label_height
             )
-            
-            # Tło etykiety
+
             painter.setBrush(source_color)
             painter.setPen(Qt.NoPen)
             painter.drawRoundedRect(source_label_rect, 5, 5)
-            
-            # Tekst etykiety
+
             painter.setPen(Qt.black)
             painter.drawText(source_label_rect, Qt.AlignCenter, "OD")
-            
-            # Etykieta "DO" przy celu
+
             target_label_rect = QRectF(
-                target_point.x() - label_width/2, 
+                target_point.x() - label_width/2,
                 target_point.y() - highlight_radius - label_height - 5,
                 label_width, label_height
             )
-            
-            # Tło etykiety
+
             painter.setBrush(target_color)
             painter.setPen(Qt.NoPen)
             painter.drawRoundedRect(target_label_rect, 5, 5)
-            
-            # Tekst etykiety
+
             painter.setPen(Qt.black)
             painter.drawText(target_label_rect, Qt.AlignCenter, "DO")
-            
-            # Dodajemy napis z kosztem na środku linii
+
             if self.hint_cost > 0:
                 mid_x = (self.hint_source.x + self.hint_target.x) / 2
                 mid_y = (self.hint_source.y + self.hint_target.y) / 2
-                
+
                 font = QFont("Arial", 12, QFont.Bold)
                 painter.setFont(font)
                 cost_text = f"Koszt: {self.hint_cost}"
-                
-                # Poprawione rysowanie tekstu używając QRectF zamiast współrzędnych float
-                text_width = 80  # przybliżona szerokość tekstu
-                text_height = 20  # przybliżona wysokość tekstu
-                
-                # Biały tekst z czarnym cieniem
+
+                text_width = 80
+                text_height = 20
+
                 painter.setPen(QPen(Qt.black, 2))
                 for dx, dy in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
                     text_rect = QRectF(mid_x + dx - text_width/2, mid_y + dy - text_height/2, text_width, text_height)
                     painter.drawText(text_rect, Qt.AlignCenter, cost_text)
-                
+
                 painter.setPen(QPen(Qt.white, 1))
                 text_rect = QRectF(mid_x - text_width/2, mid_y - text_height/2, text_width, text_height)
                 painter.drawText(text_rect, Qt.AlignCenter, cost_text)
@@ -801,12 +719,10 @@ class GameScene(QGraphicsScene):
         if self.hint_active:
             self.hint_visible = not self.hint_visible
             self.update()
-            
-            # Jeśli podpowiedź jest niewidoczna, zwiększ licznik (liczenie pełnych cykli)
+
             if not self.hint_visible:
                 self.hint_blink_count += 1
-                
-            # Po 2 pełnych cyklach (2 razy zaświecenie i wygaszenie) wyłącz podpowiedź
+
             if self.hint_blink_count >= 2:
                 self.hint_active = False
                 self.hint_visible = False
@@ -816,13 +732,13 @@ class GameScene(QGraphicsScene):
     def show_hint(self):
         """Pokazuje podpowiedź strategiczną od AI"""
         best_move = self.game_ai.analyze_best_move()
-        
+
         if best_move:
             self.hint_source, self.hint_target, self.hint_cost = best_move
             self.hint_active = True
-            self.hint_visible = True  # Rozpocznij od widocznej podpowiedzi
-            self.hint_blink_count = 0  # Resetuj licznik mrugnięć
-            QMessageBox.information(None, "Podpowiedź", 
+            self.hint_visible = True
+            self.hint_blink_count = 0
+            QMessageBox.information(None, "Podpowiedź",
                 f"Sugerowany ruch: Połącz komórkę z {self.hint_source.points} punktami "
                 f"z komórką typu {self.hint_target.cell_type}. Koszt: {self.hint_cost}")
         else:
@@ -830,8 +746,8 @@ class GameScene(QGraphicsScene):
             self.hint_visible = False
             self.hint_blink_count = 0
             QMessageBox.information(None, "Podpowiedź", "Brak sugerowanych ruchów.")
-        
-        self.update()  # Odświeżenie sceny, aby pokazać podpowiedź
+
+        self.update()
 
     def activate_powerup(self, powerup_type):
         self.powerup_active = powerup_type
@@ -842,7 +758,6 @@ class GameScene(QGraphicsScene):
         self.powerup_label = QGraphicsTextItem(f"Powerup {powerup_type} aktywowany. Wybierz komórkę docelową.")
         self.powerup_label.setDefaultTextColor(Qt.white)
         self.powerup_label.setFont(QFont("Arial", 16))
-        # Dodanie efektu outline (czarny kontur)
         effect = QGraphicsDropShadowEffect()
         effect.setOffset(0, 0)
         effect.setBlurRadius(3)
@@ -854,26 +769,22 @@ class GameScene(QGraphicsScene):
         self.addItem(self.powerup_label)
 
     def keyPressEvent(self, event):
-        # Obsługa klawisza H - pokaż podpowiedź
         if event.key() == Qt.Key_H:
             self.show_hint()
             event.accept()
             return
-        
-        # Obsługa klawisza Escape - powrót do menu
+
         if event.key() == Qt.Key_Escape:
             if self.logger:
                 self.logger.log("GameScene: Gracz przerwał rozgrywkę.")
             self.timer.stop()
             self.points_timer.stop()
-            
-            # Powrót do menu głównego
+
             if self.views() and self.views()[0].parent():
                 self.views()[0].parent().show_menu()
             event.accept()
             return
-            
-        # Dodajemy menu kontekstowe po wciśnięciu "i"
+
         if event.key() == Qt.Key_I:
             if self.views():
                 view = self.views()[0]
@@ -886,7 +797,7 @@ class GameScene(QGraphicsScene):
                 action_info = menu.addAction("Informacje o komórce")
                 action = menu.exec_(QCursor.pos())
                 if action == action_info:
-                    QMessageBox.information(None, "Komórka", 
+                    QMessageBox.information(None, "Komórka",
                         f"Typ: {item.cell_type}\nPunkty: {item.points}\nSiła: {item.strength}")
             else:
                 found_conn = None
@@ -912,26 +823,25 @@ class GameScene(QGraphicsScene):
                     action = menu.exec_(QCursor.pos())
                     if action == action_info:
                         cost = getattr(found_conn, "cost", 0)
-                        QMessageBox.information(None, "Most", 
+                        QMessageBox.information(None, "Most",
                             f"Typ: {found_conn.connection_type}\nKoszt: {cost}")
             event.accept()
         else:
             super().keyPressEvent(event)
 
-    # Metody obsługi zegara rundowego
     def start_turn_timer(self):
-        self.current_turn = "player"  # Zaczynamy od gracza
+        self.current_turn = "player"
         self.round_time_remaining = self.turn_duration
         self.turn_timer.timeout.connect(self.update_turn_timer)
         self.turn_timer.start(TURN_TIMER_INTERVAL_MS)
         self.update()
-        
+
     def update_turn_timer(self):
         self.round_time_remaining -= 1
         if self.round_time_remaining <= 0:
             self.switch_turn()
         self.update()
-        
+
     def switch_turn(self):
         if self.current_turn == "player":
             self.current_turn = "enemy"
