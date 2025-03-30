@@ -84,6 +84,20 @@ class GameScene(QGraphicsScene):
                 )
                 self.cells.append(cell)
                 self.addItem(cell)
+            # Wyśrodkowanie komórek na scenie
+            if self.cells:
+                min_x = min(cell.x for cell in self.cells)
+                max_x = max(cell.x for cell in self.cells)
+                min_y = min(cell.y for cell in self.cells)
+                max_y = max(cell.y for cell in self.cells)
+                level_center = ((min_x + max_x) / 2, (min_y + max_y) / 2)
+                scene_center = self.sceneRect().center()
+                offset_x = scene_center.x() - level_center[0]
+                offset_y = scene_center.y() - level_center[1]
+                for cell in self.cells:
+                    cell.x += offset_x
+                    cell.y += offset_y
+                    cell.update()
             
             # Create connections based on level data
             for conn_data in level_data.get("connections", []):
@@ -98,6 +112,20 @@ class GameScene(QGraphicsScene):
         else:
             # Fallback to hardcoded level if loading fails
             self._initialize_default_level(level_number)
+            # Wyśrodkowanie komórek na scenie
+            if self.cells:
+                min_x = min(cell.x for cell in self.cells)
+                max_x = max(cell.x for cell in self.cells)
+                min_y = min(cell.y for cell in self.cells)
+                max_y = max(cell.y for cell in self.cells)
+                level_center = ((min_x + max_x) / 2, (min_y + max_y) / 2)
+                scene_center = self.sceneRect().center()
+                offset_x = scene_center.x() - level_center[0]
+                offset_y = scene_center.y() - level_center[1]
+                for cell in self.cells:
+                    cell.x += offset_x
+                    cell.y += offset_y
+                    cell.update()
 
     def load_level_data(self, level_number):
         """Load level data from file"""
