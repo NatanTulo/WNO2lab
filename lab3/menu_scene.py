@@ -1,9 +1,51 @@
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem
-from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsItem
+from PyQt5.QtCore import Qt, QRectF, pyqtSignal
 from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap
 import resources_rc #pyrcc5 resources.rc -o resources_rc.py
 import json
 import os
+
+class SwitchButton(QGraphicsItem):
+    def __init__(self, width=60, height=30, parent=None):
+        super().__init__(parent)
+        self._state = False  # OFF
+        self.width = width
+        self.height = height
+        self.callback = None  # Funkcja wywoływana przy zmianie stanu
+        self.setAcceptHoverEvents(True)
+        self.setAcceptedMouseButtons(Qt.LeftButton)
+
+    def boundingRect(self):
+        return QRectF(0, 0, self.width, self.height)
+        
+    def shape(self):
+        from PyQt5.QtGui import QPainterPath
+        path = QPainterPath()
+        # Zwracamy cały obszar przycisku (zaokrąglony prostokąt)
+        path.addRoundedRect(self.boundingRect(), self.height/2, self.height/2)
+        return path
+
+    def paint(self, painter, option, widget):
+        # Rysujemy tło (zaokrąglone prostokąty)
+        radius = self.height / 2
+        bg_color = QColor(200, 200, 200) if not self._state else QColor(0, 150, 136)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(bg_color)
+        painter.drawRoundedRect(self.boundingRect(), radius, radius)
+        # Rysujemy przesuwany okrąg
+        circle_diameter = self.height - 4
+        circle_rect = QRectF(2, 2, circle_diameter, circle_diameter)
+        if self._state:
+            circle_rect.moveLeft(self.width - circle_diameter - 2)
+        painter.setBrush(Qt.white)
+        painter.drawEllipse(circle_rect)
+
+    def mousePressEvent(self, event):
+        self._state = not self._state
+        self.update()
+        if self.callback:
+            self.callback(self._state)
+        event.accept()
 
 class MenuScene(QGraphicsScene):
     def __init__(self, parent=None):
@@ -11,6 +53,7 @@ class MenuScene(QGraphicsScene):
         self.setSceneRect(0, 0, 800, 600)
         self.level_buttons = []
         self.levels_data = []
+        self.turn_based = False  # Tryb turowy domyślnie wyłączony
         self.load_levels()
         self.setup_menu()
         self.editor_selected = None  # Nowy sygnał dla edytora
@@ -61,6 +104,22 @@ class MenuScene(QGraphicsScene):
             button.right_rect.is_edit_button = True  # oznaczamy jako przycisk edycji
             self.level_buttons.append(button)
             y_pos += 60
+
+        # Dodaj etykietę opisującą przełącznik trybu turowego
+        switch_label = QGraphicsTextItem("Tryb turowy")
+        switch_label.setFont(QFont("Arial", 16))
+        switch_label.setDefaultTextColor(Qt.white)
+        switch_label_width = switch_label.boundingRect().width()
+        switch_label.setPos((self.width() - switch_label_width) / 2, 460)
+        self.addItem(switch_label)
+
+        # Usuwamy poprzedni tekstowy przełącznik i tworzymy SwitchButton
+        self.switch = SwitchButton(60, 30)
+        # Ustawiamy pozycję poniżej etykiety
+        self.switch.setPos((self.width() - self.switch.width) / 2, 490)
+        # Callback zmienia atrybut trybu turowego
+        self.switch.callback = lambda state: setattr(self, 'turn_based', state)
+        self.addItem(self.switch)
     
     def create_button(self, text, x, y, width=200):
         # Podział przycisku na lewą część z tekstem i prawą z ikoną
@@ -116,20 +175,20 @@ class MenuScene(QGraphicsScene):
         return button
         
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            pos = event.scenePos()
-            clicked_items = self.items(pos)
-            
-            for item in clicked_items:
-                if isinstance(item, QGraphicsRectItem) and hasattr(item, 'level_id') and item.level_id > 0:
-                    # Sprawdzenie czy kliknięcie jest na części lewej (graj) czy prawej (edytuj)
-                    if hasattr(item, 'is_edit_button') and item.is_edit_button:
-                        if self.editor_selected:
-                            self.editor_selected(item.level_id)
-                    else:
-                        self.level_selected(item.level_id)
-                    return
+        pos = event.scenePos()
+        clicked_items = self.items(pos)
         
+        for item in clicked_items:
+            if isinstance(item, QGraphicsRectItem) and hasattr(item, 'level_id') and item.level_id > 0:
+                # Sprawdzenie czy kliknięcie jest na części lewej (graj) czy prawej (edytuj)
+                if hasattr(item, 'is_edit_button') and item.is_edit_button:
+                    if self.editor_selected:
+                        self.editor_selected(item.level_id)
+                else:
+                    self.level_selected(item.level_id)
+                return
+        
+        # Pozwól, aby zdarzenie trafiło do SwitchButton i innych elementów
         super().mousePressEvent(event)
     
     def level_selected(self, level_id):

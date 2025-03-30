@@ -42,6 +42,10 @@ class GameWindow(QMainWindow):
         self.game_scene = GameScene()
         self.view.setScene(self.game_scene)
         self.game_scene.initialize_level(level_id)
+        # Ustawienie trybu turowego pobrane z menu
+        if self.menu_scene.turn_based:
+            self.game_scene.turn_based_mode = True
+            self.game_scene.start_turn_timer()
         self.game_scene.timer.start(16)
         self.game_scene.points_timer.start(2000)
         

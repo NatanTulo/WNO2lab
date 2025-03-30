@@ -40,6 +40,13 @@ class GameScene(QGraphicsScene):
         self.hint_visible = False
         self.hint_blink_count = 0  # Licznik mrugnięć
 
+        # Nowe atrybuty dla trybu turowego
+        self.turn_based_mode = False
+        self.current_turn = None  # "player" lub "enemy"
+        self.turn_duration = 10  # czas trwania tury w sekundach
+        self.round_time_remaining = self.turn_duration
+        self.turn_timer = QTimer()
+
     def drawBackground(self, painter, rect):
         # Ustawienie radialnego gradientu: środek jasny fiolent, krawędzie ciemny fiolent
         center = self.sceneRect().center()
@@ -166,6 +173,11 @@ class GameScene(QGraphicsScene):
         if not self.drag_start_cell:
             return
             
+        # Jeśli tryb turowy włączony i komórka źródłowa nie należy do aktywnej strony,
+        # nie obliczamy ani nie podświetlamy dostępnych komórek
+        if self.turn_based_mode and self.drag_start_cell.cell_type != self.current_turn:
+            return
+            
         self.reachable_cells = []
         available_points = self.drag_start_cell.points
         
@@ -218,22 +230,21 @@ class GameScene(QGraphicsScene):
     def mouseMoveEvent(self, event):
         if self.drag_start_cell:
             self.drag_current_pos = event.scenePos()
-            # Jeśli tworzymy nowy most, nie sprawdzamy przecięcia i nie usuwamy istniejących mostów.
             self.update()
         else:
             buttons = event.buttons()
-            # Przeprowadzamy sprawdzenie przecięcia tylko gdy wciśnięty jest odpowiedni przycisk
             if buttons & Qt.LeftButton:
                 connection_filter = "player"
             elif buttons & Qt.RightButton:
                 connection_filter = "enemy"
             else:
-                # Jeśli żaden przycisk nie jest wciśnięty, nie sprawdzamy przecięcia
                 return super().mouseMoveEvent(event)
-            
             P = event.scenePos()
             for conn in self.connections:
                 if conn.connection_type == connection_filter:
+                    # W trybie turowym pozwalamy na usunięcie tylko mostu aktywnej strony
+                    if self.turn_based_mode and conn.connection_type != self.current_turn:
+                        continue
                     A = QPointF(conn.source_cell.x, conn.source_cell.y)
                     B = QPointF(conn.target_cell.x, conn.target_cell.y)
                     AB = QPointF(B.x() - A.x(), B.y() - A.y())
@@ -247,7 +258,6 @@ class GameScene(QGraphicsScene):
                     Qx = A.x() + t * AB.x()
                     Qy = A.y() + t * AB.y()
                     if math.hypot(P.x() - Qx, P.y() - Qy) < 5:
-                        # Usuwamy most
                         if conn in self.connections:
                             self.connections.remove(conn)
                         if conn in conn.source_cell.connections:
@@ -257,7 +267,6 @@ class GameScene(QGraphicsScene):
                         cost = getattr(conn, "cost", 0)
                         source_points = round(t * cost)
                         target_points = cost - source_points
-                        # Rozdzielenie punktów dla mostu "player" lub "enemy"
                         if conn.connection_type == "player":
                             if conn.target_cell.cell_type != "player":
                                 conn.source_cell.points += source_points
@@ -282,6 +291,9 @@ class GameScene(QGraphicsScene):
                         conn.target_cell.strength = (conn.target_cell.points // 10) + 1
                         conn.source_cell.update()
                         conn.target_cell.update()
+                        # Po usunięciu mostu przełączamy turę
+                        if self.turn_based_mode:
+                            self.switch_turn()
                         break
             self.update()
         super().mouseMoveEvent(event)
@@ -297,6 +309,12 @@ class GameScene(QGraphicsScene):
         if self.drag_start_cell is None:
             return
         release_item = self.itemAt(event.scenePos(), QTransform())
+        # Sprawdzenie, czy wykonujący ruch to aktywny gracz
+        if self.turn_based_mode:
+            if event.button() == Qt.LeftButton and self.current_turn != "player":
+                return
+            if event.button() == Qt.RightButton and self.current_turn != "enemy":
+                return
         if event.button() == Qt.LeftButton:
             # Zmodyfikowano: akceptujemy każdą komórkę (o ile nie jest identyczna z komórką początkową)
             if isinstance(release_item, CellUnit) and release_item != self.drag_start_cell:
@@ -314,6 +332,9 @@ class GameScene(QGraphicsScene):
                     if not exists:
                         new_conn = self.create_connection(self.drag_start_cell, release_item, "player")
                         new_conn.cost = cost
+                        # Przełączenie tury po wykonaniu ruchu
+                        if self.turn_based_mode:
+                            self.switch_turn()
         elif event.button() == Qt.RightButton:
             # Zmieniony warunek: akceptujemy dowolną komórkę, która nie jest komórką początkową
             if isinstance(release_item, CellUnit) and release_item != self.drag_start_cell:
@@ -331,6 +352,8 @@ class GameScene(QGraphicsScene):
                     if not exists:
                         new_conn = self.create_connection(self.drag_start_cell, release_item, "enemy")
                         new_conn.cost = cost
+                        if self.turn_based_mode:
+                            self.switch_turn()
         self.drag_start_cell = None
         self.drag_current_pos = None  # Reset pozycji kursora
         self.update()
@@ -405,23 +428,35 @@ class GameScene(QGraphicsScene):
                         self.calculate_reachable_cells()
 
     def drawForeground(self, painter, rect):
+        # Rysowanie informacji o turze i czasie rundy
+        if self.turn_based_mode and self.current_turn:
+            info_text = f"Runda: {self.current_turn.upper()} - Pozostało: {self.round_time_remaining}s"
+            font = QFont("Arial", 16, QFont.Bold)
+            painter.setFont(font)
+            painter.setPen(QPen(Qt.white))
+            painter.drawText(rect.adjusted(10, 10, -10, -10), Qt.AlignTop | Qt.AlignHCenter, info_text)
+        # Rysowanie linii dynamicznej tylko, gdy to tura aktywnego gracza
         if self.drag_start_cell and self.drag_current_pos:
-            target_item = self.itemAt(self.drag_current_pos, QTransform())
-            if isinstance(target_item, CellUnit) and target_item.cell_type == self.drag_start_cell.cell_type and target_item != self.drag_start_cell:
-                target_point = QPointF(target_item.x, target_item.y)
+            if self.turn_based_mode and self.drag_start_cell.cell_type != self.current_turn:
+                # Nie rysujemy animacji mostu, bo to nie tura tej strony
+                pass
             else:
-                target_point = self.drag_current_pos
-            dx = target_point.x() - self.drag_start_cell.x
-            dy = target_point.y() - self.drag_start_cell.y
-            distance = math.hypot(dx, dy)
-            cost = int(distance / 20)
-            if self.drag_start_cell.cell_type == "player":
-                line_color = QColor(0, 255, 0)
-            else:
-                line_color = QColor(139, 0, 0)  # ciemno czerwony
-            color = line_color if self.drag_start_cell.points >= cost else QColor(255, 0, 0)
-            painter.setPen(QPen(color, 2))
-            painter.drawLine(QPointF(self.drag_start_cell.x, self.drag_start_cell.y), target_point)
+                target_item = self.itemAt(self.drag_current_pos, QTransform())
+                if isinstance(target_item, CellUnit) and target_item.cell_type == self.drag_start_cell.cell_type and target_item != self.drag_start_cell:
+                    target_point = QPointF(target_item.x, target_item.y)
+                else:
+                    target_point = self.drag_current_pos
+                dx = target_point.x() - self.drag_start_cell.x
+                dy = target_point.y() - self.drag_start_cell.y
+                distance = math.hypot(dx, dy)
+                cost = int(distance / 20)
+                if self.drag_start_cell.cell_type == "player":
+                    line_color = QColor(0, 255, 0)
+                else:
+                    line_color = QColor(139, 0, 0)  # ciemno czerwony
+                color = line_color if self.drag_start_cell.points >= cost else QColor(255, 0, 0)
+                painter.setPen(QPen(color, 2))
+                painter.drawLine(QPointF(self.drag_start_cell.x, self.drag_start_cell.y), target_point)
         # Rysowanie wszystkich mostów jako ciemnozielone linie
         for conn in self.connections:
             source = QPointF(conn.source_cell.x, conn.source_cell.y)
@@ -667,3 +702,25 @@ class GameScene(QGraphicsScene):
             event.accept()
         else:
             super().keyPressEvent(event)
+
+    # Metody obsługi zegara rundowego
+    def start_turn_timer(self):
+        self.current_turn = "player"  # Zaczynamy od gracza
+        self.round_time_remaining = self.turn_duration
+        self.turn_timer.timeout.connect(self.update_turn_timer)
+        self.turn_timer.start(1000)
+        self.update()
+        
+    def update_turn_timer(self):
+        self.round_time_remaining -= 1
+        if self.round_time_remaining <= 0:
+            self.switch_turn()
+        self.update()
+        
+    def switch_turn(self):
+        if self.current_turn == "player":
+            self.current_turn = "enemy"
+        else:
+            self.current_turn = "player"
+        self.round_time_remaining = self.turn_duration
+        self.update()
