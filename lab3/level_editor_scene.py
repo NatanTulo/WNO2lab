@@ -16,6 +16,7 @@ class LevelEditorScene(QGraphicsScene):
         self.cells = []
         self.dragging_cell = None
         self.drag_offset = QPointF(0, 0)
+        self.logger = None  # dodany atrybut logger
         
         # Ładowanie wybranego poziomu lub utworzenie nowego
         self.load_level()
@@ -165,9 +166,13 @@ class LevelEditorScene(QGraphicsScene):
                 json.dump(levels, f, indent=2, ensure_ascii=False)
                 
             QMessageBox.information(None, "Sukces", f"Poziom {self.level_id} zapisany pomyślnie!")
+            if self.logger:
+                self.logger.log(f"LevelEditorScene: Poziom {self.level_id} zapisany.")
             return True
         except Exception as e:
             QMessageBox.critical(None, "Błąd", f"Nie udało się zapisać poziomu: {e}")
+            if self.logger:
+                self.logger.log(f"LevelEditorScene: Błąd przy zapisie poziomu {self.level_id}: {e}")
             return False
     
     def return_to_menu(self):
@@ -209,6 +214,8 @@ class LevelEditorScene(QGraphicsScene):
                 new_cell = CellUnit(event.scenePos().x(), event.scenePos().y(), cell_type, points)
                 self.cells.append(new_cell)
                 self.addItem(new_cell)
+                if self.logger:
+                    self.logger.log(f"LevelEditorScene: Dodano komórkę typu '{cell_type}' na pozycji ({event.scenePos().x():.0f}, {event.scenePos().y():.0f}).")
         
         super().mousePressEvent(event)
     

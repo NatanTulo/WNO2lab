@@ -50,6 +50,7 @@ class SwitchButton(QGraphicsItem):
 class MenuScene(QGraphicsScene):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.logger = None  # dodany atrybut logger
         self.setSceneRect(0, 0, 800, 600)
         self.level_buttons = []
         self.levels_data = []
@@ -57,6 +58,8 @@ class MenuScene(QGraphicsScene):
         self.load_levels()
         self.setup_menu()
         self.editor_selected = None  # Nowy sygnał dla edytora
+        if self.logger:
+            self.logger.log("MenuScene: Scena menu utworzona.")
         
     def load_levels(self):
         try:
@@ -117,8 +120,12 @@ class MenuScene(QGraphicsScene):
         self.switch = SwitchButton(60, 30)
         # Ustawiamy pozycję poniżej etykiety
         self.switch.setPos((self.width() - self.switch.width) / 2, 490)
-        # Callback zmienia atrybut trybu turowego
-        self.switch.callback = lambda state: setattr(self, 'turn_based', state)
+        # Callback zmienia atrybut trybu turowego z logowaniem
+        def switch_callback(state):
+            setattr(self, 'turn_based', state)
+            if self.logger:
+                self.logger.log(f"MenuScene: Tryb turowy {'włączony' if state else 'wyłączony'}.")
+        self.switch.callback = switch_callback
         self.addItem(self.switch)
     
     def create_button(self, text, x, y, width=200):
@@ -182,9 +189,13 @@ class MenuScene(QGraphicsScene):
             if isinstance(item, QGraphicsRectItem) and hasattr(item, 'level_id') and item.level_id > 0:
                 # Sprawdzenie czy kliknięcie jest na części lewej (graj) czy prawej (edytuj)
                 if hasattr(item, 'is_edit_button') and item.is_edit_button:
+                    if self.logger:
+                        self.logger.log(f"MenuScene: Wybrano edycję poziomu {item.level_id}.")
                     if self.editor_selected:
                         self.editor_selected(item.level_id)
                 else:
+                    if self.logger:
+                        self.logger.log(f"MenuScene: Wybrano poziom {item.level_id} do gry.")
                     self.level_selected(item.level_id)
                 return
         

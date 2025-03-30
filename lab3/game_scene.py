@@ -47,6 +47,8 @@ class GameScene(QGraphicsScene):
         self.round_time_remaining = self.turn_duration
         self.turn_timer = QTimer()
 
+        self.logger = None  # dodany atrybut logger
+
     def drawBackground(self, painter, rect):
         # Ustawienie radialnego gradientu: środek jasny fiolent, krawędzie ciemny fiolent
         center = self.sceneRect().center()
@@ -67,6 +69,9 @@ class GameScene(QGraphicsScene):
         # Load level data from file
         level_data = self.load_level_data(level_number)
         
+        if self.logger:
+            self.logger.log(f"GameScene: Inicjalizacja poziomu {level_number}.")
+
         if level_data:
             # Create cells based on level data
             for cell_data in level_data.get("cells", []):
@@ -88,8 +93,7 @@ class GameScene(QGraphicsScene):
                 if 0 <= source_idx < len(self.cells) and 0 <= target_idx < len(self.cells):
                     source = self.cells[source_idx]
                     target = self.cells[target_idx]
-                    connection = self.create_connection(source, target, conn_type)
-                    connection.cost = conn_data.get("cost", 0)
+                    connection = self.create_connection(source, target, conn_type, cost=conn_data.get("cost", 0))
         else:
             # Fallback to hardcoded level if loading fails
             self._initialize_default_level(level_number)
@@ -127,12 +131,15 @@ class GameScene(QGraphicsScene):
                 self.cells.append(cell)
                 self.addItem(cell)
                             
-    def create_connection(self, source, target, conn_type):
+    def create_connection(self, source, target, conn_type, cost=0):
         """Create a connection between two cells"""
         connection = CellConnection(source, target, conn_type)
+        connection.cost = cost
         source.connections.append(connection)
         target.connections.append(connection)
         self.connections.append(connection)
+        if self.logger:
+            self.logger.log(f"GameScene: Utworzono most między komórkami przy ({source.x:.0f}, {source.y:.0f}) i ({target.x:.0f}, {target.y:.0f}) o koszcie {connection.cost}.")
         return connection
         
     def update_game(self):
@@ -330,9 +337,7 @@ class GameScene(QGraphicsScene):
                                   (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
                                   for conn in self.connections)
                     if not exists:
-                        new_conn = self.create_connection(self.drag_start_cell, release_item, "player")
-                        new_conn.cost = cost
-                        # Przełączenie tury po wykonaniu ruchu
+                        new_conn = self.create_connection(self.drag_start_cell, release_item, "player", cost)
                         if self.turn_based_mode:
                             self.switch_turn()
         elif event.button() == Qt.RightButton:
@@ -350,8 +355,7 @@ class GameScene(QGraphicsScene):
                                   (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
                                   for conn in self.connections)
                     if not exists:
-                        new_conn = self.create_connection(self.drag_start_cell, release_item, "enemy")
-                        new_conn.cost = cost
+                        new_conn = self.create_connection(self.drag_start_cell, release_item, "enemy", cost)
                         if self.turn_based_mode:
                             self.switch_turn()
         self.drag_start_cell = None
@@ -374,6 +378,8 @@ class GameScene(QGraphicsScene):
         self.timer.stop()
         self.points_timer.stop()  # Dodano, aby zapauzować grę po zakończeniu
         self.game_over_text = "Wygrana!" if victory else "Przegrana!"
+        if self.logger:
+            self.logger.log(f"GameScene: Gra zakończona - {self.game_over_text}.")
         self.update()
         
         # Dodanie przycisku powrotu do menu po 2 sekundach
@@ -648,7 +654,8 @@ class GameScene(QGraphicsScene):
         
         # Obsługa klawisza Escape - powrót do menu
         if event.key() == Qt.Key_Escape:
-            # Zatrzymanie timerów
+            if self.logger:
+                self.logger.log("GameScene: Gracz przerwał rozgrywkę.")
             self.timer.stop()
             self.points_timer.stop()
             
@@ -723,4 +730,6 @@ class GameScene(QGraphicsScene):
         else:
             self.current_turn = "player"
         self.round_time_remaining = self.turn_duration
+        if self.logger:
+            self.logger.log(f"GameScene: Zmiana tury, teraz: {self.current_turn}.")
         self.update()

@@ -1,17 +1,42 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow
+from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit
 from PyQt5.QtCore import Qt
 from game_scene import GameScene
 from menu_scene import MenuScene
 from level_editor_scene import LevelEditorScene  # Nowy import
+from logger import Logger  # nowy import
 
 class GameWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Cell Expansion Wars")
         
+        # Utworzenie loggera
+        self.logger = Logger(max_lines=100)
+        
+        # Utworzenie widoku loggera w docku
+        self.log_dock = QDockWidget("Log", self)
+        # Umożliwiamy zamykanie, poruszanie i oddokowywanie
+        self.log_dock.setFeatures(QDockWidget.DockWidgetClosable | 
+                                  QDockWidget.DockWidgetMovable | 
+                                  QDockWidget.DockWidgetFloatable)
+        self.log_view = QTextEdit()
+        self.log_view.setReadOnly(True)
+        self.log_dock.setWidget(self.log_view)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.log_dock)
+        self.logger.set_text_edit(self.log_view)
+        
+        # Dodaj pasek menu z akcją przełączania widoku logów
+        menu_bar = self.menuBar()
+        view_menu = menu_bar.addMenu("Widok")
+        self.toggle_log_action = view_menu.addAction("Pokaż/Ukryj Logi")
+        self.toggle_log_action.setCheckable(True)
+        self.toggle_log_action.setChecked(True)
+        self.toggle_log_action.triggered.connect(self.toggle_log_dock)
+        
         # Tworzenie scen
         self.menu_scene = MenuScene()
+        self.menu_scene.logger = self.logger  # przekazanie loggera do menu
         self.game_scene = None
         self.editor_scene = None  # Nowy atrybut dla sceny edytora
         
@@ -20,7 +45,7 @@ class GameWindow(QMainWindow):
         self.view.setRenderHints(self.view.renderHints())
         self.view.setViewportUpdateMode(self.view.FullViewportUpdate)
         self.setCentralWidget(self.view)
-        self.resize(850, 650)
+        self.resize(1280, 720)
         
         # Połączenie sygnałów z menu
         self.menu_scene.level_selected = self.start_game
@@ -28,6 +53,16 @@ class GameWindow(QMainWindow):
         
         # Rozpoczęcie od menu
         self.show_menu()
+        
+        # Przykładowe logowanie
+        self.logger.log("Aplikacja uruchomiona.")
+        
+    def toggle_log_dock(self, visible):
+        if visible:
+            self.addDockWidget(Qt.BottomDockWidgetArea, self.log_dock)
+            self.log_dock.show()
+        else:
+            self.log_dock.hide()
         
     def show_menu(self):
         # Zatrzymaj timery gry, jeśli istnieją
@@ -40,6 +75,7 @@ class GameWindow(QMainWindow):
         
     def start_game(self, level_id):
         self.game_scene = GameScene()
+        self.game_scene.logger = self.logger  # ustawienie loggera dla gry
         self.view.setScene(self.game_scene)
         self.game_scene.initialize_level(level_id)
         # Ustawienie trybu turowego pobrane z menu
@@ -52,6 +88,7 @@ class GameWindow(QMainWindow):
     def start_editor(self, level_id):
         # Tworzenie i wyświetlanie edytora poziomów
         self.editor_scene = LevelEditorScene(level_id)
+        self.editor_scene.logger = self.logger  # ustawienie loggera dla edytora
         self.view.setScene(self.editor_scene)
 
 def main():
