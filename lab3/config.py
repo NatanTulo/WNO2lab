@@ -44,3 +44,8 @@ GAME_TURN_FONT_SIZE = 16
 GAME_OVER_FONT_SIZE = 36
 
 FREEZE_DURATION_SECONDS = 10  # Czas trwania zamrożenia w sekundach
+
+# Dodane stałe powerupów
+POWERUP_FREEZE = "mrożący"
+POWERUP_TAKEOVER = "przejmujący"
+POWERUP_ADD_POINTS = "punktujący"

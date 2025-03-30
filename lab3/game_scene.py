@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
 from PyQt5.QtGui import QColor, QPen, QRadialGradient, QFont, QTransform, QCursor
 from PyQt5.QtWidgets import QGraphicsScene, QMenu, QMessageBox, QGraphicsTextItem, QGraphicsDropShadowEffect
 
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS, TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE, GAME_OVER_FONT_SIZE, FREEZE_DURATION_SECONDS
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS, TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE, GAME_OVER_FONT_SIZE, FREEZE_DURATION_SECONDS, POWERUP_FREEZE, POWERUP_TAKEOVER, POWERUP_ADD_POINTS
 from game_ai import GameAI
 from game_objects import CellUnit, CellConnection
 
@@ -252,7 +252,7 @@ class GameScene(QGraphicsScene):
         if self.powerup_active is not None:
             clicked_item = self.itemAt(event.scenePos(), QTransform())
             if isinstance(clicked_item, CellUnit):
-                if self.powerup_active == "freeze":
+                if self.powerup_active == POWERUP_FREEZE:
                     if clicked_item.cell_type == "enemy":
                         clicked_item.frozen = True
                         clicked_item.freeze_end_time = time.time() + FREEZE_DURATION_SECONDS
@@ -273,7 +273,7 @@ class GameScene(QGraphicsScene):
                             self.addItem(self.powerup_label)
                         else:
                             self.powerup_label.setPlainText("Wybierz komórkę przeciwnika do zamrożenia.")
-                elif self.powerup_active == "takeover":
+                elif self.powerup_active == POWERUP_TAKEOVER:
                     if clicked_item.cell_type == "enemy":
                         clicked_item.cell_type = "player"
                         clicked_item.update()
@@ -293,7 +293,7 @@ class GameScene(QGraphicsScene):
                             self.addItem(self.powerup_label)
                         else:
                             self.powerup_label.setPlainText("Wybierz komórkę przeciwnika do przejęcia.")
-                elif self.powerup_active == "add_points":
+                elif self.powerup_active == POWERUP_ADD_POINTS:
                     if clicked_item.cell_type in ["player", "enemy"]:
                         clicked_item.points += 10
                         clicked_item.strength = (clicked_item.points // 10) + 1
@@ -756,10 +756,10 @@ class GameScene(QGraphicsScene):
     def activate_powerup(self, powerup_type):
         self.powerup_active = powerup_type
         if self.logger:
-            self.logger.log(f"GameScene: Powerup '{powerup_type}' aktywowany. Kliknij na docelową komórkę.")
+            self.logger.log(f"GameScene: Powerup {powerup_type} aktywowany. Kliknij na docelową komórkę.")
         if hasattr(self, 'powerup_label') and self.powerup_label is not None:
             self.removeItem(self.powerup_label)
-        self.powerup_label = QGraphicsTextItem(f"Powerup '{powerup_type}' aktywowany. Wybierz komórkę docelową.")
+        self.powerup_label = QGraphicsTextItem(f"Powerup {powerup_type} aktywowany. Wybierz komórkę docelową.")
         self.powerup_label.setDefaultTextColor(Qt.white)
         self.powerup_label.setFont(QFont("Arial", 16))
         # Dodanie efektu outline (czarny kontur)
