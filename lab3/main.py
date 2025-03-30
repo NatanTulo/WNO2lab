@@ -3,7 +3,7 @@ import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit, QMessageBox
 
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, POWERUP_FREEZE, POWERUP_TAKEOVER, POWERUP_ADD_POINTS
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, POWERUP_FREEZE, POWERUP_TAKEOVER, POWERUP_ADD_POINTS, POWERUP_NEW_CELL
 from game_scene import GameScene
 from level_editor_scene import LevelEditorScene
 from logger import Logger
@@ -50,9 +50,11 @@ class GameWindow(QMainWindow):
         freeze_action = powerup_menu.addAction("Zamrożenie komórki")
         takeover_action = powerup_menu.addAction("Przejęcie komórki")
         addpoints_action = powerup_menu.addAction("Dodaj 10 punktów")
+        newcell_action = powerup_menu.addAction("Dodaj nową komórkę")  # Dodana akcja dla nowego powerupu
         freeze_action.triggered.connect(lambda: self.activate_powerup(POWERUP_FREEZE))
         takeover_action.triggered.connect(lambda: self.activate_powerup(POWERUP_TAKEOVER))
         addpoints_action.triggered.connect(lambda: self.activate_powerup(POWERUP_ADD_POINTS))
+        newcell_action.triggered.connect(lambda: self.activate_powerup(POWERUP_NEW_CELL))
         
         # Tworzenie scen
         self.menu_scene = MenuScene()

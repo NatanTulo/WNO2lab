@@ -5,9 +5,9 @@ import time
 
 from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
 from PyQt5.QtGui import QColor, QPen, QRadialGradient, QFont, QTransform, QCursor
-from PyQt5.QtWidgets import QGraphicsScene, QMenu, QMessageBox, QGraphicsTextItem, QGraphicsDropShadowEffect
+from PyQt5.QtWidgets import QGraphicsScene, QMenu, QMessageBox, QGraphicsTextItem, QGraphicsDropShadowEffect, QGraphicsItem
 
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS, TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE, GAME_OVER_FONT_SIZE, FREEZE_DURATION_SECONDS, POWERUP_FREEZE, POWERUP_TAKEOVER, POWERUP_ADD_POINTS
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS, TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE, GAME_OVER_FONT_SIZE, FREEZE_DURATION_SECONDS, POWERUP_FREEZE, POWERUP_TAKEOVER, POWERUP_ADD_POINTS, POWERUP_NEW_CELL, NEW_CELL_COPY_RANGE_FACTOR
 from game_ai import GameAI
 from game_objects import CellUnit, CellConnection
 
@@ -53,6 +53,7 @@ class GameScene(QGraphicsScene):
 
         self.logger = None  # dodany atrybut logger
         self.powerup_active = None  # Nowy atrybut: typ aktywnego powerupu
+        self.copy_source = None  # Dla powerupu kopiowania komórki
 
     def drawBackground(self, painter, rect):
         # Ustawienie radialnego gradientu: środek jasny fiolent, krawędzie ciemny fiolent
@@ -251,58 +252,137 @@ class GameScene(QGraphicsScene):
         # Obsługa powerupu przed standardowym zachowaniem
         if self.powerup_active is not None:
             clicked_item = self.itemAt(event.scenePos(), QTransform())
-            if isinstance(clicked_item, CellUnit):
+            # Powerup kopiowania komórki
+            if self.powerup_active == POWERUP_NEW_CELL:
+                # Jeśli nie wybrano jeszcze komórki źródłowej
+                if self.copy_source is None:
+                    if isinstance(clicked_item, CellUnit):
+                        self.copy_source = clicked_item
+                        # Informujemy użytkownika, aby wybrał miejsce – minimalna odległość: 2*promień, maksymalna: NEW_CELL_COPY_RANGE_FACTOR*promień
+                        if self.logger:
+                            self.logger.log("GameScene: Komórka wybrana do kopiowania. Teraz wybierz miejsce, gdzie ją postawić.")
+                        if hasattr(self, 'powerup_label'):
+                            self.powerup_label.setPlainText("Wybierz miejsce: odległość ≥ 2*promień i ≤ {}*promień".format(NEW_CELL_COPY_RANGE_FACTOR))
+                        event.accept()
+                        return
+                    else:
+                        # Nie kliknięto na komórkę - komunikat
+                        if self.powerup_label is None:
+                            self.powerup_label = QGraphicsTextItem("Wybierz komórkę do skopiowania.")
+                            self.powerup_label.setDefaultTextColor(Qt.white)
+                            self.powerup_label.setFont(QFont("Arial", 16))
+                            label_width = self.powerup_label.boundingRect().width()
+                            scene_center = self.sceneRect().center().x()
+                            self.powerup_label.setPos(scene_center - label_width/2, 10)
+                            self.addItem(self.powerup_label)
+                        else:
+                            self.powerup_label.setPlainText("Wybierz komórkę do skopiowania.")
+                        event.accept()
+                        return
+                else:
+                    # Komórka źródłowa wybrana - sprawdzamy odległość miejsca kliknięcia
+                    pos = event.scenePos()
+                    dx = pos.x() - self.copy_source.x
+                    dy = pos.y() - self.copy_source.y
+                    distance = math.hypot(dx, dy)
+                    radius = self.copy_source.radius
+                    min_dist = 2 * radius
+                    max_dist = NEW_CELL_COPY_RANGE_FACTOR * radius
+                    if distance < min_dist or distance > max_dist:
+                        if self.powerup_label is None:
+                            self.powerup_label = QGraphicsTextItem("Błędna odległość. Wybierz miejsce między {} a {} pikseli.".format(min_dist, max_dist))
+                            self.powerup_label.setDefaultTextColor(Qt.white)
+                            self.powerup_label.setFont(QFont("Arial", 16))
+                            label_width = self.powerup_label.boundingRect().width()
+                            scene_center = self.sceneRect().center().x()
+                            self.powerup_label.setPos(scene_center - label_width/2, 10)
+                            self.addItem(self.powerup_label)
+                        else:
+                            self.powerup_label.setPlainText("Błędna odległość. Wybierz miejsce między {} a {} pikseli.".format(min_dist, max_dist))
+                        event.accept()
+                        return
+                    # Jeśli warunki spełnione: nowa komórka otrzymuje punkty równe wybranej komórce
+                    new_cell = CellUnit(pos.x(), pos.y(), "player", self.copy_source.points)
+                    self.cells.append(new_cell)
+                    self.addItem(new_cell)
+                    if self.logger:
+                        self.logger.log("GameScene: Nowa komórka skopiowana z komórki o {} punktach.".format(self.copy_source.points))
+                    # Resetujemy stan
+                    self.copy_source = None
+                    self.powerup_active = None
+                    if hasattr(self, 'powerup_label'):
+                        self.removeItem(self.powerup_label)
+                        self.powerup_label = None
+                    self.update()
+                    event.accept()
+                    return
+            # Obsługa pozostałych powerupów
+            elif isinstance(clicked_item, QGraphicsItem):
                 if self.powerup_active == POWERUP_FREEZE:
-                    if clicked_item.cell_type == "enemy":
-                        clicked_item.frozen = True
-                        clicked_item.freeze_end_time = time.time() + FREEZE_DURATION_SECONDS
-                        if self.logger:
-                            self.logger.log("GameScene: Komórka przeciwnika zamrożona.")
-                        if hasattr(self, 'powerup_label') and self.powerup_label is not None:
-                            self.removeItem(self.powerup_label)
-                            self.powerup_label = None
-                    else:
-                        # Aktualizujemy napis pozostający na scenie do momentu wybrania komórki przeciwnika
-                        if self.powerup_label is None:
-                            self.powerup_label = QGraphicsTextItem("Wybierz komórkę przeciwnika do zamrożenia.")
-                            self.powerup_label.setDefaultTextColor(Qt.white)
-                            self.powerup_label.setFont(QFont("Arial", 16))
-                            label_width = self.powerup_label.boundingRect().width()
-                            scene_center = self.sceneRect().center().x()
-                            self.powerup_label.setPos(scene_center - label_width/2, 10)
-                            self.addItem(self.powerup_label)
+                    if isinstance(clicked_item, CellUnit):
+                        if clicked_item.cell_type == "enemy":
+                            clicked_item.frozen = True
+                            clicked_item.freeze_end_time = time.time() + FREEZE_DURATION_SECONDS
+                            if self.logger:
+                                self.logger.log("GameScene: Komórka przeciwnika zamrożona.")
+                            if hasattr(self, 'powerup_label') and self.powerup_label is not None:
+                                self.removeItem(self.powerup_label)
+                                self.powerup_label = None
                         else:
-                            self.powerup_label.setPlainText("Wybierz komórkę przeciwnika do zamrożenia.")
+                            if self.powerup_label is None:
+                                self.powerup_label = QGraphicsTextItem("Wybierz komórkę przeciwnika do zamrożenia.")
+                                self.powerup_label.setDefaultTextColor(Qt.white)
+                                self.powerup_label.setFont(QFont("Arial", 16))
+                                label_width = self.powerup_label.boundingRect().width()
+                                scene_center = self.sceneRect().center().x()
+                                self.powerup_label.setPos(scene_center - label_width/2, 10)
+                                self.addItem(self.powerup_label)
+                            else:
+                                self.powerup_label.setPlainText("Wybierz komórkę przeciwnika do zamrożenia.")
+                    self.powerup_active = None
+                    self.update()
+                    event.accept()
+                    return
                 elif self.powerup_active == POWERUP_TAKEOVER:
-                    if clicked_item.cell_type == "enemy":
-                        clicked_item.cell_type = "player"
-                        clicked_item.update()
-                        if self.logger:
-                            self.logger.log("GameScene: Komórka przeciwnika przejęta.")
-                        if hasattr(self, 'powerup_label') and self.powerup_label is not None:
-                            self.removeItem(self.powerup_label)
-                            self.powerup_label = None
-                    else:
-                        if self.powerup_label is None:
-                            self.powerup_label = QGraphicsTextItem("Wybierz komórkę przeciwnika do przejęcia.")
-                            self.powerup_label.setDefaultTextColor(Qt.white)
-                            self.powerup_label.setFont(QFont("Arial", 16))
-                            label_width = self.powerup_label.boundingRect().width()
-                            scene_center = self.sceneRect().center().x()
-                            self.powerup_label.setPos(scene_center - label_width/2, 10)
-                            self.addItem(self.powerup_label)
+                    if isinstance(clicked_item, CellUnit):
+                        if clicked_item.cell_type == "enemy":
+                            clicked_item.cell_type = "player"
+                            clicked_item.update()
+                            if self.logger:
+                                self.logger.log("GameScene: Komórka przeciwnika przejęta.")
+                            if hasattr(self, 'powerup_label') and self.powerup_label is not None:
+                                self.removeItem(self.powerup_label)
+                                self.powerup_label = None
                         else:
-                            self.powerup_label.setPlainText("Wybierz komórkę przeciwnika do przejęcia.")
+                            if self.powerup_label is None:
+                                self.powerup_label = QGraphicsTextItem("Wybierz komórkę przeciwnika do przejęcia.")
+                                self.powerup_label.setDefaultTextColor(Qt.white)
+                                self.powerup_label.setFont(QFont("Arial", 16))
+                                label_width = self.powerup_label.boundingRect().width()
+                                scene_center = self.sceneRect().center().x()
+                                self.powerup_label.setPos(scene_center - label_width/2, 10)
+                                self.addItem(self.powerup_label)
+                            else:
+                                self.powerup_label.setPlainText("Wybierz komórkę przeciwnika do przejęcia.")
+                    self.powerup_active = None
+                    self.update()
+                    event.accept()
+                    return
                 elif self.powerup_active == POWERUP_ADD_POINTS:
-                    if clicked_item.cell_type in ["player", "enemy"]:
-                        clicked_item.points += 10
-                        clicked_item.strength = (clicked_item.points // 10) + 1
-                        clicked_item.update()
-                        if self.logger:
-                            self.logger.log("GameScene: Dodano 10 punktów do komórki.")
-                        if hasattr(self, 'powerup_label') and self.powerup_label is not None:
-                            self.removeItem(self.powerup_label)
-                            self.powerup_label = None
+                    if isinstance(clicked_item, CellUnit):
+                        if clicked_item.cell_type in ["player", "enemy"]:
+                            clicked_item.points += 10
+                            clicked_item.strength = (clicked_item.points // 10) + 1
+                            clicked_item.update()
+                            if self.logger:
+                                self.logger.log("GameScene: Dodano 10 punktów do komórki.")
+                            if hasattr(self, 'powerup_label') and self.powerup_label is not None:
+                                self.removeItem(self.powerup_label)
+                                self.powerup_label = None
+                    self.powerup_active = None
+                    self.update()
+                    event.accept()
+                    return
             else:
                 if self.powerup_label is None:
                     self.powerup_label = QGraphicsTextItem("Nie kliknięto na komórkę. Wybierz komórkę docelową.")

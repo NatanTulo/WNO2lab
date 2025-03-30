@@ -49,3 +49,7 @@ FREEZE_DURATION_SECONDS = 10  # Czas trwania zamrożenia w sekundach
 POWERUP_FREEZE = "mrożący"
 POWERUP_TAKEOVER = "przejmujący"
 POWERUP_ADD_POINTS = "punktujący"
+POWERUP_NEW_CELL = "stawiający"  # Nowy powerup do dodania nowej komórki
+
+# Dodana stała określająca maksymalną odległość dla kopiowania komórki 
+NEW_CELL_COPY_RANGE_FACTOR = 5  # Maksymalna odległość = 5 * promień komórki
