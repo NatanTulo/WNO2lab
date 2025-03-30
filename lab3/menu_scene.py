@@ -1,9 +1,11 @@
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsItem
-from PyQt5.QtCore import Qt, QRectF, pyqtSignal
-from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap, QPainterPath
-import resources_rc #pyrcc5 resources.rc -o resources_rc.py
 import json
 import os
+
+from PyQt5.QtCore import Qt, QRectF, pyqtSignal
+from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap, QPainterPath
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsItem
+
+import resources_rc  # pyrcc5 resources.rc -o resources_rc.py
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, MENU_TITLE_FONT_SIZE, MENU_LEVEL_TITLE_FONT_SIZE, MENU_SWITCH_LABEL_FONT_SIZE, MENU_LEVEL_BUTTON_WIDTH, FONT_FAMILY, BUTTON_FONT_SIZE
 
 class SwitchButton(QGraphicsItem):

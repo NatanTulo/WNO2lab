@@ -1,11 +1,19 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit, QMessageBox
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit, QMessageBox
+
+from config import WINDOW_WIDTH, WINDOW_HEIGHT
 from game_scene import GameScene
-from menu_scene import MenuScene
 from level_editor_scene import LevelEditorScene
 from logger import Logger
-from config import WINDOW_WIDTH, WINDOW_HEIGHT
+from menu_scene import MenuScene
+
+class DynamicGraphicsView(QGraphicsView):
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self.scene():
+            self.fitInView(self.scene().sceneRect(), Qt.KeepAspectRatio)
 
 class GameWindow(QMainWindow):
     def __init__(self):
@@ -25,6 +33,8 @@ class GameWindow(QMainWindow):
         self.log_view.setReadOnly(True)
         self.log_dock.setWidget(self.log_view)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.log_dock)
+        # Ustawienie początkowej wysokości loggera na 100 pikseli (dock automatycznie się rozmiaruje później)
+        self.resizeDocks([self.log_dock], [100], Qt.Vertical)
         self.logger.set_text_edit(self.log_view)
         
         # Dodaj pasek menu z akcją przełączania widoku logów
@@ -50,12 +60,12 @@ class GameWindow(QMainWindow):
         self.game_scene = None
         self.editor_scene = None  # Nowy atrybut dla sceny edytora
         
-        # Konfiguracja widoku
-        self.view = QGraphicsView()
+        # Konfiguracja widoku z dynamicznym skalowaniem
+        self.view = DynamicGraphicsView()
         self.view.setRenderHints(self.view.renderHints())
         self.view.setViewportUpdateMode(self.view.FullViewportUpdate)
         self.setCentralWidget(self.view)
-        self.resize(int(WINDOW_WIDTH + WINDOW_WIDTH/10), int(WINDOW_HEIGHT + WINDOW_HEIGHT/10))
+        self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
         
         # Połączenie sygnałów z menu
         self.menu_scene.level_selected = self.start_game

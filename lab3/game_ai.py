@@ -1,8 +1,9 @@
-from game_objects import CellUnit, CellConnection
 import math
 import random
 import time
 from collections import defaultdict
+
+from game_objects import CellUnit, CellConnection
 
 class GameAI:
     """Zaawansowane AI do strategicznych podpowiedzi w grze, działające lokalnie"""

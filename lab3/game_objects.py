@@ -1,8 +1,10 @@
-from PyQt5.QtWidgets import QGraphicsItem
-from PyQt5.QtCore import QRectF, QPointF, Qt
-from PyQt5.QtGui import QPainterPath, QPen, QRadialGradient, QFont, QColor
 import math
 import time
+
+from PyQt5.QtCore import QRectF, QPointF, Qt
+from PyQt5.QtGui import QPainterPath, QPen, QRadialGradient, QFont, QColor
+from PyQt5.QtWidgets import QGraphicsItem
+
 from config import DEFAULT_CELL_RADIUS, POINTS_PER_STRENGTH, COLOR_PLAYER, COLOR_ENEMY, COLOR_NEUTRAL, FONT_FAMILY
 
 class CellUnit(QGraphicsItem):
