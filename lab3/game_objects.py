@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import QGraphicsItem
 from PyQt5.QtCore import QRectF, QPointF, Qt
-from PyQt5.QtGui import QPainter, QPen, QRadialGradient, QFont, QColor
+from PyQt5.QtGui import QPainterPath, QPen, QRadialGradient, QFont, QColor
 import math
+import time
 from config import DEFAULT_CELL_RADIUS, POINTS_PER_STRENGTH, COLOR_PLAYER, COLOR_ENEMY, COLOR_NEUTRAL, FONT_FAMILY
 
 class CellUnit(QGraphicsItem):
@@ -17,6 +18,8 @@ class CellUnit(QGraphicsItem):
         self.strength = (self.points // POINTS_PER_STRENGTH) + 1  # strength wynika z punktów
         self.connections = []  # List of connected cells
         self.highlighted = False  # Nowy atrybut określający czy komórka jest podświetlona
+        self.frozen = False  # Nowy atrybut dla efektu zamrożenia
+        self.freeze_end_time = 0  # Czas zakończenia zamrożenia (timestamp)
         
     def setHighlighted(self, highlighted):
         """Ustawia stan podświetlenia komórki"""
@@ -32,7 +35,6 @@ class CellUnit(QGraphicsItem):
     
     def shape(self):
         # Zwracamy ścieżkę będącą okręgiem o promieniu effective_radius
-        from PyQt5.QtGui import QPainterPath
         path = QPainterPath()
         effective_radius = self.radius * (1 + 0.2 * (self.strength - 1))
         path.addEllipse(QPointF(self.x, self.y), effective_radius, effective_radius)
@@ -107,8 +109,35 @@ class CellUnit(QGraphicsItem):
                                                dot_radius * 2, dot_radius * 2))
                 count_dot += 1
 
+        # Rysowanie niebieskiego obrysu, gdy komórka jest zamrożona
+        if self.frozen:
+            current_time = time.time()
+            if current_time < self.freeze_end_time:
+                painter.setPen(QPen(QColor(0, 150, 255), 4))
+                painter.setBrush(Qt.NoBrush)
+                painter.drawEllipse(QRectF(self.x - effective_radius, self.y - effective_radius, 
+                                           effective_radius * 2, effective_radius * 2))
+                # Obliczenie pozostałego czasu zamrożenia
+                remaining = max(0, int(self.freeze_end_time - current_time))
+                # Rysowanie licznika (niebieski tekst) obok komórki
+                counter_text = str(remaining)
+                font = QFont(FONT_FAMILY, int(effective_radius / 2))
+                painter.setFont(font)
+                painter.setPen(QPen(QColor(0, 150, 255), 2))
+                # Pozycja licznika: w prawym dolnym rogu komórki
+                text_rect = QRectF(self.x + effective_radius - 20, self.y + effective_radius - 20, 40, 40)
+                painter.drawText(text_rect, Qt.AlignCenter, counter_text)
+            else:
+                # Freeze time expired: wyłącz zamrożenie
+                self.frozen = False
+                self.freeze_end_time = 0
+                self.update()
+
     def add_point(self):
         """Dodaje punkt do komórki oraz aktualizuje siłę"""
+        # Nie dodajemy punktów, gdy komórka jest zamrożona
+        if self.frozen:
+            return
         self.points += 1
         self.strength = (self.points // POINTS_PER_STRENGTH) + 1
         self.update()

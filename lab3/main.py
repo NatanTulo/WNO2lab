@@ -1,11 +1,11 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit
+from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit, QMessageBox
 from PyQt5.QtCore import Qt
 from game_scene import GameScene
 from menu_scene import MenuScene
-from level_editor_scene import LevelEditorScene  # Nowy import
-from logger import Logger  # nowy import
-from config import WINDOW_WIDTH, WINDOW_HEIGHT  # zmieniony import
+from level_editor_scene import LevelEditorScene
+from logger import Logger
+from config import WINDOW_WIDTH, WINDOW_HEIGHT
 
 class GameWindow(QMainWindow):
     def __init__(self):
@@ -34,6 +34,15 @@ class GameWindow(QMainWindow):
         self.toggle_log_action.setCheckable(True)
         self.toggle_log_action.setChecked(True)
         self.toggle_log_action.triggered.connect(self.toggle_log_dock)
+        
+        # Nowe menu Powerupy
+        powerup_menu = menu_bar.addMenu("Powerupy")
+        freeze_action = powerup_menu.addAction("Zamrożenie komórki")
+        takeover_action = powerup_menu.addAction("Przejęcie komórki")
+        addpoints_action = powerup_menu.addAction("Dodaj 10 punktów")
+        freeze_action.triggered.connect(lambda: self.activate_powerup("freeze"))
+        takeover_action.triggered.connect(lambda: self.activate_powerup("takeover"))
+        addpoints_action.triggered.connect(lambda: self.activate_powerup("add_points"))
         
         # Tworzenie scen
         self.menu_scene = MenuScene()
@@ -91,6 +100,12 @@ class GameWindow(QMainWindow):
         self.editor_scene = LevelEditorScene(level_id)
         self.editor_scene.logger = self.logger  # ustawienie loggera dla edytora
         self.view.setScene(self.editor_scene)
+    
+    def activate_powerup(self, powerup_type):
+        if self.game_scene:
+            self.game_scene.activate_powerup(powerup_type)
+        else:
+            QMessageBox.information(self, "Powerup", "Brak aktywnej sceny gry.")
 
 def main():
     app = QApplication(sys.argv)

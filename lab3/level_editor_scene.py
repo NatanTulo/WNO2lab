@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import (
-    QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QInputDialog, 
+    QGraphicsScene, QGraphicsTextItem, QInputDialog, 
     QMessageBox, QMenu, QGraphicsView, QPushButton, QGraphicsProxyWidget
 )
 from PyQt5.QtCore import Qt, QPointF
-from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QCursor
+from PyQt5.QtGui import QColor, QPen, QFont, QLinearGradient, QCursor
 from game_objects import CellUnit
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, FONT_FAMILY, EDITOR_TITLE_FONT_SIZE, EDITOR_SUBTITLE_FONT_SIZE, EDITOR_INSTRUCTION_FONT_SIZE
 import json

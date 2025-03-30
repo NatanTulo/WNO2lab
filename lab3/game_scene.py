@@ -1,12 +1,13 @@
 from PyQt5.QtWidgets import QGraphicsScene, QMenu, QMessageBox
 from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
-from PyQt5.QtGui import QPainter, QColor, QPen, QRadialGradient, QFont, QTransform, QCursor
+from PyQt5.QtGui import QColor, QPen, QRadialGradient, QFont, QTransform, QCursor
 import math
 import json
 import os
+import time
 from game_objects import CellUnit, CellConnection
-from game_ai import GameAI  # Nowy import
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS, TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE, GAME_OVER_FONT_SIZE
+from game_ai import GameAI
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS, TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE, GAME_OVER_FONT_SIZE, FREEZE_DURATION_SECONDS
 
 class GameScene(QGraphicsScene):
     """Main game scene class"""
@@ -49,6 +50,7 @@ class GameScene(QGraphicsScene):
         self.turn_timer = QTimer()
 
         self.logger = None  # dodany atrybut logger
+        self.powerup_active = None  # Nowy atrybut: typ aktywnego powerupu
 
     def drawBackground(self, painter, rect):
         # Ustawienie radialnego gradientu: środek jasny fiolent, krawędzie ciemny fiolent
@@ -180,7 +182,9 @@ class GameScene(QGraphicsScene):
         # Update connection animations and handle unit transfers
         for conn in self.connections:
             if conn.connection_type in ["player", "enemy"]:
-                # Aktualizacja postępu każdej kropki
+                # Jeżeli którakolwiek komórka jest zamrożona, pomijamy animację mostu
+                if conn.source_cell.frozen or conn.target_cell.frozen:
+                    continue
                 finished = []
                 for i in range(len(conn.dots)):
                     conn.dots[i] += 0.016  # przybliżony przyrost dla 60 FPS
@@ -242,6 +246,41 @@ class GameScene(QGraphicsScene):
         self.update()  # Odświeżamy scenę, aby pokazać zmiany
 
     def mousePressEvent(self, event):
+        # Obsługa powerupu przed standardowym zachowaniem
+        if self.powerup_active is not None:
+            clicked_item = self.itemAt(event.scenePos(), QTransform())
+            if isinstance(clicked_item, CellUnit):
+                if self.powerup_active == "freeze":
+                    if clicked_item.cell_type == "enemy":
+                        clicked_item.frozen = True
+                        clicked_item.freeze_end_time = time.time() + FREEZE_DURATION_SECONDS  # 5 sekund zamrożenia
+                        if self.logger:
+                            self.logger.log("GameScene: Komórka przeciwnika zamrożona.")
+                    else:
+                        QMessageBox.information(None, "Powerup", "Wybierz komórkę przeciwnika do zamrożenia.")
+                elif self.powerup_active == "takeover":
+                    if clicked_item.cell_type == "enemy":
+                        clicked_item.cell_type = "player"
+                        clicked_item.update()
+                        if self.logger:
+                            self.logger.log("GameScene: Komórka przeciwnika przejęta.")
+                    else:
+                        QMessageBox.information(None, "Powerup", "Wybierz komórkę przeciwnika do przejęcia.")
+                elif self.powerup_active == "add_points":
+                    if clicked_item.cell_type in ["player", "enemy"]:
+                        clicked_item.points += 10
+                        clicked_item.strength = (clicked_item.points // 10) + 1
+                        clicked_item.update()
+                        if self.logger:
+                            self.logger.log("GameScene: Dodano 10 punktów do komórki.")
+                self.powerup_active = None
+                self.update()
+                event.accept()
+                return
+            else:
+                QMessageBox.information(None, "Powerup", "Nie kliknięto na komórkę.")
+                self.powerup_active = None
+        
         clicked_item = self.itemAt(event.scenePos(), QTransform())
         
         # Najpierw resetujemy poprzednie podświetlenia
@@ -417,7 +456,6 @@ class GameScene(QGraphicsScene):
     def show_return_button(self):
         # Dodanie przycisku powrotu do menu
         if self.game_over_text:
-            from PyQt5.QtWidgets import QPushButton
             parent_widget = self.views()[0] if self.views() else None
             if parent_widget and parent_widget.parent():
                 msgBox = QMessageBox(parent_widget)
@@ -445,6 +483,9 @@ class GameScene(QGraphicsScene):
         # Dla każdego mostu gracza przesyłamy kropkę, jeśli komórka źródłowa ma wystarczająco punktów
         for conn in self.connections:
             if conn.connection_type in ["player", "enemy"]:
+                # Jeżeli którakolwiek komórka jest zamrożona, pomijamy transfer punktów przez most
+                if conn.source_cell.frozen or conn.target_cell.frozen:
+                    continue
                 if conn.source_cell.points >= 1:
                     conn.source_cell.points -= 1
                     conn.source_cell.strength = (conn.source_cell.points // 10) + 1
@@ -673,6 +714,12 @@ class GameScene(QGraphicsScene):
             QMessageBox.information(None, "Podpowiedź", "Brak sugerowanych ruchów.")
         
         self.update()  # Odświeżenie sceny, aby pokazać podpowiedź
+
+    def activate_powerup(self, powerup_type):
+        self.powerup_active = powerup_type
+        if self.logger:
+            self.logger.log(f"GameScene: Powerup '{powerup_type}' aktywowany. Kliknij na docelową komórkę.")
+        QMessageBox.information(None, "Powerup", f"Powerup '{powerup_type}' aktywowany. Kliknij na docelową komórkę.")
 
     def keyPressEvent(self, event):
         # Obsługa klawisza H - pokaż podpowiedź

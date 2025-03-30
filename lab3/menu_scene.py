@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsItem
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal
-from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap
+from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap, QPainterPath
 import resources_rc #pyrcc5 resources.rc -o resources_rc.py
 import json
 import os
@@ -20,7 +20,6 @@ class SwitchButton(QGraphicsItem):
         return QRectF(0, 0, self.width, self.height)
         
     def shape(self):
-        from PyQt5.QtGui import QPainterPath
         path = QPainterPath()
         # Zwracamy cały obszar przycisku (zaokrąglony prostokąt)
         path.addRoundedRect(self.boundingRect(), self.height/2, self.height/2)
