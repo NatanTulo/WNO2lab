@@ -5,6 +5,7 @@ from game_scene import GameScene
 from menu_scene import MenuScene
 from level_editor_scene import LevelEditorScene  # Nowy import
 from logger import Logger  # nowy import
+from config import WINDOW_WIDTH, WINDOW_HEIGHT  # zmieniony import
 
 class GameWindow(QMainWindow):
     def __init__(self):
@@ -45,7 +46,7 @@ class GameWindow(QMainWindow):
         self.view.setRenderHints(self.view.renderHints())
         self.view.setViewportUpdateMode(self.view.FullViewportUpdate)
         self.setCentralWidget(self.view)
-        self.resize(1280, 720)
+        self.resize(int(WINDOW_WIDTH + WINDOW_WIDTH/10), int(WINDOW_HEIGHT + WINDOW_HEIGHT/10))
         
         # Połączenie sygnałów z menu
         self.menu_scene.level_selected = self.start_game

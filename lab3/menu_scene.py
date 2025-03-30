@@ -4,6 +4,7 @@ from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap
 import resources_rc #pyrcc5 resources.rc -o resources_rc.py
 import json
 import os
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, MENU_TITLE_FONT_SIZE, MENU_LEVEL_TITLE_FONT_SIZE, MENU_SWITCH_LABEL_FONT_SIZE, MENU_LEVEL_BUTTON_WIDTH, FONT_FAMILY, BUTTON_FONT_SIZE
 
 class SwitchButton(QGraphicsItem):
     def __init__(self, width=60, height=30, parent=None):
@@ -51,7 +52,7 @@ class MenuScene(QGraphicsScene):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.logger = None  # dodany atrybut logger
-        self.setSceneRect(0, 0, 800, 600)
+        self.setSceneRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
         self.level_buttons = []
         self.levels_data = []
         self.turn_based = False  # Tryb turowy domyślnie wyłączony
@@ -74,7 +75,7 @@ class MenuScene(QGraphicsScene):
     def setup_menu(self):
         # Tytuł
         title = QGraphicsTextItem("Cell Expansion Wars")
-        title.setFont(QFont("Arial", 36, QFont.Bold))
+        title.setFont(QFont(FONT_FAMILY, MENU_TITLE_FONT_SIZE, QFont.Bold))
         title.setDefaultTextColor(Qt.white)
         
         # Wyśrodkowanie tytułu
@@ -84,7 +85,7 @@ class MenuScene(QGraphicsScene):
         
         # Wybór poziomu
         level_title = QGraphicsTextItem("Wybierz poziom:")
-        level_title.setFont(QFont("Arial", 24))
+        level_title.setFont(QFont(FONT_FAMILY, MENU_LEVEL_TITLE_FONT_SIZE))
         level_title.setDefaultTextColor(Qt.white)
         
         # Wyśrodkowanie tekstu "Wybierz poziom"
@@ -94,7 +95,7 @@ class MenuScene(QGraphicsScene):
         
         # Tworzenie przycisków poziomów
         y_pos = 250
-        button_width = 300  # Szerszy przycisk dla tekstu
+        button_width = MENU_LEVEL_BUTTON_WIDTH  # Szerszy przycisk dla tekstu
         
         for i, level in enumerate(self.levels_data):
             button_x = (self.width() - button_width) / 2  # Wyśrodkowanie przycisku
@@ -110,7 +111,7 @@ class MenuScene(QGraphicsScene):
 
         # Dodaj etykietę opisującą przełącznik trybu turowego
         switch_label = QGraphicsTextItem("Tryb turowy")
-        switch_label.setFont(QFont("Arial", 16))
+        switch_label.setFont(QFont(FONT_FAMILY, MENU_SWITCH_LABEL_FONT_SIZE))
         switch_label.setDefaultTextColor(Qt.white)
         switch_label_width = switch_label.boundingRect().width()
         switch_label.setPos((self.width() - switch_label_width) / 2, 460)
@@ -147,7 +148,7 @@ class MenuScene(QGraphicsScene):
 
                 self.text_item = QGraphicsTextItem(text, self.left_rect)
                 self.text_item.setDefaultTextColor(Qt.white)
-                self.text_item.setFont(QFont("Arial", 14))
+                self.text_item.setFont(QFont(FONT_FAMILY, BUTTON_FONT_SIZE))
                 self.update_text_position(x, y, left_width, height)
 
                 # Dodajemy utworzenie prawego prostokąta z ikoną

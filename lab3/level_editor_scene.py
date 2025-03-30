@@ -5,13 +5,14 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QCursor
 from game_objects import CellUnit
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, FONT_FAMILY, EDITOR_TITLE_FONT_SIZE, EDITOR_SUBTITLE_FONT_SIZE, EDITOR_INSTRUCTION_FONT_SIZE
 import json
 import os
 
 class LevelEditorScene(QGraphicsScene):
     def __init__(self, level_id=1, parent=None):
         super().__init__(parent)
-        self.setSceneRect(0, 0, 800, 600)
+        self.setSceneRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
         self.level_id = level_id
         self.cells = []
         self.dragging_cell = None
@@ -25,7 +26,7 @@ class LevelEditorScene(QGraphicsScene):
     def setup_ui(self):
         # Tytuł
         title = QGraphicsTextItem("Edytor poziomów")
-        title.setFont(QFont("Arial", 24, QFont.Bold))
+        title.setFont(QFont(FONT_FAMILY, EDITOR_TITLE_FONT_SIZE, QFont.Bold))
         title.setDefaultTextColor(Qt.white)
         title_width = title.boundingRect().width()
         title.setPos((self.width() - title_width) / 2, 20)
@@ -33,7 +34,7 @@ class LevelEditorScene(QGraphicsScene):
         
         # Informacje o poziomie
         level_text = QGraphicsTextItem(f"Edycja poziomu {self.level_id}: {self.level_name}")
-        level_text.setFont(QFont("Arial", 16))
+        level_text.setFont(QFont(FONT_FAMILY, EDITOR_SUBTITLE_FONT_SIZE))
         level_text.setDefaultTextColor(Qt.white)
         level_text_width = level_text.boundingRect().width()
         level_text.setPos((self.width() - level_text_width) / 2, 60)
@@ -52,7 +53,7 @@ class LevelEditorScene(QGraphicsScene):
         y_pos = 100
         for instruction in instructions:
             text = QGraphicsTextItem(instruction)
-            text.setFont(QFont("Arial", 12))
+            text.setFont(QFont(FONT_FAMILY, EDITOR_INSTRUCTION_FONT_SIZE))
             text.setDefaultTextColor(Qt.white)
             text.setPos(20, y_pos)
             self.addItem(text)

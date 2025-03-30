@@ -6,13 +6,14 @@ import json
 import os
 from game_objects import CellUnit, CellConnection
 from game_ai import GameAI  # Nowy import
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS, TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE, GAME_OVER_FONT_SIZE
 
 class GameScene(QGraphicsScene):
     """Main game scene class"""
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setSceneRect(0, 0, 800, 600)
+        self.setSceneRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
         self.cells = []
         self.connections = []
         self.current_level = 1
@@ -25,7 +26,7 @@ class GameScene(QGraphicsScene):
         # Nowy timer do dodawania punktów co 2000 ms
         self.points_timer = QTimer()
         self.points_timer.timeout.connect(self.add_points)
-        self.points_timer.start(2000)
+        self.points_timer.start(POINTS_INTERVAL_MS)
         self.game_over_text = None  # Dodano atrybut na komunikat końca gry
         
         # Nowy kod: Inicjalizacja AI i atrybutów do podpowiedzi
@@ -43,7 +44,7 @@ class GameScene(QGraphicsScene):
         # Nowe atrybuty dla trybu turowego
         self.turn_based_mode = False
         self.current_turn = None  # "player" lub "enemy"
-        self.turn_duration = 10  # czas trwania tury w sekundach
+        self.turn_duration = TURN_DURATION_SECONDS
         self.round_time_remaining = self.turn_duration
         self.turn_timer = QTimer()
 
@@ -437,7 +438,7 @@ class GameScene(QGraphicsScene):
         # Rysowanie informacji o turze i czasie rundy
         if self.turn_based_mode and self.current_turn:
             info_text = f"Runda: {self.current_turn.upper()} - Pozostało: {self.round_time_remaining}s"
-            font = QFont("Arial", 16, QFont.Bold)
+            font = QFont(FONT_FAMILY, GAME_TURN_FONT_SIZE, QFont.Bold)
             painter.setFont(font)
             painter.setPen(QPen(Qt.white))
             painter.drawText(rect.adjusted(10, 10, -10, -10), Qt.AlignTop | Qt.AlignHCenter, info_text)
@@ -486,7 +487,7 @@ class GameScene(QGraphicsScene):
                 painter.drawEllipse(QRectF(x - dot_radius, y - dot_radius, dot_radius * 2, dot_radius * 2))
         # Dodano rysowanie komunikatu końca gry
         if self.game_over_text is not None:
-            font = QFont("Arial", 36, QFont.Bold)
+            font = QFont(FONT_FAMILY, GAME_OVER_FONT_SIZE, QFont.Bold)
             painter.setFont(font)
             text = self.game_over_text
             scene_rect = self.sceneRect()
@@ -715,7 +716,7 @@ class GameScene(QGraphicsScene):
         self.current_turn = "player"  # Zaczynamy od gracza
         self.round_time_remaining = self.turn_duration
         self.turn_timer.timeout.connect(self.update_turn_timer)
-        self.turn_timer.start(1000)
+        self.turn_timer.start(TURN_TIMER_INTERVAL_MS)
         self.update()
         
     def update_turn_timer(self):

@@ -2,18 +2,19 @@ from PyQt5.QtWidgets import QGraphicsItem
 from PyQt5.QtCore import QRectF, QPointF, Qt
 from PyQt5.QtGui import QPainter, QPen, QRadialGradient, QFont, QColor
 import math
+from config import DEFAULT_CELL_RADIUS, POINTS_PER_STRENGTH, COLOR_PLAYER, COLOR_ENEMY, COLOR_NEUTRAL, FONT_FAMILY
 
 class CellUnit(QGraphicsItem):
     """Base class for all cell units in the game"""
     
-    def __init__(self, x, y, cell_type, points=10, radius = 30):  # zmieniono "strength" na "points" i ustawiono domyślnie na 10
+    def __init__(self, x, y, cell_type, points=10, radius=DEFAULT_CELL_RADIUS):
         super().__init__()
         self.x = x
         self.y = y
         self.radius = radius
         self.cell_type = cell_type  # e.g., "player", "enemy", "neutral"
         self.points = points  # punkty to podstawowa waluta
-        self.strength = (self.points // 10) + 1  # strength wynika z punktów
+        self.strength = (self.points // POINTS_PER_STRENGTH) + 1  # strength wynika z punktów
         self.connections = []  # List of connected cells
         self.highlighted = False  # Nowy atrybut określający czy komórka jest podświetlona
         
@@ -42,11 +43,11 @@ class CellUnit(QGraphicsItem):
         effective_radius = self.radius * (1 + 0.2 * (self.strength - 1))  # łagodniejszy wzrost promienia
         # Set color based on cell type
         if self.cell_type == "player":
-            base_color = QColor(0, 200, 100)  # Green for player
+            base_color = COLOR_PLAYER  # Green for player
         elif self.cell_type == "enemy":
-            base_color = QColor(200, 50, 50)  # Red for enemy
+            base_color = COLOR_ENEMY  # Red for enemy
         elif self.cell_type == "neutral":
-            base_color = QColor(200, 150, 0)  # Yellow/orange for neutral
+            base_color = COLOR_NEUTRAL  # Yellow/orange for neutral
             
         # Create gradient for cell
         gradient = QRadialGradient(self.x, self.y, effective_radius)
@@ -70,7 +71,7 @@ class CellUnit(QGraphicsItem):
         font_size = int(effective_radius / 1.5)
         if len(str(self.points)) > 2:
             font_size = int(effective_radius / 2)
-        font = QFont('Arial', font_size)
+        font = QFont(FONT_FAMILY, font_size)
         painter.setFont(font)
         painter.setPen(Qt.white)
         text_rect = QRectF(self.x - effective_radius, self.y - effective_radius, effective_radius * 2, effective_radius * 2)
@@ -109,7 +110,7 @@ class CellUnit(QGraphicsItem):
     def add_point(self):
         """Dodaje punkt do komórki oraz aktualizuje siłę"""
         self.points += 1
-        self.strength = (self.points // 10) + 1
+        self.strength = (self.points // POINTS_PER_STRENGTH) + 1
         self.update()
 
 class CellConnection:
