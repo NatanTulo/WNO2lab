@@ -8,6 +8,7 @@ from game_scene import GameScene
 from level_editor_scene import LevelEditorScene
 from logger import Logger
 from menu_scene import MenuScene
+from gesture_controller import GestureController  # <-- nowy import
 
 class DynamicGraphicsView(QGraphicsView):
     def resizeEvent(self, event):
@@ -79,6 +80,10 @@ class GameWindow(QMainWindow):
         # Przykładowe logowanie
         self.logger.log("Aplikacja uruchomiona.")
         
+        # Inicjujemy GestureController
+        self.gesture_ctrl = GestureController(self.gesture_callback)
+        self.gesture_ctrl.start()
+        
     def toggle_log_dock(self, visible):
         if visible:
             self.addDockWidget(Qt.BottomDockWidgetArea, self.log_dock)
@@ -118,6 +123,15 @@ class GameWindow(QMainWindow):
             self.game_scene.activate_powerup(powerup_type)
         else:
             QMessageBox.information(self, "Powerup", "Brak aktywnej sceny gry.")
+    
+    def gesture_callback(self, gesture):
+        # Obsługa gestów – początkowo implementujemy sterowanie kursorem przy budowie mostów
+        if gesture == "pinch":
+            self.logger.log("Gesture 'pinch' wykryty – implementacja sterowania kursorem do budowy mostów.")
+        elif gesture == "fist":
+            self.logger.log("Gesture 'fist' wykryty – zamknięta dłoń.")
+        elif gesture == "open":
+            self.logger.log("Gesture 'open' wykryty – otwarta dłoń.")
 
 def main():
     app = QApplication(sys.argv)
