@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem
 from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap
+import resources_rc #pyrcc5 resources.rc -o resources_rc.py
 import json
 import os
 
@@ -92,8 +93,7 @@ class MenuScene(QGraphicsScene):
                 self.addToGroup(self.right_rect)
 
                 # Prawa część z ikoną (placeholder)
-                pixmap_path = os.path.join(os.path.dirname(__file__), 'olowek.png')
-                self.icon_item = QGraphicsPixmapItem(QPixmap(pixmap_path), self.right_rect)
+                self.icon_item = QGraphicsPixmapItem(QPixmap(":/olowek.png"), self.right_rect)
                 self.update_icon_position(x + left_width, y, right_width, height)
 
                 for item in [self.left_rect, self.right_rect]:
