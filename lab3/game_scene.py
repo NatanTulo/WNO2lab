@@ -1,14 +1,17 @@
-import math
 import json
+import math
 import os
 import time
 
 from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
-from PyQt5.QtGui import QColor, QPen, QFont, QTransform, QCursor, QLinearGradient
-from PyQt5.QtWidgets import QGraphicsScene, QMenu, QMessageBox, QGraphicsTextItem, QGraphicsDropShadowEffect, QGraphicsItem
+from PyQt5.QtGui import QCursor, QColor, QLinearGradient, QPen, QFont, QTransform
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsDropShadowEffect, QGraphicsItem, QMenu, QMessageBox, QGraphicsTextItem
 
 import config
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS, TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE, GAME_OVER_FONT_SIZE, FREEZE_DURATION_SECONDS, POWERUP_FREEZE, POWERUP_TAKEOVER, POWERUP_ADD_POINTS, POWERUP_NEW_CELL, NEW_CELL_COPY_RANGE_FACTOR, POINTS_PER_STRENGTH
+from config import (WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS,
+                    TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE,
+                    GAME_OVER_FONT_SIZE, FREEZE_DURATION_SECONDS, POWERUP_FREEZE, POWERUP_TAKEOVER,
+                    POWERUP_ADD_POINTS, POWERUP_NEW_CELL, NEW_CELL_COPY_RANGE_FACTOR, POINTS_PER_STRENGTH)
 from game_ai import GameAI
 from game_objects import CellUnit, CellConnection
 import game_history  # dodany import do zapisu replay
@@ -633,11 +636,19 @@ class GameScene(QGraphicsScene):
             "timestamp": time.time(),
             "description": f"Status przed ostatnim ruchem: {points_status}"
         })
-
         # Zapis ostatecznego wyniku
         self.move_history.append({
             "timestamp": time.time(),
             "description": f"Wynik: {final_result}"
+        })
+        # Dodane: ponowny zapis finalnego stanu po ogłoszeniu wyniku
+        final_status = "; ".join(
+            f"({cell.cell_type} @ {int(cell.x)},{int(cell.y)}: {cell.points} pts)"
+            for cell in self.cells
+        )
+        self.move_history.append({
+            "timestamp": time.time(),
+            "description": f"Status po ogłoszeniu wyniku: {final_status}"
         })
         self.update()
         game_history.save_game_history(self, "replay.xml")  # automatyczny zapis replay

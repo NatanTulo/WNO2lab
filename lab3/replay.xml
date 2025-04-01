@@ -2,703 +2,361 @@
 <GameHistory>
     <InitialState>
         <Cells>
-            <Cell x="465.0" y="310.0" type="player" points="3" />
-            <Cell x="415.0" y="460.0" type="player" points="7" />
-            <Cell x="865.0" y="260.0" type="enemy" points="2" />
-            <Cell x="765.0" y="410.0" type="enemy" points="1" />
-            <Cell x="615.0" y="360.0" type="neutral" points="14" />
+            <Cell x="390.0" y="210.0" type="player" points="9" />
+            <Cell x="890.0" y="210.0" type="enemy" points="0" />
+            <Cell x="640.0" y="360.0" type="neutral" points="0" />
+            <Cell x="390.0" y="510.0" type="neutral" points="3" />
+            <Cell x="890.0" y="510.0" type="neutral" points="3" />
         </Cells>
     </InitialState>
     <Moves>
-        <Move timestamp="1743537712.7370534">
+        <Move timestamp="1743539903.1419346">
             <Status>
-                <Cell type="player" x="465" y="310" points="30" />
-                <Cell type="player" x="415" y="460" points="2" />
-                <Cell type="enemy" x="865" y="260" points="30" />
-                <Cell type="enemy" x="765" y="410" points="2" />
-                <Cell type="neutral" x="615" y="360" points="2" />
+                <Cell type="player" x="390" y="210" points="40" />
+                <Cell type="enemy" x="890" y="210" points="20" />
+                <Cell type="neutral" x="640" y="360" points="5" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
             </Status>
         </Move>
-        <Move timestamp="1743537713.7450213">
+        <Move timestamp="1743539904.1500654">
             <Status>
-                <Cell type="player" x="465" y="310" points="30" />
-                <Cell type="player" x="415" y="460" points="2" />
-                <Cell type="enemy" x="865" y="260" points="30" />
-                <Cell type="enemy" x="765" y="410" points="2" />
-                <Cell type="neutral" x="615" y="360" points="2" />
+                <Cell type="player" x="390" y="210" points="40" />
+                <Cell type="enemy" x="890" y="210" points="20" />
+                <Cell type="neutral" x="640" y="360" points="5" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
             </Status>
         </Move>
-        <Move timestamp="1743537714.6720178">
+        <Move timestamp="1743539904.4367676">
             <CreateBridge>
-                <Source>465,310</Source>
-                <Target>615,360</Target>
-                <Cost>7</Cost>
+                <Source>390,210</Source>
+                <Target>640,360</Target>
+                <Cost>14</Cost>
             </CreateBridge>
         </Move>
-        <Move timestamp="1743537714.7126682">
+        <Move timestamp="1743539905.1253955">
             <Status>
-                <Cell type="player" x="465" y="310" points="23" />
-                <Cell type="player" x="415" y="460" points="3" />
-                <Cell type="enemy" x="865" y="260" points="31" />
-                <Cell type="enemy" x="765" y="410" points="3" />
-                <Cell type="neutral" x="615" y="360" points="2" />
+                <Cell type="player" x="390" y="210" points="26" />
+                <Cell type="enemy" x="890" y="210" points="21" />
+                <Cell type="neutral" x="640" y="360" points="5" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
             </Status>
         </Move>
-        <Move timestamp="1743537714.7539306">
+        <Move timestamp="1743539905.158712">
             <Status>
-                <Cell type="player" x="465" y="310" points="23" />
-                <Cell type="player" x="415" y="460" points="3" />
-                <Cell type="enemy" x="865" y="260" points="31" />
-                <Cell type="enemy" x="765" y="410" points="3" />
-                <Cell type="neutral" x="615" y="360" points="2" />
+                <Cell type="player" x="390" y="210" points="26" />
+                <Cell type="enemy" x="890" y="210" points="21" />
+                <Cell type="neutral" x="640" y="360" points="5" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
             </Status>
         </Move>
-        <Move timestamp="1743537715.4972095">
-            <CreateBridge>
-                <Source>465,310</Source>
-                <Target>765,410</Target>
-                <Cost>15</Cost>
-            </CreateBridge>
-        </Move>
-        <Move timestamp="1743537715.7615745">
-            <Status>
-                <Cell type="player" x="465" y="310" points="8" />
-                <Cell type="player" x="415" y="460" points="3" />
-                <Cell type="enemy" x="865" y="260" points="31" />
-                <Cell type="enemy" x="765" y="410" points="3" />
-                <Cell type="neutral" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537716.7107866">
-            <Status>
-                <Cell type="player" x="465" y="310" points="7" />
-                <Cell type="player" x="415" y="460" points="4" />
-                <Cell type="enemy" x="865" y="260" points="32" />
-                <Cell type="enemy" x="765" y="410" points="4" />
-                <Cell type="neutral" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537716.7692018">
-            <Status>
-                <Cell type="player" x="465" y="310" points="7" />
-                <Cell type="player" x="415" y="460" points="4" />
-                <Cell type="enemy" x="865" y="260" points="32" />
-                <Cell type="enemy" x="765" y="410" points="4" />
-                <Cell type="neutral" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537717.3581886">
+        <Move timestamp="1743539906.1070416">
             <RemoveBridge>
-                <Source>465,310</Source>
-                <Target>615,360</Target>
+                <Source>390,210</Source>
+                <Target>640,360</Target>
             </RemoveBridge>
         </Move>
-        <Move timestamp="1743537717.3602002">
-            <RemoveBridge>
-                <Source>465,310</Source>
-                <Target>765,410</Target>
-            </RemoveBridge>
-        </Move>
-        <Move timestamp="1743537717.7780035">
+        <Move timestamp="1743539906.165957">
             <Status>
-                <Cell type="player" x="465" y="310" points="12" />
-                <Cell type="player" x="415" y="460" points="4" />
-                <Cell type="enemy" x="865" y="260" points="32" />
-                <Cell type="player" x="765" y="410" points="8" />
-                <Cell type="player" x="615" y="360" points="4" />
+                <Cell type="player" x="390" y="210" points="30" />
+                <Cell type="enemy" x="890" y="210" points="21" />
+                <Cell type="player" x="640" y="360" points="5" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
             </Status>
         </Move>
-        <Move timestamp="1743537718.7121654">
+        <Move timestamp="1743539907.1185546">
             <Status>
-                <Cell type="player" x="465" y="310" points="13" />
-                <Cell type="player" x="415" y="460" points="5" />
-                <Cell type="enemy" x="865" y="260" points="33" />
-                <Cell type="player" x="765" y="410" points="9" />
-                <Cell type="player" x="615" y="360" points="5" />
+                <Cell type="player" x="390" y="210" points="31" />
+                <Cell type="enemy" x="890" y="210" points="22" />
+                <Cell type="player" x="640" y="360" points="6" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
             </Status>
         </Move>
-        <Move timestamp="1743537718.7851822">
+        <Move timestamp="1743539907.1736789">
             <Status>
-                <Cell type="player" x="465" y="310" points="13" />
-                <Cell type="player" x="415" y="460" points="5" />
-                <Cell type="enemy" x="865" y="260" points="33" />
-                <Cell type="player" x="765" y="410" points="9" />
-                <Cell type="player" x="615" y="360" points="5" />
+                <Cell type="player" x="390" y="210" points="31" />
+                <Cell type="enemy" x="890" y="210" points="22" />
+                <Cell type="player" x="640" y="360" points="6" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
             </Status>
         </Move>
-        <Move timestamp="1743537719.7930105">
-            <Status>
-                <Cell type="player" x="465" y="310" points="13" />
-                <Cell type="player" x="415" y="460" points="5" />
-                <Cell type="enemy" x="865" y="260" points="33" />
-                <Cell type="player" x="765" y="410" points="9" />
-                <Cell type="player" x="615" y="360" points="5" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537720.7132442">
-            <Status>
-                <Cell type="player" x="465" y="310" points="14" />
-                <Cell type="player" x="415" y="460" points="6" />
-                <Cell type="enemy" x="865" y="260" points="34" />
-                <Cell type="player" x="765" y="410" points="10" />
-                <Cell type="player" x="615" y="360" points="6" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537720.8016775">
-            <Status>
-                <Cell type="player" x="465" y="310" points="14" />
-                <Cell type="player" x="415" y="460" points="6" />
-                <Cell type="enemy" x="865" y="260" points="34" />
-                <Cell type="player" x="765" y="410" points="10" />
-                <Cell type="player" x="615" y="360" points="6" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537721.809538">
-            <Status>
-                <Cell type="player" x="465" y="310" points="14" />
-                <Cell type="player" x="415" y="460" points="6" />
-                <Cell type="enemy" x="865" y="260" points="34" />
-                <Cell type="player" x="765" y="410" points="10" />
-                <Cell type="player" x="615" y="360" points="6" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537722.7211862">
-            <Status>
-                <Cell type="player" x="465" y="310" points="15" />
-                <Cell type="player" x="415" y="460" points="7" />
-                <Cell type="enemy" x="865" y="260" points="35" />
-                <Cell type="player" x="765" y="410" points="11" />
-                <Cell type="player" x="615" y="360" points="7" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537722.8177555">
-            <Status>
-                <Cell type="player" x="465" y="310" points="15" />
-                <Cell type="player" x="415" y="460" points="7" />
-                <Cell type="enemy" x="865" y="260" points="35" />
-                <Cell type="player" x="765" y="410" points="11" />
-                <Cell type="player" x="615" y="360" points="7" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537723.825381">
-            <Status>
-                <Cell type="player" x="465" y="310" points="15" />
-                <Cell type="player" x="415" y="460" points="7" />
-                <Cell type="enemy" x="865" y="260" points="35" />
-                <Cell type="player" x="765" y="410" points="11" />
-                <Cell type="player" x="615" y="360" points="7" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537724.712642">
-            <Status>
-                <Cell type="player" x="465" y="310" points="16" />
-                <Cell type="player" x="415" y="460" points="8" />
-                <Cell type="enemy" x="865" y="260" points="36" />
-                <Cell type="player" x="765" y="410" points="12" />
-                <Cell type="player" x="615" y="360" points="8" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537724.8330092">
-            <Status>
-                <Cell type="player" x="465" y="310" points="16" />
-                <Cell type="player" x="415" y="460" points="8" />
-                <Cell type="enemy" x="865" y="260" points="36" />
-                <Cell type="player" x="765" y="410" points="12" />
-                <Cell type="player" x="615" y="360" points="8" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537725.841623">
-            <Status>
-                <Cell type="player" x="465" y="310" points="16" />
-                <Cell type="player" x="415" y="460" points="8" />
-                <Cell type="enemy" x="865" y="260" points="36" />
-                <Cell type="player" x="765" y="410" points="12" />
-                <Cell type="player" x="615" y="360" points="8" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537725.8803313">
+        <Move timestamp="1743539908.167575">
             <CreateBridge>
-                <Source>465,310</Source>
-                <Target>615,360</Target>
-                <Cost>7</Cost>
+                <Source>390,210</Source>
+                <Target>890,210</Target>
+                <Cost>25</Cost>
             </CreateBridge>
         </Move>
-        <Move timestamp="1743537726.4389043">
+        <Move timestamp="1743539908.181611">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="22" />
+                <Cell type="player" x="640" y="360" points="6" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539909.1229904">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="7" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539909.1897292">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="7" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539910.198003">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="22" />
+                <Cell type="player" x="640" y="360" points="7" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539911.1191366">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="8" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539911.2065368">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="8" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539912.2138762">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="22" />
+                <Cell type="player" x="640" y="360" points="8" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539913.1171854">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="9" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539913.2218096">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="9" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539914.2299852">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="22" />
+                <Cell type="player" x="640" y="360" points="9" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539915.1234548">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="10" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539915.2386982">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="10" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539916.2455382">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="22" />
+                <Cell type="player" x="640" y="360" points="10" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539917.1255176">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="11" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539917.2537153">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="11" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539918.2621942">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="22" />
+                <Cell type="player" x="640" y="360" points="11" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539919.119807">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="12" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539919.2698321">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="12" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539920.277399">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="22" />
+                <Cell type="player" x="640" y="360" points="12" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539921.1256695">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="13" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539921.2856498">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="13" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539922.2934864">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="22" />
+                <Cell type="player" x="640" y="360" points="13" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539923.1202896">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="14" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539923.3016887">
+            <Status>
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="23" />
+                <Cell type="player" x="640" y="360" points="14" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
+            </Status>
+        </Move>
+        <Move timestamp="1743539923.7266316">
             <CreateBridge>
-                <Source>765,410</Source>
-                <Target>615,360</Target>
-                <Cost>7</Cost>
+                <Source>640,360</Source>
+                <Target>890,210</Target>
+                <Cost>14</Cost>
             </CreateBridge>
         </Move>
-        <Move timestamp="1743537726.7138317">
+        <Move timestamp="1743539924.30946">
             <Status>
-                <Cell type="player" x="465" y="310" points="9" />
-                <Cell type="player" x="415" y="460" points="9" />
-                <Cell type="enemy" x="865" y="260" points="37" />
-                <Cell type="player" x="765" y="410" points="5" />
-                <Cell type="player" x="615" y="360" points="9" />
+                <Cell type="player" x="390" y="210" points="6" />
+                <Cell type="enemy" x="890" y="210" points="22" />
+                <Cell type="player" x="640" y="360" points="0" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
             </Status>
         </Move>
-        <Move timestamp="1743537726.849014">
-            <Status>
-                <Cell type="player" x="465" y="310" points="9" />
-                <Cell type="player" x="415" y="460" points="9" />
-                <Cell type="enemy" x="865" y="260" points="37" />
-                <Cell type="player" x="765" y="410" points="5" />
-                <Cell type="player" x="615" y="360" points="9" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537727.8571382">
-            <Status>
-                <Cell type="player" x="465" y="310" points="9" />
-                <Cell type="player" x="415" y="460" points="9" />
-                <Cell type="enemy" x="865" y="260" points="37" />
-                <Cell type="player" x="765" y="410" points="5" />
-                <Cell type="player" x="615" y="360" points="11" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537728.148207">
-            <CreateBridge>
-                <Source>415,460</Source>
-                <Target>465,310</Target>
-                <Cost>7</Cost>
-            </CreateBridge>
-        </Move>
-        <Move timestamp="1743537728.6722598">
+        <Move timestamp="1743539924.95872">
             <RemoveBridge>
-                <Source>415,460</Source>
-                <Target>465,310</Target>
+                <Source>390,210</Source>
+                <Target>890,210</Target>
             </RemoveBridge>
         </Move>
-        <Move timestamp="1743537728.7120852">
-            <Status>
-                <Cell type="player" x="465" y="310" points="13" />
-                <Cell type="player" x="415" y="460" points="6" />
-                <Cell type="enemy" x="865" y="260" points="38" />
-                <Cell type="player" x="765" y="410" points="5" />
-                <Cell type="player" x="615" y="360" points="12" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537728.8398135">
-            <RemoveBridge>
-                <Source>765,410</Source>
-                <Target>615,360</Target>
-            </RemoveBridge>
-        </Move>
-        <Move timestamp="1743537728.8659291">
-            <Status>
-                <Cell type="player" x="465" y="310" points="13" />
-                <Cell type="player" x="415" y="460" points="6" />
-                <Cell type="enemy" x="865" y="260" points="38" />
-                <Cell type="player" x="765" y="410" points="8" />
-                <Cell type="player" x="615" y="360" points="16" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537729.501322">
-            <RemoveBridge>
-                <Source>465,310</Source>
-                <Target>615,360</Target>
-            </RemoveBridge>
-        </Move>
-        <Move timestamp="1743537729.87301">
-            <Status>
-                <Cell type="player" x="465" y="310" points="15" />
-                <Cell type="player" x="415" y="460" points="6" />
-                <Cell type="enemy" x="865" y="260" points="38" />
-                <Cell type="player" x="765" y="410" points="8" />
-                <Cell type="player" x="615" y="360" points="21" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537730.4483643">
-            <CreateBridge>
-                <Source>615,360</Source>
-                <Target>865,260</Target>
-                <Cost>13</Cost>
-            </CreateBridge>
-        </Move>
-        <Move timestamp="1743537730.7112448">
-            <Status>
-                <Cell type="player" x="465" y="310" points="16" />
-                <Cell type="player" x="415" y="460" points="7" />
-                <Cell type="enemy" x="865" y="260" points="39" />
-                <Cell type="player" x="765" y="410" points="9" />
-                <Cell type="player" x="615" y="360" points="8" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537730.8814037">
-            <Status>
-                <Cell type="player" x="465" y="310" points="16" />
-                <Cell type="player" x="415" y="460" points="7" />
-                <Cell type="enemy" x="865" y="260" points="39" />
-                <Cell type="player" x="765" y="410" points="9" />
-                <Cell type="player" x="615" y="360" points="8" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537730.949103">
-            <RemoveBridge>
-                <Source>615,360</Source>
-                <Target>865,260</Target>
-            </RemoveBridge>
-        </Move>
-        <Move timestamp="1743537731.889006">
-            <Status>
-                <Cell type="player" x="465" y="310" points="16" />
-                <Cell type="player" x="415" y="460" points="7" />
-                <Cell type="enemy" x="865" y="260" points="30" />
-                <Cell type="player" x="765" y="410" points="9" />
-                <Cell type="player" x="615" y="360" points="12" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537732.7212157">
-            <Status>
-                <Cell type="player" x="465" y="310" points="17" />
-                <Cell type="player" x="415" y="460" points="8" />
-                <Cell type="enemy" x="865" y="260" points="31" />
-                <Cell type="player" x="765" y="410" points="10" />
-                <Cell type="player" x="615" y="360" points="13" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537732.897245">
-            <Status>
-                <Cell type="player" x="465" y="310" points="17" />
-                <Cell type="player" x="415" y="460" points="8" />
-                <Cell type="enemy" x="865" y="260" points="31" />
-                <Cell type="player" x="765" y="410" points="10" />
-                <Cell type="player" x="615" y="360" points="13" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537732.9550707">
-            <CreateBridge>
-                <Source>765,410</Source>
-                <Target>865,260</Target>
-                <Cost>9</Cost>
-            </CreateBridge>
-        </Move>
-        <Move timestamp="1743537733.9051397">
-            <Status>
-                <Cell type="player" x="465" y="310" points="17" />
-                <Cell type="player" x="415" y="460" points="8" />
-                <Cell type="enemy" x="865" y="260" points="31" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="13" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537734.7132504">
-            <Status>
-                <Cell type="player" x="465" y="310" points="18" />
-                <Cell type="player" x="415" y="460" points="9" />
-                <Cell type="enemy" x="865" y="260" points="32" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="14" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537734.849917">
-            <CreateBridge>
-                <Source>615,360</Source>
-                <Target>865,260</Target>
-                <Cost>13</Cost>
-            </CreateBridge>
-        </Move>
-        <Move timestamp="1743537734.9132116">
-            <Status>
-                <Cell type="player" x="465" y="310" points="18" />
-                <Cell type="player" x="415" y="460" points="9" />
-                <Cell type="enemy" x="865" y="260" points="32" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537735.9216485">
-            <Status>
-                <Cell type="player" x="465" y="310" points="18" />
-                <Cell type="player" x="415" y="460" points="9" />
-                <Cell type="enemy" x="865" y="260" points="31" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537736.7108986">
-            <Status>
-                <Cell type="player" x="465" y="310" points="19" />
-                <Cell type="player" x="415" y="460" points="10" />
-                <Cell type="enemy" x="865" y="260" points="32" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537736.9297237">
-            <Status>
-                <Cell type="player" x="465" y="310" points="19" />
-                <Cell type="player" x="415" y="460" points="10" />
-                <Cell type="enemy" x="865" y="260" points="32" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537737.9370878">
-            <Status>
-                <Cell type="player" x="465" y="310" points="19" />
-                <Cell type="player" x="415" y="460" points="10" />
-                <Cell type="enemy" x="865" y="260" points="30" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537738.719813">
-            <Status>
-                <Cell type="player" x="465" y="310" points="20" />
-                <Cell type="player" x="415" y="460" points="11" />
-                <Cell type="enemy" x="865" y="260" points="31" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537738.9081779">
-            <CreateBridge>
-                <Source>465,310</Source>
-                <Target>615,360</Target>
-                <Cost>7</Cost>
-            </CreateBridge>
-        </Move>
-        <Move timestamp="1743537738.9450474">
-            <Status>
-                <Cell type="player" x="465" y="310" points="13" />
-                <Cell type="player" x="415" y="460" points="11" />
-                <Cell type="enemy" x="865" y="260" points="31" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537739.9539258">
-            <Status>
-                <Cell type="player" x="465" y="310" points="13" />
-                <Cell type="player" x="415" y="460" points="11" />
-                <Cell type="enemy" x="865" y="260" points="29" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537740.6138618">
-            <CreateBridge>
-                <Source>415,460</Source>
-                <Target>615,360</Target>
-                <Cost>11</Cost>
-            </CreateBridge>
-        </Move>
-        <Move timestamp="1743537740.7122257">
-            <Status>
-                <Cell type="player" x="465" y="310" points="13" />
-                <Cell type="player" x="415" y="460" points="0" />
-                <Cell type="enemy" x="865" y="260" points="30" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537740.9610155">
-            <Status>
-                <Cell type="player" x="465" y="310" points="13" />
-                <Cell type="player" x="415" y="460" points="0" />
-                <Cell type="enemy" x="865" y="260" points="30" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="1" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537741.064747">
-            <RemoveBridge>
-                <Source>465,310</Source>
-                <Target>615,360</Target>
-            </RemoveBridge>
-        </Move>
-        <Move timestamp="1743537741.149456">
-            <RemoveBridge>
-                <Source>415,460</Source>
-                <Target>615,360</Target>
-            </RemoveBridge>
-        </Move>
-        <Move timestamp="1743537741.9690273">
-            <Status>
-                <Cell type="player" x="465" y="310" points="15" />
-                <Cell type="player" x="415" y="460" points="4" />
-                <Cell type="enemy" x="865" y="260" points="28" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="13" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537742.7127233">
-            <Status>
-                <Cell type="player" x="465" y="310" points="16" />
-                <Cell type="player" x="415" y="460" points="5" />
-                <Cell type="enemy" x="865" y="260" points="29" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="13" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537742.961827">
-            <CreateBridge>
-                <Source>465,310</Source>
-                <Target>615,360</Target>
-                <Cost>7</Cost>
-            </CreateBridge>
-        </Move>
-        <Move timestamp="1743537742.9778266">
-            <Status>
-                <Cell type="player" x="465" y="310" points="9" />
-                <Cell type="player" x="415" y="460" points="5" />
-                <Cell type="enemy" x="865" y="260" points="29" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="13" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537743.2407415">
-            <RemoveBridge>
-                <Source>465,310</Source>
-                <Target>615,360</Target>
-            </RemoveBridge>
-        </Move>
-        <Move timestamp="1743537743.9852295">
-            <Status>
-                <Cell type="player" x="465" y="310" points="11" />
-                <Cell type="player" x="415" y="460" points="5" />
-                <Cell type="enemy" x="865" y="260" points="27" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="18" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537744.0530293">
-            <CreateBridge>
-                <Source>465,310</Source>
-                <Target>615,360</Target>
-                <Cost>7</Cost>
-            </CreateBridge>
-        </Move>
-        <Move timestamp="1743537744.3267126">
-            <RemoveBridge>
-                <Source>465,310</Source>
-                <Target>615,360</Target>
-            </RemoveBridge>
-        </Move>
-        <Move timestamp="1743537744.712366">
-            <Status>
-                <Cell type="player" x="465" y="310" points="7" />
-                <Cell type="player" x="415" y="460" points="6" />
-                <Cell type="enemy" x="865" y="260" points="28" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="23" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537744.946855">
-            <CreateBridge>
-                <Source>465,310</Source>
-                <Target>615,360</Target>
-                <Cost>7</Cost>
-            </CreateBridge>
-        </Move>
-        <Move timestamp="1743537744.9937882">
-            <Status>
-                <Cell type="player" x="465" y="310" points="0" />
-                <Cell type="player" x="415" y="460" points="6" />
-                <Cell type="enemy" x="865" y="260" points="28" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="23" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537745.249649">
-            <RemoveBridge>
-                <Source>465,310</Source>
-                <Target>615,360</Target>
-            </RemoveBridge>
-        </Move>
-        <Move timestamp="1743537745.773975">
-            <RemoveBridge>
-                <Source>615,360</Source>
-                <Target>865,260</Target>
-            </RemoveBridge>
-        </Move>
-        <Move timestamp="1743537746.001862">
-            <Status>
-                <Cell type="player" x="465" y="310" points="2" />
-                <Cell type="player" x="415" y="460" points="6" />
-                <Cell type="enemy" x="865" y="260" points="16" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="31" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537746.710804">
-            <Status>
-                <Cell type="player" x="465" y="310" points="3" />
-                <Cell type="player" x="415" y="460" points="7" />
-                <Cell type="enemy" x="865" y="260" points="17" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="32" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537746.9972167">
-            <CreateBridge>
-                <Source>615,360</Source>
-                <Target>865,260</Target>
-                <Cost>13</Cost>
-            </CreateBridge>
-        </Move>
-        <Move timestamp="1743537747.0097296">
-            <Status>
-                <Cell type="player" x="465" y="310" points="3" />
-                <Cell type="player" x="415" y="460" points="7" />
-                <Cell type="enemy" x="865" y="260" points="17" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="19" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537747.3133216">
-            <RemoveBridge>
-                <Source>615,360</Source>
-                <Target>865,260</Target>
-            </RemoveBridge>
-        </Move>
-        <Move timestamp="1743537747.9980955">
-            <CreateBridge>
-                <Source>615,360</Source>
-                <Target>865,260</Target>
-                <Cost>13</Cost>
-            </CreateBridge>
-        </Move>
-        <Move timestamp="1743537748.0179055">
-            <Status>
-                <Cell type="player" x="465" y="310" points="3" />
-                <Cell type="player" x="415" y="460" points="7" />
-                <Cell type="enemy" x="865" y="260" points="7" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="10" />
-            </Status>
-        </Move>
-        <Move timestamp="1743537748.3814723">
-            <RemoveBridge>
-                <Source>615,360</Source>
-                <Target>865,260</Target>
-            </RemoveBridge>
-        </Move>
-        <Move timestamp="1743537748.3879852">
+        <Move timestamp="1743539924.9688594">
             <PreFinalStatus>
-                <Cell type="player" x="465" y="310" points="3" />
-                <Cell type="player" x="415" y="460" points="7" />
-                <Cell type="player" x="865" y="260" points="2" />
-                <Cell type="player" x="765" y="410" points="1" />
-                <Cell type="player" x="615" y="360" points="14" />
+                <Cell type="player" x="390" y="210" points="9" />
+                <Cell type="player" x="890" y="210" points="0" />
+                <Cell type="player" x="640" y="360" points="0" />
+                <Cell type="neutral" x="390" y="510" points="3" />
+                <Cell type="neutral" x="890" y="510" points="3" />
             </PreFinalStatus>
         </Move>
-        <Move timestamp="1743537748.3879852">
+        <Move timestamp="1743539924.9688594">
             <Result>Wygrana!</Result>
+        </Move>
+        <Move timestamp="1743539924.9688594">
+            <Description>Status po ogłoszeniu wyniku: (player @ 390,210: 9 pts); (player @ 890,210: 0 pts); (player @ 640,360: 0 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Description>
         </Move>
     </Moves>
     <FinalState>
         <Cells>
-            <Cell x="465.0" y="310.0" type="player" points="3" />
-            <Cell x="415.0" y="460.0" type="player" points="7" />
-            <Cell x="865.0" y="260.0" type="player" points="2" />
-            <Cell x="765.0" y="410.0" type="player" points="1" />
-            <Cell x="615.0" y="360.0" type="player" points="14" />
+            <Cell x="390.0" y="210.0" type="player" points="9" />
+            <Cell x="890.0" y="210.0" type="player" points="0" />
+            <Cell x="640.0" y="360.0" type="player" points="0" />
+            <Cell x="390.0" y="510.0" type="neutral" points="3" />
+            <Cell x="890.0" y="510.0" type="neutral" points="3" />
         </Cells>
         <Connections>
-            <Connection source_index="3" target_index="2" type="player" cost="9" />
+            <Connection source_index="2" target_index="1" type="player" cost="14" />
         </Connections>
     </FinalState>
 </GameHistory>

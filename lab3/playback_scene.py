@@ -1,12 +1,17 @@
 import os
+import re
 import xml.etree.ElementTree as ET
-from PyQt5.QtCore import Qt, QTimer, QPointF
+
+from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
 from PyQt5.QtGui import QFont, QPen, QBrush, QColor, QLinearGradient
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsProxyWidget, QPushButton, QSlider, QLabel
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsProxyWidget, QPushButton, QSlider, QLabel, QMessageBox
 
 import config
 from game_history import load_game_history
 from game_objects import CellUnit, CellConnection
+
+# Dodajemy globalną flagę debugowania (domyślnie wyłączoną)
+DEBUG_MODE = False
 
 class PlaybackScene(QGraphicsScene):
     def __init__(self, history_file, parent=None):
@@ -96,11 +101,27 @@ class PlaybackScene(QGraphicsScene):
                 pen = QPen(pen_color, 3)
             painter.setPen(pen)
             painter.drawLine(source, target)
+            
+            # Dodajemy animowane kółka (dots) analogicznie do głównej gry
+            if not (hasattr(conn, 'conflict') and conn.conflict):
+                if conn.connection_type == "player":
+                    dot_color = config.COLOR_DOT_PLAYER
+                else:
+                    dot_color = config.COLOR_DOT_ENEMY
+                for progress in conn.dots:
+                    x = conn.source_cell.x + progress * (conn.target_cell.x - conn.source_cell.x)
+                    y = conn.source_cell.y + progress * (conn.target_cell.y - conn.source_cell.y)
+                    dot_radius = 4
+                    painter.setPen(Qt.NoPen)
+                    painter.setBrush(dot_color)
+                    painter.drawEllipse(QRectF(x - dot_radius, y - dot_radius, dot_radius * 2, dot_radius * 2))
 
     def animate_dots(self):
+        # Zwiększ przyrost animacji zgodnie z ustawioną prędkością replay (speed_slider)
+        delta = 0.016 * self.speed_slider.value()
         for conn in self.connections:
             for i in range(len(conn.dots)):
-                conn.dots[i] += 0.016
+                conn.dots[i] += delta
                 if conn.dots[i] >= 1.0:
                     conn.dots[i] = 0.0  # resetujemy, by animacja była ciągła
         self.update()
@@ -112,11 +133,17 @@ class PlaybackScene(QGraphicsScene):
 
     def apply_move_event(self, move):
         description = move.get("description", "").strip()
-        # Obsługa tworzenia mostu
+        if DEBUG_MODE:
+            print("DEBUG: apply_move_event - description:", description)
         if description.startswith("Utworzono most"):
-            import re
-            pattern = r"Utworzono most między \(([\d.]+), ([\d.]+)\) a \(([\d.]+), ([\d.]+)\) o koszcie (\d+)"
+            if DEBUG_MODE:
+                print("DEBUG: Próba utworzenia mostu.")
+            pattern = r"Utworzono most między \(([\d.]+),\s*([\d.]+)\) a \(([\d.]+),\s*([\d.]+)\) o koszcie (\d+)"
             m = re.search(pattern, description)
+            if m and DEBUG_MODE:
+                print("DEBUG: Wzorzec dopasowany! Dane mostu:", m.groups())
+            elif not m and DEBUG_MODE:
+                print("DEBUG: Wzorzec nie został dopasowany.")
             if m:
                 x1, y1, x2, y2, cost = list(map(float, m.groups()[:4])) + [int(m.group(5))]
                 found = False
@@ -129,7 +156,8 @@ class PlaybackScene(QGraphicsScene):
                         found = True
                         break
                 if not found:
-                    # Utwórz nowy most, jeśli nie został znaleziony
+                    if DEBUG_MODE:
+                        print("DEBUG: Nie znaleziono istniejącego mostu. Tworzę nowy most.")
                     src = None
                     tgt = None
                     for cell in self.cells:
@@ -138,36 +166,54 @@ class PlaybackScene(QGraphicsScene):
                         if abs(cell.x - x2) < 10 and abs(cell.y - y2) < 10:
                             tgt = cell
                     if src and tgt:
-                        from game_objects import CellConnection
                         new_conn = CellConnection(src, tgt, src.cell_type)
                         new_conn.cost = cost
                         new_conn.flash = True
+                        new_conn.dots.append(0)  # Inicjujemy animowane kółko
                         self.connections.append(new_conn)
             return
-        # Obsługa usunięcia mostu
         elif description.startswith("Usunięto most"):
-            import re
-            pattern = r"Usunięto most między \(([\d.]+), ([\d.]+)\) a \(([\d.]+), ([\d.]+)\)"
+            pattern = r"Usunięto most między \(([\d.]+),\s*([\d.]+)\) a \(([\d.]+),\s*([\d.]+)\)"
             m = re.search(pattern, description)
             if m:
+                if DEBUG_MODE:
+                    print("DEBUG: Most do usunięcia znaleziony:", m.groups())
                 x1, y1, x2, y2 = map(float, m.groups())
                 for conn in self.connections:
                     sx, sy = conn.source_cell.x, conn.source_cell.y
                     tx, ty = conn.target_cell.x, conn.target_cell.y
                     if abs(sx - x1) < 10 and abs(sy - y1) < 10 and abs(tx - x2) < 10 and abs(ty - y2) < 10:
-                        self.removeItem(conn)
+                        if DEBUG_MODE:
+                            print("DEBUG: Usuwam most:", conn)
+                        # Usuwamy most tylko z listy połączeń, ponieważ nie jest QGraphicsItem
                         self.connections.remove(conn)
                         break
+            else:
+                if DEBUG_MODE:
+                    print("DEBUG: Wzorzec usunięcia mostu nie dopasowany.")
             return
-        # Obsługa statusu punktowego – zawsze aktualizujemy typ i punkty komórki na podstawie opisu ruchu
         elif description.startswith("Status punktowy:"):
-            import re
             matches = re.findall(r"\((\w+) @ ([\d.]+),([\d.]+): (\d+) pts\)", description)
+            if DEBUG_MODE:
+                print("DEBUG: Aktualizacja statusu. Znalazłem komórki:", matches)
             for new_type, x, y, pts in matches:
                 x, y, pts = float(x), float(y), int(pts)
                 for cell in self.cells:
                     if abs(cell.x - x) < 10 and abs(cell.y - y) < 10:
                         cell.cell_type = new_type  # aktualizacja typu zgodnie z opisem
+                        cell.points = pts
+                        cell.strength = (pts // 10) + 1
+                        cell.update()
+            return
+        elif description.startswith("Status po ogłoszeniu wyniku:"):
+            matches = re.findall(r"\((\w+) @ ([\d.]+),([\d.]+): (\d+) pts\)", description)
+            if DEBUG_MODE:
+                print("DEBUG: Aktualizacja finalnego statusu. Znalazłem komórki:", matches)
+            for new_type, x, y, pts in matches:
+                x, y, pts = float(x), float(y), int(pts)
+                for cell in self.cells:
+                    if abs(cell.x - x) < 10 and abs(cell.y - y) < 10:
+                        cell.cell_type = new_type
                         cell.points = pts
                         cell.strength = (pts // 10) + 1
                         cell.update()
@@ -185,23 +231,22 @@ class PlaybackScene(QGraphicsScene):
             self.show_game_result()
 
     def show_game_result(self):
-        import re
         # Szukamy ostatniego ruchu ze statusem punktowym
         final_status = ""
         for move in reversed(self.move_history):
-            if move.get("description", "").startswith("Status punktowy:"):
-                final_status = move["description"]
+            desc = move.get("description", "")
+            if desc.startswith("Status punktowy:") or desc.startswith("Status po ogłoszeniu wyniku:"):
+                final_status = desc
                 break
         matches = re.findall(r"\((\w+) @ [\d.]+,[\d.]+: \d+ pts\)", final_status)
         player_count = matches.count("player")
         enemy_count = matches.count("enemy")
         if enemy_count == 0 and player_count > 0:
-            result = "Wygrana!"
+            result = "Gracz wygrał"
         elif player_count == 0 and enemy_count > 0:
-            result = "Przegrana!"
+            result = "Gracz przegrał."
         else:
             result = "Gra zakończona."
-        from PyQt5.QtWidgets import QMessageBox
         QMessageBox.information(None, "Koniec replay", result)
 
     def return_to_menu(self):

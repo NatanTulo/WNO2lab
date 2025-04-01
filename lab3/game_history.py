@@ -1,6 +1,6 @@
 import os
-import xml.etree.ElementTree as ET
 import re
+import xml.etree.ElementTree as ET
 
 def save_game_history(game_scene, filename):
     """

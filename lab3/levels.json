@@ -13,7 +13,7 @@
   {
     "name": "Plansza 1",
     "cells": [
-      {"x": 400,"y": 250,"type": "player","points": 20},
+      {"x": 400,"y": 250,"type": "player","points": 40},
       {"x": 900,"y": 250,"type": "enemy","points": 20},
       {"x": 650,"y": 400,"type": "neutral","points": 5},
       {"x": 400,"y": 550,"type": "neutral","points": 3},
