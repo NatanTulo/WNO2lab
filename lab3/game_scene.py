@@ -4,9 +4,10 @@ import os
 import time
 
 from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
-from PyQt5.QtGui import QColor, QPen, QRadialGradient, QFont, QTransform, QCursor
+from PyQt5.QtGui import QColor, QPen, QFont, QTransform, QCursor, QLinearGradient
 from PyQt5.QtWidgets import QGraphicsScene, QMenu, QMessageBox, QGraphicsTextItem, QGraphicsDropShadowEffect, QGraphicsItem
 
+import config
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS, TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE, GAME_OVER_FONT_SIZE, FREEZE_DURATION_SECONDS, POWERUP_FREEZE, POWERUP_TAKEOVER, POWERUP_ADD_POINTS, POWERUP_NEW_CELL, NEW_CELL_COPY_RANGE_FACTOR, POINTS_PER_STRENGTH
 from game_ai import GameAI
 from game_objects import CellUnit, CellConnection
@@ -56,11 +57,9 @@ class GameScene(QGraphicsScene):
         self.enemy_timer = None
 
     def drawBackground(self, painter, rect):
-        center = self.sceneRect().center()
-        radius = max(self.sceneRect().width(), self.sceneRect().height())
-        gradient = QRadialGradient(center, radius)
-        gradient.setColorAt(0, QColor(230, 190, 255))
-        gradient.setColorAt(1, QColor(100, 0, 150))
+        gradient = QLinearGradient(0, 0, 0, self.height())
+        gradient.setColorAt(0, config.COLOR_BG_TOP)
+        gradient.setColorAt(1, config.COLOR_BG_BOTTOM)
         painter.fillRect(rect, gradient)
 
     def initialize_level(self, level_number):
@@ -661,9 +660,9 @@ class GameScene(QGraphicsScene):
                 distance = math.hypot(dx, dy)
                 cost = int(distance / 20)
                 if self.drag_start_cell.cell_type == "player":
-                    line_color = QColor(0, 255, 0)
+                    line_color = config.COLOR_CONN_PLAYER
                 else:
-                    line_color = QColor(139, 0, 0)
+                    line_color = config.COLOR_CONN_ENEMY
                 color = line_color if self.drag_start_cell.points >= cost else QColor(255, 0, 0)
                 painter.setPen(QPen(color, 2))
                 painter.drawLine(QPointF(self.drag_start_cell.x, self.drag_start_cell.y), target_point)
@@ -671,24 +670,22 @@ class GameScene(QGraphicsScene):
             source = QPointF(conn.source_cell.x, conn.source_cell.y)
             target = QPointF(conn.target_cell.x, conn.target_cell.y)
             if hasattr(conn, 'conflict') and conn.conflict:
-                # Rysujemy most konfliktowy jako dwie połowy: zieloną i czerwoną
-                mid_point = QPointF((source.x() + target.x())/2, (source.y() + target.y())/2)
-                painter.setPen(QPen(QColor(0,255,0), 3))
+                mid_point = QPointF((source.x() + target.x()) / 2, (source.y() + target.y()) / 2)
+                painter.setPen(QPen(config.COLOR_CONN_CONFLICT_LEFT, 3))
                 painter.drawLine(source, mid_point)
-                painter.setPen(QPen(QColor(139,0,0), 3))
+                painter.setPen(QPen(config.COLOR_CONN_CONFLICT_RIGHT, 3))
                 painter.drawLine(mid_point, target)
             else:
                 if conn.connection_type == "player":
-                    painter.setPen(QPen(QColor(0,100,0), 3))
+                    painter.setPen(QPen(config.COLOR_CONN_PLAYER, 3))
                 else:
-                    painter.setPen(QPen(QColor(139,0,0), 3))
+                    painter.setPen(QPen(config.COLOR_CONN_ENEMY, 3))
                 painter.drawLine(source, target)
-            # Rysowanie kropel, dla normalnych mostów pozostaje niezmienione
             if not (hasattr(conn, 'conflict') and conn.conflict):
                 if conn.connection_type == "player":
-                    dot_color = QColor(144,238,144)
+                    dot_color = config.COLOR_DOT_PLAYER
                 else:
-                    dot_color = QColor(255,99,71)
+                    dot_color = config.COLOR_DOT_ENEMY
                 for progress in conn.dots:
                     x = conn.source_cell.x + progress * (conn.target_cell.x - conn.source_cell.x)
                     y = conn.source_cell.y + progress * (conn.target_cell.y - conn.source_cell.y)
@@ -713,7 +710,7 @@ class GameScene(QGraphicsScene):
             source_point = QPointF(self.hint_source.x, self.hint_source.y)
             target_point = QPointF(self.hint_target.x, self.hint_target.y)
 
-            hint_pen = QPen(QColor(255, 215, 0), 3, Qt.DashLine)
+            hint_pen = QPen(config.COLOR_HINT_PRIMARY, 3, Qt.DashLine)
             painter.setPen(hint_pen)
             painter.drawLine(source_point, target_point)
 
@@ -727,7 +724,7 @@ class GameScene(QGraphicsScene):
                 arrow_point_x = source_point.x() + dx * length * 0.7
                 arrow_point_y = source_point.y() + dy * length * 0.7
 
-                painter.setBrush(QColor(255, 215, 0))
+                painter.setBrush(config.COLOR_HINT_PRIMARY)
                 points = [
                     QPointF(arrow_point_x, arrow_point_y),
                     QPointF(arrow_point_x - arrow_size * (dx + dy * 0.5), arrow_point_y - arrow_size * (dy - dx * 0.5)),
@@ -735,15 +732,12 @@ class GameScene(QGraphicsScene):
                 ]
                 painter.drawPolygon(points)
 
-            source_color = QColor(255, 215, 0)
-            target_color = QColor(255, 100, 0)
-            highlight_radius = 40
-
-            painter.setPen(QPen(source_color, 3, Qt.DashLine))
+            painter.setPen(QPen(config.COLOR_HINT_PRIMARY, 3, Qt.DashLine))
             painter.setBrush(Qt.NoBrush)
+            highlight_radius = 40
             painter.drawEllipse(source_point, highlight_radius, highlight_radius)
 
-            painter.setPen(QPen(target_color, 3, Qt.DashLine))
+            painter.setPen(QPen(config.COLOR_HINT_SECONDARY, 3, Qt.DashLine))
             painter.drawEllipse(target_point, highlight_radius, highlight_radius)
 
             font = QFont("Arial", 12, QFont.Bold)
@@ -758,7 +752,7 @@ class GameScene(QGraphicsScene):
                 label_width, label_height
             )
 
-            painter.setBrush(source_color)
+            painter.setBrush(config.COLOR_HINT_PRIMARY)
             painter.setPen(Qt.NoPen)
             painter.drawRoundedRect(source_label_rect, 5, 5)
 
@@ -771,7 +765,7 @@ class GameScene(QGraphicsScene):
                 label_width, label_height
             )
 
-            painter.setBrush(target_color)
+            painter.setBrush(config.COLOR_HINT_SECONDARY)
             painter.setPen(Qt.NoPen)
             painter.drawRoundedRect(target_label_rect, 5, 5)
 

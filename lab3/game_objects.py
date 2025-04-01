@@ -5,7 +5,7 @@ from PyQt5.QtCore import QRectF, QPointF, Qt
 from PyQt5.QtGui import QPainterPath, QPen, QRadialGradient, QFont, QColor
 from PyQt5.QtWidgets import QGraphicsItem
 
-from config import DEFAULT_CELL_RADIUS, POINTS_PER_STRENGTH, COLOR_PLAYER, COLOR_ENEMY, COLOR_NEUTRAL, FONT_FAMILY
+from config import DEFAULT_CELL_RADIUS, POINTS_PER_STRENGTH, COLOR_PLAYER, COLOR_ENEMY, COLOR_NEUTRAL, FONT_FAMILY, COLOR_FROZEN_OUTLINE
 
 class CellUnit(QGraphicsItem):
     """Base class for all cell units in the game"""
@@ -103,7 +103,7 @@ class CellUnit(QGraphicsItem):
         if self.frozen:
             current_time = time.time()
             if current_time < self.freeze_end_time:
-                painter.setPen(QPen(QColor(0, 150, 255), 4))
+                painter.setPen(QPen(COLOR_FROZEN_OUTLINE, 4))
                 painter.setBrush(Qt.NoBrush)
                 painter.drawEllipse(QRectF(self.x - effective_radius, self.y - effective_radius,
                                            effective_radius * 2, effective_radius * 2))

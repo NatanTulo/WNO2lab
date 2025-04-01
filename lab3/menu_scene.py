@@ -6,7 +6,7 @@ from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap, Q
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsItem, QGraphicsEllipseItem
 
 import resources_rc
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, MENU_TITLE_FONT_SIZE, MENU_LEVEL_TITLE_FONT_SIZE, MENU_SWITCH_LABEL_FONT_SIZE, MENU_LEVEL_BUTTON_WIDTH, FONT_FAMILY, BUTTON_FONT_SIZE
+from config import WINDOW_WIDTH, WINDOW_HEIGHT, MENU_TITLE_FONT_SIZE, MENU_LEVEL_TITLE_FONT_SIZE, MENU_SWITCH_LABEL_FONT_SIZE, MENU_LEVEL_BUTTON_WIDTH, FONT_FAMILY, BUTTON_FONT_SIZE, COLOR_SWITCH_OFF, COLOR_SWITCH_ON, COLOR_BUTTON_LEFT, COLOR_BUTTON_RIGHT
 
 class SwitchButton(QGraphicsItem):
     def __init__(self, width=60, height=30, parent=None):
@@ -28,7 +28,7 @@ class SwitchButton(QGraphicsItem):
 
     def paint(self, painter, option, widget):
         radius = self.height / 2
-        bg_color = QColor(200, 200, 200) if not self._state else QColor(0, 150, 136)
+        bg_color = COLOR_SWITCH_OFF if not self._state else COLOR_SWITCH_ON
         painter.setPen(Qt.NoPen)
         painter.setBrush(bg_color)
         painter.drawRoundedRect(self.boundingRect(), radius, radius)
@@ -54,12 +54,10 @@ class GameModeRadioButton(QGraphicsItemGroup):
         self.selected = selected
         self.setAcceptHoverEvents(True)
         self.circle_radius = 8
-        # Ustawienie pozycji kółka z dolnym offsetem
         self.circle = QGraphicsEllipseItem(0, 8, self.circle_radius*2, self.circle_radius*2)
-        self.circle.setBrush(QBrush(QColor(0,150,136)) if self.selected else QBrush(Qt.white))
+        self.circle.setBrush(QBrush(COLOR_SWITCH_ON) if self.selected else QBrush(Qt.white))
         self.circle.setPen(QPen(Qt.white, 1))
         self.addToGroup(self.circle)
-        # Ustawienie pozycji tekstu – przesunięcie o ten sam offset
         self.text_item = QGraphicsTextItem(mode_text)
         self.text_item.setDefaultTextColor(Qt.white)
         self.text_item.setFont(QFont(FONT_FAMILY, MENU_SWITCH_LABEL_FONT_SIZE))
@@ -74,7 +72,7 @@ class GameModeRadioButton(QGraphicsItemGroup):
     
     def setSelected(self, selected):
         self.selected = selected
-        self.circle.setBrush(QBrush(QColor(0,150,136)) if self.selected else QBrush(Qt.white))
+        self.circle.setBrush(QBrush(COLOR_SWITCH_ON) if self.selected else QBrush(Qt.white))
         self.update()
 
 class MenuScene(QGraphicsScene):
@@ -141,7 +139,6 @@ class MenuScene(QGraphicsScene):
         mode_title.setPos((self.width() - mode_title_width) / 2, y_pos + 10)
         self.addItem(mode_title)
 
-        # Pierwsza grupa radio buttonów ("1 gracz" i "2 graczy lokalnie")
         radio_y = y_pos + 50
         first_group = [("1 gracz", "1 gracz"), ("2 graczy lokalnie", "2 graczy lokalnie")]
         spacing = 110
@@ -153,12 +150,11 @@ class MenuScene(QGraphicsScene):
             self.radio_buttons.append(radio)
             self.addItem(radio)
 
-        # Druga grupa radio buttonów ("gra sieciowa") – oddzielna linia wyśrodkowana
         radio_y2 = radio_y + 25
         second_group = [("gra sieciowa", "gra sieciowa")]
         for text, value in second_group:
             selected = (value == self.game_mode)
-            radio_x = (self.width() - 110) / 2  # przyjmujemy szerokość ~110 pikseli
+            radio_x = (self.width() - 110) / 2
             radio = GameModeRadioButton(text, value, radio_x, radio_y2, selected)
             self.radio_buttons.append(radio)
             self.addItem(radio)
@@ -189,7 +185,7 @@ class MenuScene(QGraphicsScene):
                 left_width = width - right_width
 
                 self.left_rect = QGraphicsRectItem(x, y, left_width, height)
-                self.left_rect.setBrush(QBrush(QColor(50, 50, 150)))
+                self.left_rect.setBrush(QBrush(COLOR_BUTTON_LEFT))
                 self.left_rect.setPen(QPen(Qt.white, 2))
                 self.left_rect.level_id = 0
                 self.addToGroup(self.left_rect)
@@ -200,7 +196,7 @@ class MenuScene(QGraphicsScene):
                 self.update_text_position(x, y, left_width, height)
 
                 self.right_rect = QGraphicsRectItem(x + left_width, y, right_width, height)
-                self.right_rect.setBrush(QBrush(QColor(80, 80, 180)))
+                self.right_rect.setBrush(QBrush(COLOR_BUTTON_RIGHT))
                 self.right_rect.setPen(QPen(Qt.white, 2))
                 self.right_rect.level_id = 0
                 self.right_rect.is_edit_button = False
