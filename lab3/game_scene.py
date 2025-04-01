@@ -238,7 +238,7 @@ class GameScene(QGraphicsScene):
 
         # Po zakończeniu przetwarzania stanów komórek i mostów, zapisujemy stan pośredni
         now = time.time()
-        if now - self.last_state_record >= 0.1:  # co 100 ms zapisujemy stan
+        if now - self.last_state_record >= 1.0:  # co 1 s zapisujemy stan
             points_status = "; ".join(
                 f"({cell.cell_type} @ {int(cell.x)},{int(cell.y)}: {cell.points} pts)"
                 for cell in self.cells
@@ -501,6 +501,11 @@ class GameScene(QGraphicsScene):
                     Qx = A.x() + t * AB.x()
                     Qy = A.y() + t * AB.y()
                     if math.hypot(P.x() - Qx, P.y() - Qy) < 5:
+                        # Dodajemy logowanie usunięcia mostu
+                        self.move_history.append({
+                            "timestamp": time.time(),
+                            "description": f"Usunięto most między ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) a ({conn.target_cell.x:.0f}, {conn.target_cell.y:.0f})"
+                        })
                         if conn in self.connections:
                             self.connections.remove(conn)
                         if conn in conn.source_cell.connections:
@@ -615,9 +620,25 @@ class GameScene(QGraphicsScene):
     def game_over(self, victory):
         self.timer.stop()
         self.points_timer.stop()
-        self.game_over_text = "Wygrana!" if victory else "Przegrana!"
+        final_result = "Wygrana!" if victory else "Przegrana!"
+        self.game_over_text = final_result
         if self.logger:
             self.logger.log(f"GameScene: Gra zakończona - {self.game_over_text}.")
+        # Zapis stanu przed ostatnim ruchem
+        points_status = "; ".join(
+            f"({cell.cell_type} @ {int(cell.x)},{int(cell.y)}: {cell.points} pts)"
+            for cell in self.cells
+        )
+        self.move_history.append({
+            "timestamp": time.time(),
+            "description": f"Status przed ostatnim ruchem: {points_status}"
+        })
+
+        # Zapis ostatecznego wyniku
+        self.move_history.append({
+            "timestamp": time.time(),
+            "description": f"Wynik: {final_result}"
+        })
         self.update()
         game_history.save_game_history(self, "replay.xml")  # automatyczny zapis replay
         QTimer.singleShot(2000, self.show_return_button)

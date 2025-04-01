@@ -1,55 +1,92 @@
 import os
 import xml.etree.ElementTree as ET
+import re
 
 def save_game_history(game_scene, filename):
     """
     Zapisuje historię rozgrywki do pliku XML.
-    W zapisie znajduje się początkowy stan (lista komórek i powiązań),
-    oraz lista ruchów zapisanych w atrybucie move_history.
-    Dodajemy też stan końcowy, aby replay zawierało informacje o ostatnim przejęciu.
+    W zapisie znajduje się początkowy stan (lista komórek),
+    lista ruchów oraz stan końcowy.
     """
     root = ET.Element("GameHistory")
 
-    # Zapis stanu początkowego
+    # Zapis stanu początkowego – tylko komórki
     initial_state = ET.SubElement(root, "InitialState")
     cells_el = ET.SubElement(initial_state, "Cells")
     for cell in game_scene.cells:
         cell_el = ET.SubElement(cells_el, "Cell")
         cell_el.set("x", str(cell.x))
         cell_el.set("y", str(cell.y))
-        # Zapisujemy oryginalny typ z initial_type
         cell_el.set("type", str(getattr(cell, "initial_type", cell.cell_type)))
         cell_el.set("points", str(cell.points))
-    connections_el = ET.SubElement(initial_state, "Connections")
-    for conn in game_scene.connections:
-        conn_el = ET.SubElement(connections_el, "Connection")
-        try:
-            src_index = game_scene.cells.index(conn.source_cell)
-            tgt_index = game_scene.cells.index(conn.target_cell)
-        except ValueError:
-            src_index = -1
-            tgt_index = -1
-        conn_el.set("source_index", str(src_index))
-        conn_el.set("target_index", str(tgt_index))
-        conn_el.set("type", str(conn.connection_type))
-        conn_el.set("cost", str(getattr(conn, "cost", 0)))
-
-    # Zapis ruchów
+    
+    # Zapis ruchów – bardziej strukturalny
     moves_el = ET.SubElement(root, "Moves")
     if hasattr(game_scene, "move_history"):
         for move in game_scene.move_history:
             move_el = ET.SubElement(moves_el, "Move")
             move_el.set("timestamp", str(move.get("timestamp", 0)))
-            move_el.text = move.get("description", "")
+            description = move.get("description", "")
+            if description.startswith("Utworzono most"):
+                create_el = ET.SubElement(move_el, "CreateBridge")
+                m = re.search(r"Utworzono most między \(([\d.]+), ([\d.]+)\) a \(([\d.]+), ([\d.]+)\) o koszcie (\d+)", description)
+                if m:
+                    ET.SubElement(create_el, "Source").text = f"{m.group(1)},{m.group(2)}"
+                    ET.SubElement(create_el, "Target").text = f"{m.group(3)},{m.group(4)}"
+                    ET.SubElement(create_el, "Cost").text = m.group(5)
+                else:
+                    ET.SubElement(create_el, "Info").text = description
+            elif description.startswith("Usunięto most"):
+                remove_el = ET.SubElement(move_el, "RemoveBridge")
+                m = re.search(r"Usunięto most między \(([\d.]+), ([\d.]+)\) a \(([\d.]+), ([\d.]+)\)", description)
+                if m:
+                    ET.SubElement(remove_el, "Source").text = f"{m.group(1)},{m.group(2)}"
+                    ET.SubElement(remove_el, "Target").text = f"{m.group(3)},{m.group(4)}"
+                else:
+                    ET.SubElement(remove_el, "Info").text = description
+            elif description.startswith("Status punktowy:"):
+                status_el = ET.SubElement(move_el, "Status")
+                parts = description.replace("Status punktowy:", "").split(";")
+                for part in parts:
+                    part = part.strip()
+                    if part:
+                        m = re.search(r"\((\w+)\s+@\s+([\d.]+),([\d.]+):\s+(\d+)\s+pts\)", part)
+                        if m:
+                            cell_status = ET.SubElement(status_el, "Cell")
+                            cell_status.set("type", m.group(1))
+                            cell_status.set("x", m.group(2))
+                            cell_status.set("y", m.group(3))
+                            cell_status.set("points", m.group(4))
+                        else:
+                            ET.SubElement(status_el, "Info").text = part
+            elif description.startswith("Status przed ostatnim ruchem:"):
+                pre_final_el = ET.SubElement(move_el, "PreFinalStatus")
+                parts = description.replace("Status przed ostatnim ruchem:", "").split(";")
+                for part in parts:
+                    part = part.strip()
+                    if part:
+                        m = re.search(r"\((\w+)\s+@\s+([\d.]+),([\d.]+):\s+(\d+)\s+pts\)", part)
+                        if m:
+                            cell_status = ET.SubElement(pre_final_el, "Cell")
+                            cell_status.set("type", m.group(1))
+                            cell_status.set("x", m.group(2))
+                            cell_status.set("y", m.group(3))
+                            cell_status.set("points", m.group(4))
+                        else:
+                            ET.SubElement(pre_final_el, "Info").text = part
+            elif description.startswith("Wynik:"):
+                result_el = ET.SubElement(move_el, "Result")
+                result_el.text = description.replace("Wynik:", "").strip()
+            else:
+                ET.SubElement(move_el, "Description").text = description
 
-    # NOWY: Zapis stanu końcowego
+    # Zapis stanu końcowego
     final_state = ET.SubElement(root, "FinalState")
     final_cells_el = ET.SubElement(final_state, "Cells")
     for cell in game_scene.cells:
         cell_el = ET.SubElement(final_cells_el, "Cell")
         cell_el.set("x", str(cell.x))
         cell_el.set("y", str(cell.y))
-        # Zapisujemy bieżący typ i punkty (po przejęciach)
         cell_el.set("type", cell.cell_type)
         cell_el.set("points", str(cell.points))
     final_connections_el = ET.SubElement(final_state, "Connections")
@@ -117,9 +154,50 @@ def load_game_history(filename):
     moves_el = root.find("Moves")
     if moves_el is not None:
         for move_el in moves_el.findall("Move"):
+            timestamp = float(move_el.get("timestamp", 0))
+            # Jeśli <Move> posiada dzieci, złożymy opis z podtagów
+            if len(move_el):
+                description_parts = []
+                for child in move_el:
+                    if child.tag == "CreateBridge":
+                        source = child.find("Source").text if child.find("Source") is not None else ""
+                        target = child.find("Target").text if child.find("Target") is not None else ""
+                        cost = child.find("Cost").text if child.find("Cost") is not None else ""
+                        description_parts.append(f"Utworzono most między ({source}) a ({target}) o koszcie {cost}")
+                    elif child.tag == "RemoveBridge":
+                        source = child.find("Source").text if child.find("Source") is not None else ""
+                        target = child.find("Target").text if child.find("Target") is not None else ""
+                        description_parts.append(f"Usunięto most między ({source}) a ({target})")
+                    elif child.tag == "Status":
+                        cell_parts = []
+                        for cell in child.findall("Cell"):
+                            typ = cell.get("type", "neutral")
+                            x = cell.get("x", "0")
+                            y = cell.get("y", "0")
+                            points = cell.get("points", "0")
+                            cell_parts.append(f"({typ} @ {x},{y}: {points} pts)")
+                        description_parts.append("Status punktowy: " + "; ".join(cell_parts))
+                    elif child.tag == "PreFinalStatus":
+                        cell_parts = []
+                        for cell in child.findall("Cell"):
+                            typ = cell.get("type", "neutral")
+                            x = cell.get("x", "0")
+                            y = cell.get("y", "0")
+                            points = cell.get("points", "0")
+                            cell_parts.append(f"({typ} @ {x},{y}: {points} pts)")
+                        description_parts.append("Status przed ostatnim ruchem: " + "; ".join(cell_parts))
+                    elif child.tag == "Result":
+                        result_text = child.text.strip() if child.text else ""
+                        description_parts.append("Wynik: " + result_text)
+                    else:
+                        if child.text:
+                            description_parts.append(child.text.strip())
+                full_description = "\n".join(description_parts)
+            else:
+                full_description = (move_el.text or "").strip()
             move = {
-                "timestamp": float(move_el.get("timestamp", 0)),
-                "description": move_el.text or ""
+                "timestamp": timestamp,
+                "description": full_description.strip()
             }
             history["moves"].append(move)
 

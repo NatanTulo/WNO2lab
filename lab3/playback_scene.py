@@ -2,7 +2,7 @@ import os
 import xml.etree.ElementTree as ET
 from PyQt5.QtCore import Qt, QTimer, QPointF
 from PyQt5.QtGui import QFont, QPen, QBrush, QColor, QLinearGradient
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsProxyWidget, QPushButton, QLineEdit
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsProxyWidget, QPushButton, QSlider, QLabel
 
 import config
 from game_history import load_game_history
@@ -43,15 +43,23 @@ class PlaybackScene(QGraphicsScene):
         self.move_display.setPos(20, config.WINDOW_HEIGHT - 60)
         self.addItem(self.move_display)
 
-        # Kontrola szybkości – QLineEdit do wprowadzenia interwału (ms)
-        self.speed_lineedit = QLineEdit()
-        self.speed_lineedit.setPlaceholderText("Interwał (ms)")
-        self.speed_lineedit.setText("1000")
-        self.speed_lineedit.setFixedWidth(150)
-        speed_proxy = QGraphicsProxyWidget()
-        speed_proxy.setWidget(self.speed_lineedit)
-        speed_proxy.setPos(config.WINDOW_WIDTH - 170, config.WINDOW_HEIGHT - 60)
-        self.addItem(speed_proxy)
+        # ZAMIENNIK: Suwak do ustawiania interwału wraz z etykietą prędkości
+        self.speed_slider = QSlider(Qt.Horizontal)
+        # Ustawiamy zakres odpowiadający mnożnikowi szybkości od 1x do 10x
+        self.speed_slider.setMinimum(1)
+        self.speed_slider.setMaximum(10)
+        self.speed_slider.setValue(1)
+        self.speed_slider.setFixedWidth(150)
+        self.speed_proxy = QGraphicsProxyWidget()
+        self.speed_proxy.setWidget(self.speed_slider)
+        self.speed_proxy.setPos(config.WINDOW_WIDTH - 170, config.WINDOW_HEIGHT - 60)
+        self.addItem(self.speed_proxy)
+        self.speed_label = QGraphicsTextItem("1.0x")
+        self.speed_label.setDefaultTextColor(Qt.white)
+        self.speed_label.setFont(QFont(config.FONT_FAMILY, 14))
+        self.speed_label.setPos(config.WINDOW_WIDTH - 170, config.WINDOW_HEIGHT - 90)
+        self.addItem(self.speed_label)
+        self.speed_slider.valueChanged.connect(lambda val: self.speed_label.setPlainText(f"{val:.1f}x"))
 
         # Przycisk powrotu do menu
         back_button = QPushButton("Powrót do menu")
@@ -99,22 +107,22 @@ class PlaybackScene(QGraphicsScene):
 
     def start_playback(self):
         self.current_move_index = 0
-        self.playback_timer.start(int(self.speed_lineedit.text()))
+        self.playback_timer.start(int(1000 / self.speed_slider.value()))
         self.animation_timer.start(16)
 
     def apply_move_event(self, move):
-        description = move.get("description", "")
+        description = move.get("description", "").strip()
         # Obsługa tworzenia mostu
         if description.startswith("Utworzono most"):
             import re
-            pattern = r"Utworzono most między \((\d+), (\d+)\) a \((\d+), (\d+)\) o koszcie (\d+)"
+            pattern = r"Utworzono most między \(([\d.]+), ([\d.]+)\) a \(([\d.]+), ([\d.]+)\) o koszcie (\d+)"
             m = re.search(pattern, description)
             if m:
-                x1, y1, x2, y2, cost = map(int, m.groups())
+                x1, y1, x2, y2, cost = list(map(float, m.groups()[:4])) + [int(m.group(5))]
                 found = False
                 for conn in self.connections:
-                    sx, sy = int(conn.source_cell.x), int(conn.source_cell.y)
-                    tx, ty = int(conn.target_cell.x), int(conn.target_cell.y)
+                    sx, sy = conn.source_cell.x, conn.source_cell.y
+                    tx, ty = conn.target_cell.x, conn.target_cell.y
                     if abs(sx - x1) < 10 and abs(sy - y1) < 10 and abs(tx - x2) < 10 and abs(ty - y2) < 10:
                         conn.flash = True  # podświetl istniejący most
                         QTimer.singleShot(500, lambda: setattr(conn, 'flash', False))
@@ -139,13 +147,13 @@ class PlaybackScene(QGraphicsScene):
         # Obsługa usunięcia mostu
         elif description.startswith("Usunięto most"):
             import re
-            pattern = r"Usunięto most między \((\d+), (\d+)\) a \((\d+), (\d+)\)"
+            pattern = r"Usunięto most między \(([\d.]+), ([\d.]+)\) a \(([\d.]+), ([\d.]+)\)"
             m = re.search(pattern, description)
             if m:
-                x1, y1, x2, y2 = map(int, m.groups())
+                x1, y1, x2, y2 = map(float, m.groups())
                 for conn in self.connections:
-                    sx, sy = int(conn.source_cell.x), int(conn.source_cell.y)
-                    tx, ty = int(conn.target_cell.x), int(conn.target_cell.y)
+                    sx, sy = conn.source_cell.x, conn.source_cell.y
+                    tx, ty = conn.target_cell.x, conn.target_cell.y
                     if abs(sx - x1) < 10 and abs(sy - y1) < 10 and abs(tx - x2) < 10 and abs(ty - y2) < 10:
                         self.removeItem(conn)
                         self.connections.remove(conn)
@@ -154,9 +162,9 @@ class PlaybackScene(QGraphicsScene):
         # Obsługa statusu punktowego – zawsze aktualizujemy typ i punkty komórki na podstawie opisu ruchu
         elif description.startswith("Status punktowy:"):
             import re
-            matches = re.findall(r"\((\w+) @ (\d+),(\d+): (\d+) pts\)", description)
+            matches = re.findall(r"\((\w+) @ ([\d.]+),([\d.]+): (\d+) pts\)", description)
             for new_type, x, y, pts in matches:
-                x, y, pts = int(x), int(y), int(pts)
+                x, y, pts = float(x), float(y), int(pts)
                 for cell in self.cells:
                     if abs(cell.x - x) < 10 and abs(cell.y - y) < 10:
                         cell.cell_type = new_type  # aktualizacja typu zgodnie z opisem
@@ -170,7 +178,7 @@ class PlaybackScene(QGraphicsScene):
             move = self.move_history[self.current_move_index]
             self.apply_move_event(move)
             self.current_move_index += 1
-            self.playback_timer.start(int(self.speed_lineedit.text()))
+            self.playback_timer.start(int(1000 / self.speed_slider.value()))
         else:
             self.playback_timer.stop()
             self.animation_timer.stop()
@@ -184,7 +192,7 @@ class PlaybackScene(QGraphicsScene):
             if move.get("description", "").startswith("Status punktowy:"):
                 final_status = move["description"]
                 break
-        matches = re.findall(r"\((\w+) @ [\d,]+: \d+ pts\)", final_status)
+        matches = re.findall(r"\((\w+) @ [\d.]+,[\d.]+: \d+ pts\)", final_status)
         player_count = matches.count("player")
         enemy_count = matches.count("enemy")
         if enemy_count == 0 and player_count > 0:

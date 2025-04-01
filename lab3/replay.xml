@@ -2,202 +2,703 @@
 <GameHistory>
     <InitialState>
         <Cells>
-            <Cell x="390.0" y="210.0" type="player" points="101" />
-            <Cell x="890.0" y="210.0" type="enemy" points="1" />
-            <Cell x="640.0" y="360.0" type="neutral" points="3" />
-            <Cell x="390.0" y="510.0" type="neutral" points="9" />
-            <Cell x="890.0" y="510.0" type="neutral" points="9" />
+            <Cell x="465.0" y="310.0" type="player" points="3" />
+            <Cell x="415.0" y="460.0" type="player" points="7" />
+            <Cell x="865.0" y="260.0" type="enemy" points="2" />
+            <Cell x="765.0" y="410.0" type="enemy" points="1" />
+            <Cell x="615.0" y="360.0" type="neutral" points="14" />
         </Cells>
-        <Connections>
-            <Connection source_index="0" target_index="3" type="player" cost="15" />
-            <Connection source_index="0" target_index="4" type="player" cost="29" />
-            <Connection source_index="0" target_index="2" type="player" cost="14" />
-        </Connections>
     </InitialState>
     <Moves>
-        <Move timestamp="1743536074.8348107">Status punktowy: (player @ 390,210: 200 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536074.9470327">Status punktowy: (player @ 390,210: 200 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536075.0588863">Status punktowy: (player @ 390,210: 200 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536075.1708539">Status punktowy: (player @ 390,210: 200 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536075.2831478">Status punktowy: (player @ 390,210: 200 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536075.3961647">Status punktowy: (player @ 390,210: 200 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536075.5067344">Status punktowy: (player @ 390,210: 200 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536075.618387">Status punktowy: (player @ 390,210: 200 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536075.732996">Status punktowy: (player @ 390,210: 200 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536075.8423345">Status punktowy: (player @ 390,210: 200 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536075.8732133">Utworzono most między (390, 210) a (890, 210) o koszcie 25</Move>
-        <Move timestamp="1743536075.954725">Status punktowy: (player @ 390,210: 175 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536076.0667388">Status punktowy: (player @ 390,210: 175 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536076.1789203">Status punktowy: (player @ 390,210: 175 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536076.2917662">Status punktowy: (player @ 390,210: 175 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536076.4028492">Status punktowy: (player @ 390,210: 175 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536076.5140812">Status punktowy: (player @ 390,210: 175 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536076.6269817">Status punktowy: (player @ 390,210: 175 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536076.738761">Status punktowy: (player @ 390,210: 175 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536076.8088777">Status punktowy: (player @ 390,210: 175 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536076.8504586">Status punktowy: (player @ 390,210: 175 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536076.8967726">Utworzono most między (390, 210) a (390, 510) o koszcie 15</Move>
-        <Move timestamp="1743536076.9623177">Status punktowy: (player @ 390,210: 160 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536077.074847">Status punktowy: (player @ 390,210: 160 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536077.18668">Status punktowy: (player @ 390,210: 160 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536077.2981758">Status punktowy: (player @ 390,210: 160 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536077.411941">Status punktowy: (player @ 390,210: 160 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536077.5221024">Status punktowy: (player @ 390,210: 160 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536077.6348884">Status punktowy: (player @ 390,210: 160 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536077.7461402">Status punktowy: (player @ 390,210: 160 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536077.8598967">Status punktowy: (player @ 390,210: 160 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536077.9704177">Status punktowy: (player @ 390,210: 160 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536077.9957166">Utworzono most między (390, 210) a (890, 510) o koszcie 29</Move>
-        <Move timestamp="1743536078.082082">Status punktowy: (player @ 390,210: 131 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536078.1949441">Status punktowy: (player @ 390,210: 131 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536078.3063529">Status punktowy: (player @ 390,210: 131 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536078.4184587">Status punktowy: (player @ 390,210: 131 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536078.53011">Status punktowy: (player @ 390,210: 131 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536078.6423643">Status punktowy: (player @ 390,210: 131 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536078.7550008">Status punktowy: (player @ 390,210: 131 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536078.8083894">Status punktowy: (player @ 390,210: 129 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536078.8666763">Status punktowy: (player @ 390,210: 129 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536078.9786706">Status punktowy: (player @ 390,210: 129 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536079.0365202">Utworzono most między (390, 210) a (640, 360) o koszcie 14</Move>
-        <Move timestamp="1743536079.0908394">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536079.2020915">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536079.3149257">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536079.4270694">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536079.5381546">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536079.6505845">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536079.7629929">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536079.874084">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536079.9869778">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536080.0981553">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536080.2108698">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536080.3226893">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536080.4340823">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536080.546931">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536080.659037">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536080.77009">Status punktowy: (player @ 390,210: 115 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536080.8066049">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536080.88286">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536080.9947183">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536081.1061864">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536081.219374">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536081.3300998">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536081.442769">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536081.5551105">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536081.6668637">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536081.7787893">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 2 pts); (neutral @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536081.8900876">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536082.0027952">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536082.1148634">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536082.2267175">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536082.3387415">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536082.4508371">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536082.5625122">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536082.6747875">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536082.7863233">Status punktowy: (player @ 390,210: 112 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536082.8118396">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536082.8981001">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536083.0106633">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536083.1220813">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536083.2349026">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536083.3468223">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536083.4586177">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536083.570101">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536083.6822417">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536083.7940826">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 4 pts); (neutral @ 390,510: 1 pts); (neutral @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536083.906327">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 1 pts); (player @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536084.0193617">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 1 pts); (player @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536084.1300995">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 1 pts); (player @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536084.2426755">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 1 pts); (player @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536084.3549666">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 1 pts); (player @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536084.4668489">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 1 pts); (player @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536084.5782042">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 1 pts); (player @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536084.6900816">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 1 pts); (player @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536084.8020816">Status punktowy: (player @ 390,210: 109 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 1 pts); (player @ 890,510: 1 pts)</Move>
-        <Move timestamp="1743536084.8183086">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 2 pts); (player @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536084.9148223">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 2 pts); (player @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536085.0266702">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 2 pts); (player @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536085.1386886">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 2 pts); (player @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536085.250637">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 2 pts); (player @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536085.362198">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 2 pts); (player @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536085.4747994">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 2 pts); (player @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536085.5866318">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 2 pts); (player @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536085.698339">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 3 pts); (player @ 390,510: 2 pts); (player @ 890,510: 2 pts)</Move>
-        <Move timestamp="1743536085.8103611">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 3 pts); (player @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536085.922098">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 3 pts); (player @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536086.0347931">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 3 pts); (player @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536086.1463523">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 3 pts); (player @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536086.2582133">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 3 pts); (player @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536086.3701003">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 3 pts); (player @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536086.4820836">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 3 pts); (player @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536086.5940812">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 3 pts); (player @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536086.706854">Status punktowy: (player @ 390,210: 106 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 3 pts); (player @ 890,510: 3 pts)</Move>
-        <Move timestamp="1743536086.812284">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 4 pts); (player @ 890,510: 4 pts)</Move>
-        <Move timestamp="1743536086.818804">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 4 pts); (player @ 890,510: 4 pts)</Move>
-        <Move timestamp="1743536086.9308062">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 4 pts); (player @ 890,510: 4 pts)</Move>
-        <Move timestamp="1743536087.0423472">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 4 pts); (player @ 890,510: 4 pts)</Move>
-        <Move timestamp="1743536087.1548228">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 4 pts); (player @ 890,510: 4 pts)</Move>
-        <Move timestamp="1743536087.2670596">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 4 pts); (player @ 890,510: 4 pts)</Move>
-        <Move timestamp="1743536087.3789403">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 4 pts); (player @ 890,510: 4 pts)</Move>
-        <Move timestamp="1743536087.490081">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 4 pts); (player @ 890,510: 4 pts)</Move>
-        <Move timestamp="1743536087.6020987">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 4 pts); (player @ 890,510: 4 pts)</Move>
-        <Move timestamp="1743536087.715542">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 2 pts); (player @ 390,510: 4 pts); (player @ 890,510: 4 pts)</Move>
-        <Move timestamp="1743536087.8270686">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 5 pts); (player @ 890,510: 5 pts)</Move>
-        <Move timestamp="1743536087.938773">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 5 pts); (player @ 890,510: 5 pts)</Move>
-        <Move timestamp="1743536088.050432">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 5 pts); (player @ 890,510: 5 pts)</Move>
-        <Move timestamp="1743536088.1620986">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 5 pts); (player @ 890,510: 5 pts)</Move>
-        <Move timestamp="1743536088.274744">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 5 pts); (player @ 890,510: 5 pts)</Move>
-        <Move timestamp="1743536088.3868866">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 5 pts); (player @ 890,510: 5 pts)</Move>
-        <Move timestamp="1743536088.4986782">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 5 pts); (player @ 890,510: 5 pts)</Move>
-        <Move timestamp="1743536088.6108773">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 5 pts); (player @ 890,510: 5 pts)</Move>
-        <Move timestamp="1743536088.7226489">Status punktowy: (player @ 390,210: 103 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 5 pts); (player @ 890,510: 5 pts)</Move>
-        <Move timestamp="1743536088.8048055">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 6 pts); (player @ 890,510: 6 pts)</Move>
-        <Move timestamp="1743536088.834819">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 6 pts); (player @ 890,510: 6 pts)</Move>
-        <Move timestamp="1743536088.9461641">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 6 pts); (player @ 890,510: 6 pts)</Move>
-        <Move timestamp="1743536089.0588987">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 6 pts); (player @ 890,510: 6 pts)</Move>
-        <Move timestamp="1743536089.1708422">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 6 pts); (player @ 890,510: 6 pts)</Move>
-        <Move timestamp="1743536089.2820845">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 6 pts); (player @ 890,510: 6 pts)</Move>
-        <Move timestamp="1743536089.3940816">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 6 pts); (player @ 890,510: 6 pts)</Move>
-        <Move timestamp="1743536089.50647">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 6 pts); (player @ 890,510: 6 pts)</Move>
-        <Move timestamp="1743536089.6193984">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 6 pts); (player @ 890,510: 6 pts)</Move>
-        <Move timestamp="1743536089.7307718">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 1 pts); (player @ 390,510: 6 pts); (player @ 890,510: 6 pts)</Move>
-        <Move timestamp="1743536089.8426015">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 1 pts); (player @ 390,510: 7 pts); (player @ 890,510: 7 pts)</Move>
-        <Move timestamp="1743536089.9540818">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 1 pts); (player @ 390,510: 7 pts); (player @ 890,510: 7 pts)</Move>
-        <Move timestamp="1743536090.066128">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 1 pts); (player @ 390,510: 7 pts); (player @ 890,510: 7 pts)</Move>
-        <Move timestamp="1743536090.1790493">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 1 pts); (player @ 390,510: 7 pts); (player @ 890,510: 7 pts)</Move>
-        <Move timestamp="1743536090.2907953">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 1 pts); (player @ 390,510: 7 pts); (player @ 890,510: 7 pts)</Move>
-        <Move timestamp="1743536090.4026337">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 1 pts); (player @ 390,510: 7 pts); (player @ 890,510: 7 pts)</Move>
-        <Move timestamp="1743536090.5150049">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 1 pts); (player @ 390,510: 7 pts); (player @ 890,510: 7 pts)</Move>
-        <Move timestamp="1743536090.6268578">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 1 pts); (player @ 390,510: 7 pts); (player @ 890,510: 7 pts)</Move>
-        <Move timestamp="1743536090.7386234">Status punktowy: (player @ 390,210: 100 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 1 pts); (player @ 390,510: 7 pts); (player @ 890,510: 7 pts)</Move>
-        <Move timestamp="1743536090.8046029">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 2 pts); (player @ 390,510: 8 pts); (player @ 890,510: 8 pts)</Move>
-        <Move timestamp="1743536090.8505917">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 2 pts); (player @ 390,510: 8 pts); (player @ 890,510: 8 pts)</Move>
-        <Move timestamp="1743536090.9625444">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 2 pts); (player @ 390,510: 8 pts); (player @ 890,510: 8 pts)</Move>
-        <Move timestamp="1743536091.0747714">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 2 pts); (player @ 390,510: 8 pts); (player @ 890,510: 8 pts)</Move>
-        <Move timestamp="1743536091.1868742">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 2 pts); (player @ 390,510: 8 pts); (player @ 890,510: 8 pts)</Move>
-        <Move timestamp="1743536091.2987897">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 2 pts); (player @ 390,510: 8 pts); (player @ 890,510: 8 pts)</Move>
-        <Move timestamp="1743536091.410782">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 2 pts); (player @ 390,510: 8 pts); (player @ 890,510: 8 pts)</Move>
-        <Move timestamp="1743536091.522713">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 2 pts); (player @ 390,510: 8 pts); (player @ 890,510: 8 pts)</Move>
-        <Move timestamp="1743536091.6347792">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 2 pts); (player @ 390,510: 8 pts); (player @ 890,510: 8 pts)</Move>
-        <Move timestamp="1743536091.7468207">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 2 pts); (player @ 390,510: 8 pts); (player @ 890,510: 8 pts)</Move>
-        <Move timestamp="1743536091.8590033">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 3 pts); (player @ 390,510: 9 pts); (player @ 890,510: 9 pts)</Move>
-        <Move timestamp="1743536091.9700992">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 3 pts); (player @ 390,510: 9 pts); (player @ 890,510: 9 pts)</Move>
-        <Move timestamp="1743536092.0820842">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 3 pts); (player @ 390,510: 9 pts); (player @ 890,510: 9 pts)</Move>
-        <Move timestamp="1743536092.1940813">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 3 pts); (player @ 390,510: 9 pts); (player @ 890,510: 9 pts)</Move>
-        <Move timestamp="1743536092.3060877">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 3 pts); (player @ 390,510: 9 pts); (player @ 890,510: 9 pts)</Move>
-        <Move timestamp="1743536092.4212134">Status punktowy: (player @ 390,210: 97 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 3 pts); (player @ 390,510: 9 pts); (player @ 890,510: 9 pts)</Move>
+        <Move timestamp="1743537712.7370534">
+            <Status>
+                <Cell type="player" x="465" y="310" points="30" />
+                <Cell type="player" x="415" y="460" points="2" />
+                <Cell type="enemy" x="865" y="260" points="30" />
+                <Cell type="enemy" x="765" y="410" points="2" />
+                <Cell type="neutral" x="615" y="360" points="2" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537713.7450213">
+            <Status>
+                <Cell type="player" x="465" y="310" points="30" />
+                <Cell type="player" x="415" y="460" points="2" />
+                <Cell type="enemy" x="865" y="260" points="30" />
+                <Cell type="enemy" x="765" y="410" points="2" />
+                <Cell type="neutral" x="615" y="360" points="2" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537714.6720178">
+            <CreateBridge>
+                <Source>465,310</Source>
+                <Target>615,360</Target>
+                <Cost>7</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537714.7126682">
+            <Status>
+                <Cell type="player" x="465" y="310" points="23" />
+                <Cell type="player" x="415" y="460" points="3" />
+                <Cell type="enemy" x="865" y="260" points="31" />
+                <Cell type="enemy" x="765" y="410" points="3" />
+                <Cell type="neutral" x="615" y="360" points="2" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537714.7539306">
+            <Status>
+                <Cell type="player" x="465" y="310" points="23" />
+                <Cell type="player" x="415" y="460" points="3" />
+                <Cell type="enemy" x="865" y="260" points="31" />
+                <Cell type="enemy" x="765" y="410" points="3" />
+                <Cell type="neutral" x="615" y="360" points="2" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537715.4972095">
+            <CreateBridge>
+                <Source>465,310</Source>
+                <Target>765,410</Target>
+                <Cost>15</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537715.7615745">
+            <Status>
+                <Cell type="player" x="465" y="310" points="8" />
+                <Cell type="player" x="415" y="460" points="3" />
+                <Cell type="enemy" x="865" y="260" points="31" />
+                <Cell type="enemy" x="765" y="410" points="3" />
+                <Cell type="neutral" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537716.7107866">
+            <Status>
+                <Cell type="player" x="465" y="310" points="7" />
+                <Cell type="player" x="415" y="460" points="4" />
+                <Cell type="enemy" x="865" y="260" points="32" />
+                <Cell type="enemy" x="765" y="410" points="4" />
+                <Cell type="neutral" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537716.7692018">
+            <Status>
+                <Cell type="player" x="465" y="310" points="7" />
+                <Cell type="player" x="415" y="460" points="4" />
+                <Cell type="enemy" x="865" y="260" points="32" />
+                <Cell type="enemy" x="765" y="410" points="4" />
+                <Cell type="neutral" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537717.3581886">
+            <RemoveBridge>
+                <Source>465,310</Source>
+                <Target>615,360</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537717.3602002">
+            <RemoveBridge>
+                <Source>465,310</Source>
+                <Target>765,410</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537717.7780035">
+            <Status>
+                <Cell type="player" x="465" y="310" points="12" />
+                <Cell type="player" x="415" y="460" points="4" />
+                <Cell type="enemy" x="865" y="260" points="32" />
+                <Cell type="player" x="765" y="410" points="8" />
+                <Cell type="player" x="615" y="360" points="4" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537718.7121654">
+            <Status>
+                <Cell type="player" x="465" y="310" points="13" />
+                <Cell type="player" x="415" y="460" points="5" />
+                <Cell type="enemy" x="865" y="260" points="33" />
+                <Cell type="player" x="765" y="410" points="9" />
+                <Cell type="player" x="615" y="360" points="5" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537718.7851822">
+            <Status>
+                <Cell type="player" x="465" y="310" points="13" />
+                <Cell type="player" x="415" y="460" points="5" />
+                <Cell type="enemy" x="865" y="260" points="33" />
+                <Cell type="player" x="765" y="410" points="9" />
+                <Cell type="player" x="615" y="360" points="5" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537719.7930105">
+            <Status>
+                <Cell type="player" x="465" y="310" points="13" />
+                <Cell type="player" x="415" y="460" points="5" />
+                <Cell type="enemy" x="865" y="260" points="33" />
+                <Cell type="player" x="765" y="410" points="9" />
+                <Cell type="player" x="615" y="360" points="5" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537720.7132442">
+            <Status>
+                <Cell type="player" x="465" y="310" points="14" />
+                <Cell type="player" x="415" y="460" points="6" />
+                <Cell type="enemy" x="865" y="260" points="34" />
+                <Cell type="player" x="765" y="410" points="10" />
+                <Cell type="player" x="615" y="360" points="6" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537720.8016775">
+            <Status>
+                <Cell type="player" x="465" y="310" points="14" />
+                <Cell type="player" x="415" y="460" points="6" />
+                <Cell type="enemy" x="865" y="260" points="34" />
+                <Cell type="player" x="765" y="410" points="10" />
+                <Cell type="player" x="615" y="360" points="6" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537721.809538">
+            <Status>
+                <Cell type="player" x="465" y="310" points="14" />
+                <Cell type="player" x="415" y="460" points="6" />
+                <Cell type="enemy" x="865" y="260" points="34" />
+                <Cell type="player" x="765" y="410" points="10" />
+                <Cell type="player" x="615" y="360" points="6" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537722.7211862">
+            <Status>
+                <Cell type="player" x="465" y="310" points="15" />
+                <Cell type="player" x="415" y="460" points="7" />
+                <Cell type="enemy" x="865" y="260" points="35" />
+                <Cell type="player" x="765" y="410" points="11" />
+                <Cell type="player" x="615" y="360" points="7" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537722.8177555">
+            <Status>
+                <Cell type="player" x="465" y="310" points="15" />
+                <Cell type="player" x="415" y="460" points="7" />
+                <Cell type="enemy" x="865" y="260" points="35" />
+                <Cell type="player" x="765" y="410" points="11" />
+                <Cell type="player" x="615" y="360" points="7" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537723.825381">
+            <Status>
+                <Cell type="player" x="465" y="310" points="15" />
+                <Cell type="player" x="415" y="460" points="7" />
+                <Cell type="enemy" x="865" y="260" points="35" />
+                <Cell type="player" x="765" y="410" points="11" />
+                <Cell type="player" x="615" y="360" points="7" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537724.712642">
+            <Status>
+                <Cell type="player" x="465" y="310" points="16" />
+                <Cell type="player" x="415" y="460" points="8" />
+                <Cell type="enemy" x="865" y="260" points="36" />
+                <Cell type="player" x="765" y="410" points="12" />
+                <Cell type="player" x="615" y="360" points="8" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537724.8330092">
+            <Status>
+                <Cell type="player" x="465" y="310" points="16" />
+                <Cell type="player" x="415" y="460" points="8" />
+                <Cell type="enemy" x="865" y="260" points="36" />
+                <Cell type="player" x="765" y="410" points="12" />
+                <Cell type="player" x="615" y="360" points="8" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537725.841623">
+            <Status>
+                <Cell type="player" x="465" y="310" points="16" />
+                <Cell type="player" x="415" y="460" points="8" />
+                <Cell type="enemy" x="865" y="260" points="36" />
+                <Cell type="player" x="765" y="410" points="12" />
+                <Cell type="player" x="615" y="360" points="8" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537725.8803313">
+            <CreateBridge>
+                <Source>465,310</Source>
+                <Target>615,360</Target>
+                <Cost>7</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537726.4389043">
+            <CreateBridge>
+                <Source>765,410</Source>
+                <Target>615,360</Target>
+                <Cost>7</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537726.7138317">
+            <Status>
+                <Cell type="player" x="465" y="310" points="9" />
+                <Cell type="player" x="415" y="460" points="9" />
+                <Cell type="enemy" x="865" y="260" points="37" />
+                <Cell type="player" x="765" y="410" points="5" />
+                <Cell type="player" x="615" y="360" points="9" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537726.849014">
+            <Status>
+                <Cell type="player" x="465" y="310" points="9" />
+                <Cell type="player" x="415" y="460" points="9" />
+                <Cell type="enemy" x="865" y="260" points="37" />
+                <Cell type="player" x="765" y="410" points="5" />
+                <Cell type="player" x="615" y="360" points="9" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537727.8571382">
+            <Status>
+                <Cell type="player" x="465" y="310" points="9" />
+                <Cell type="player" x="415" y="460" points="9" />
+                <Cell type="enemy" x="865" y="260" points="37" />
+                <Cell type="player" x="765" y="410" points="5" />
+                <Cell type="player" x="615" y="360" points="11" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537728.148207">
+            <CreateBridge>
+                <Source>415,460</Source>
+                <Target>465,310</Target>
+                <Cost>7</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537728.6722598">
+            <RemoveBridge>
+                <Source>415,460</Source>
+                <Target>465,310</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537728.7120852">
+            <Status>
+                <Cell type="player" x="465" y="310" points="13" />
+                <Cell type="player" x="415" y="460" points="6" />
+                <Cell type="enemy" x="865" y="260" points="38" />
+                <Cell type="player" x="765" y="410" points="5" />
+                <Cell type="player" x="615" y="360" points="12" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537728.8398135">
+            <RemoveBridge>
+                <Source>765,410</Source>
+                <Target>615,360</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537728.8659291">
+            <Status>
+                <Cell type="player" x="465" y="310" points="13" />
+                <Cell type="player" x="415" y="460" points="6" />
+                <Cell type="enemy" x="865" y="260" points="38" />
+                <Cell type="player" x="765" y="410" points="8" />
+                <Cell type="player" x="615" y="360" points="16" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537729.501322">
+            <RemoveBridge>
+                <Source>465,310</Source>
+                <Target>615,360</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537729.87301">
+            <Status>
+                <Cell type="player" x="465" y="310" points="15" />
+                <Cell type="player" x="415" y="460" points="6" />
+                <Cell type="enemy" x="865" y="260" points="38" />
+                <Cell type="player" x="765" y="410" points="8" />
+                <Cell type="player" x="615" y="360" points="21" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537730.4483643">
+            <CreateBridge>
+                <Source>615,360</Source>
+                <Target>865,260</Target>
+                <Cost>13</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537730.7112448">
+            <Status>
+                <Cell type="player" x="465" y="310" points="16" />
+                <Cell type="player" x="415" y="460" points="7" />
+                <Cell type="enemy" x="865" y="260" points="39" />
+                <Cell type="player" x="765" y="410" points="9" />
+                <Cell type="player" x="615" y="360" points="8" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537730.8814037">
+            <Status>
+                <Cell type="player" x="465" y="310" points="16" />
+                <Cell type="player" x="415" y="460" points="7" />
+                <Cell type="enemy" x="865" y="260" points="39" />
+                <Cell type="player" x="765" y="410" points="9" />
+                <Cell type="player" x="615" y="360" points="8" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537730.949103">
+            <RemoveBridge>
+                <Source>615,360</Source>
+                <Target>865,260</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537731.889006">
+            <Status>
+                <Cell type="player" x="465" y="310" points="16" />
+                <Cell type="player" x="415" y="460" points="7" />
+                <Cell type="enemy" x="865" y="260" points="30" />
+                <Cell type="player" x="765" y="410" points="9" />
+                <Cell type="player" x="615" y="360" points="12" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537732.7212157">
+            <Status>
+                <Cell type="player" x="465" y="310" points="17" />
+                <Cell type="player" x="415" y="460" points="8" />
+                <Cell type="enemy" x="865" y="260" points="31" />
+                <Cell type="player" x="765" y="410" points="10" />
+                <Cell type="player" x="615" y="360" points="13" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537732.897245">
+            <Status>
+                <Cell type="player" x="465" y="310" points="17" />
+                <Cell type="player" x="415" y="460" points="8" />
+                <Cell type="enemy" x="865" y="260" points="31" />
+                <Cell type="player" x="765" y="410" points="10" />
+                <Cell type="player" x="615" y="360" points="13" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537732.9550707">
+            <CreateBridge>
+                <Source>765,410</Source>
+                <Target>865,260</Target>
+                <Cost>9</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537733.9051397">
+            <Status>
+                <Cell type="player" x="465" y="310" points="17" />
+                <Cell type="player" x="415" y="460" points="8" />
+                <Cell type="enemy" x="865" y="260" points="31" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="13" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537734.7132504">
+            <Status>
+                <Cell type="player" x="465" y="310" points="18" />
+                <Cell type="player" x="415" y="460" points="9" />
+                <Cell type="enemy" x="865" y="260" points="32" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="14" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537734.849917">
+            <CreateBridge>
+                <Source>615,360</Source>
+                <Target>865,260</Target>
+                <Cost>13</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537734.9132116">
+            <Status>
+                <Cell type="player" x="465" y="310" points="18" />
+                <Cell type="player" x="415" y="460" points="9" />
+                <Cell type="enemy" x="865" y="260" points="32" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537735.9216485">
+            <Status>
+                <Cell type="player" x="465" y="310" points="18" />
+                <Cell type="player" x="415" y="460" points="9" />
+                <Cell type="enemy" x="865" y="260" points="31" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537736.7108986">
+            <Status>
+                <Cell type="player" x="465" y="310" points="19" />
+                <Cell type="player" x="415" y="460" points="10" />
+                <Cell type="enemy" x="865" y="260" points="32" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537736.9297237">
+            <Status>
+                <Cell type="player" x="465" y="310" points="19" />
+                <Cell type="player" x="415" y="460" points="10" />
+                <Cell type="enemy" x="865" y="260" points="32" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537737.9370878">
+            <Status>
+                <Cell type="player" x="465" y="310" points="19" />
+                <Cell type="player" x="415" y="460" points="10" />
+                <Cell type="enemy" x="865" y="260" points="30" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537738.719813">
+            <Status>
+                <Cell type="player" x="465" y="310" points="20" />
+                <Cell type="player" x="415" y="460" points="11" />
+                <Cell type="enemy" x="865" y="260" points="31" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537738.9081779">
+            <CreateBridge>
+                <Source>465,310</Source>
+                <Target>615,360</Target>
+                <Cost>7</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537738.9450474">
+            <Status>
+                <Cell type="player" x="465" y="310" points="13" />
+                <Cell type="player" x="415" y="460" points="11" />
+                <Cell type="enemy" x="865" y="260" points="31" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537739.9539258">
+            <Status>
+                <Cell type="player" x="465" y="310" points="13" />
+                <Cell type="player" x="415" y="460" points="11" />
+                <Cell type="enemy" x="865" y="260" points="29" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537740.6138618">
+            <CreateBridge>
+                <Source>415,460</Source>
+                <Target>615,360</Target>
+                <Cost>11</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537740.7122257">
+            <Status>
+                <Cell type="player" x="465" y="310" points="13" />
+                <Cell type="player" x="415" y="460" points="0" />
+                <Cell type="enemy" x="865" y="260" points="30" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537740.9610155">
+            <Status>
+                <Cell type="player" x="465" y="310" points="13" />
+                <Cell type="player" x="415" y="460" points="0" />
+                <Cell type="enemy" x="865" y="260" points="30" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="1" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537741.064747">
+            <RemoveBridge>
+                <Source>465,310</Source>
+                <Target>615,360</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537741.149456">
+            <RemoveBridge>
+                <Source>415,460</Source>
+                <Target>615,360</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537741.9690273">
+            <Status>
+                <Cell type="player" x="465" y="310" points="15" />
+                <Cell type="player" x="415" y="460" points="4" />
+                <Cell type="enemy" x="865" y="260" points="28" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="13" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537742.7127233">
+            <Status>
+                <Cell type="player" x="465" y="310" points="16" />
+                <Cell type="player" x="415" y="460" points="5" />
+                <Cell type="enemy" x="865" y="260" points="29" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="13" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537742.961827">
+            <CreateBridge>
+                <Source>465,310</Source>
+                <Target>615,360</Target>
+                <Cost>7</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537742.9778266">
+            <Status>
+                <Cell type="player" x="465" y="310" points="9" />
+                <Cell type="player" x="415" y="460" points="5" />
+                <Cell type="enemy" x="865" y="260" points="29" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="13" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537743.2407415">
+            <RemoveBridge>
+                <Source>465,310</Source>
+                <Target>615,360</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537743.9852295">
+            <Status>
+                <Cell type="player" x="465" y="310" points="11" />
+                <Cell type="player" x="415" y="460" points="5" />
+                <Cell type="enemy" x="865" y="260" points="27" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="18" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537744.0530293">
+            <CreateBridge>
+                <Source>465,310</Source>
+                <Target>615,360</Target>
+                <Cost>7</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537744.3267126">
+            <RemoveBridge>
+                <Source>465,310</Source>
+                <Target>615,360</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537744.712366">
+            <Status>
+                <Cell type="player" x="465" y="310" points="7" />
+                <Cell type="player" x="415" y="460" points="6" />
+                <Cell type="enemy" x="865" y="260" points="28" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="23" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537744.946855">
+            <CreateBridge>
+                <Source>465,310</Source>
+                <Target>615,360</Target>
+                <Cost>7</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537744.9937882">
+            <Status>
+                <Cell type="player" x="465" y="310" points="0" />
+                <Cell type="player" x="415" y="460" points="6" />
+                <Cell type="enemy" x="865" y="260" points="28" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="23" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537745.249649">
+            <RemoveBridge>
+                <Source>465,310</Source>
+                <Target>615,360</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537745.773975">
+            <RemoveBridge>
+                <Source>615,360</Source>
+                <Target>865,260</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537746.001862">
+            <Status>
+                <Cell type="player" x="465" y="310" points="2" />
+                <Cell type="player" x="415" y="460" points="6" />
+                <Cell type="enemy" x="865" y="260" points="16" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="31" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537746.710804">
+            <Status>
+                <Cell type="player" x="465" y="310" points="3" />
+                <Cell type="player" x="415" y="460" points="7" />
+                <Cell type="enemy" x="865" y="260" points="17" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="32" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537746.9972167">
+            <CreateBridge>
+                <Source>615,360</Source>
+                <Target>865,260</Target>
+                <Cost>13</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537747.0097296">
+            <Status>
+                <Cell type="player" x="465" y="310" points="3" />
+                <Cell type="player" x="415" y="460" points="7" />
+                <Cell type="enemy" x="865" y="260" points="17" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="19" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537747.3133216">
+            <RemoveBridge>
+                <Source>615,360</Source>
+                <Target>865,260</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537747.9980955">
+            <CreateBridge>
+                <Source>615,360</Source>
+                <Target>865,260</Target>
+                <Cost>13</Cost>
+            </CreateBridge>
+        </Move>
+        <Move timestamp="1743537748.0179055">
+            <Status>
+                <Cell type="player" x="465" y="310" points="3" />
+                <Cell type="player" x="415" y="460" points="7" />
+                <Cell type="enemy" x="865" y="260" points="7" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="10" />
+            </Status>
+        </Move>
+        <Move timestamp="1743537748.3814723">
+            <RemoveBridge>
+                <Source>615,360</Source>
+                <Target>865,260</Target>
+            </RemoveBridge>
+        </Move>
+        <Move timestamp="1743537748.3879852">
+            <PreFinalStatus>
+                <Cell type="player" x="465" y="310" points="3" />
+                <Cell type="player" x="415" y="460" points="7" />
+                <Cell type="player" x="865" y="260" points="2" />
+                <Cell type="player" x="765" y="410" points="1" />
+                <Cell type="player" x="615" y="360" points="14" />
+            </PreFinalStatus>
+        </Move>
+        <Move timestamp="1743537748.3879852">
+            <Result>Wygrana!</Result>
+        </Move>
     </Moves>
     <FinalState>
         <Cells>
-            <Cell x="390.0" y="210.0" type="player" points="101" />
-            <Cell x="890.0" y="210.0" type="player" points="1" />
-            <Cell x="640.0" y="360.0" type="player" points="3" />
-            <Cell x="390.0" y="510.0" type="player" points="9" />
-            <Cell x="890.0" y="510.0" type="player" points="9" />
+            <Cell x="465.0" y="310.0" type="player" points="3" />
+            <Cell x="415.0" y="460.0" type="player" points="7" />
+            <Cell x="865.0" y="260.0" type="player" points="2" />
+            <Cell x="765.0" y="410.0" type="player" points="1" />
+            <Cell x="615.0" y="360.0" type="player" points="14" />
         </Cells>
         <Connections>
-            <Connection source_index="0" target_index="3" type="player" cost="15" />
-            <Connection source_index="0" target_index="4" type="player" cost="29" />
-            <Connection source_index="0" target_index="2" type="player" cost="14" />
+            <Connection source_index="3" target_index="2" type="player" cost="9" />
         </Connections>
     </FinalState>
 </GameHistory>

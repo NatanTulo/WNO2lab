@@ -13,7 +13,7 @@
   {
     "name": "Plansza 1",
     "cells": [
-      {"x": 400,"y": 250,"type": "player","points": 200},
+      {"x": 400,"y": 250,"type": "player","points": 20},
       {"x": 900,"y": 250,"type": "enemy","points": 20},
       {"x": 650,"y": 400,"type": "neutral","points": 5},
       {"x": 400,"y": 550,"type": "neutral","points": 3},
@@ -24,7 +24,7 @@
   {
     "name": "Plansza 2",
     "cells": [
-      {"x": 350,"y": 400,"type": "player","points": 15},
+      {"x": 350,"y": 400,"type": "player","points": 150},
       {"x": 950,"y": 400,"type": "enemy","points": 15},
       {"x": 500,"y": 250,"type": "neutral","points": 5},
       {"x": 800,"y": 250,"type": "neutral","points": 5},
