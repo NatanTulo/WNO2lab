@@ -21,8 +21,9 @@ class PlaybackScene(QGraphicsScene):
         cells_data = self.history.get("initial_state", {}).get("cells", [])
         self.cells = []
         for cell_data in cells_data:
+            # Zmiana: używamy get() aby właściwy typ został przypisany (domyślnie "neutral")
             cell = CellUnit(cell_data["x"], cell_data["y"],
-                            cell_data["type"], cell_data["points"])
+                            cell_data.get("type", "neutral"), cell_data["points"])
             self.cells.append(cell)
             self.addItem(cell)
         # Odtwórz połączenia – zakładamy, że indeksy odpowiadają liście cells
@@ -103,45 +104,97 @@ class PlaybackScene(QGraphicsScene):
 
     def apply_move_event(self, move):
         description = move.get("description", "")
-        # Jeśli ruch dotyczy utworzenia mostu, podświetl go na chwilę
+        # Obsługa tworzenia mostu
         if description.startswith("Utworzono most"):
             import re
-            m = re.search(r"Utworzono most między \((\d+), (\d+)\) a \((\d+), (\d+)\) o koszcie (\d+)", description)
+            pattern = r"Utworzono most między \((\d+), (\d+)\) a \((\d+), (\d+)\) o koszcie (\d+)"
+            m = re.search(pattern, description)
             if m:
                 x1, y1, x2, y2, cost = map(int, m.groups())
+                found = False
                 for conn in self.connections:
-                    sx = int(conn.source_cell.x)
-                    sy = int(conn.source_cell.y)
-                    tx = int(conn.target_cell.x)
-                    ty = int(conn.target_cell.y)
+                    sx, sy = int(conn.source_cell.x), int(conn.source_cell.y)
+                    tx, ty = int(conn.target_cell.x), int(conn.target_cell.y)
                     if abs(sx - x1) < 10 and abs(sy - y1) < 10 and abs(tx - x2) < 10 and abs(ty - y2) < 10:
-                        conn.flash = True  # ustawiamy flagę, którą można wykorzystać w drawForeground do migrania
+                        conn.flash = True  # podświetl istniejący most
                         QTimer.singleShot(500, lambda: setattr(conn, 'flash', False))
+                        found = True
                         break
-        # Jeśli ruch dotyczy statusu punktowego, zaktualizuj punkty komórek
+                if not found:
+                    # Utwórz nowy most, jeśli nie został znaleziony
+                    src = None
+                    tgt = None
+                    for cell in self.cells:
+                        if abs(cell.x - x1) < 10 and abs(cell.y - y1) < 10:
+                            src = cell
+                        if abs(cell.x - x2) < 10 and abs(cell.y - y2) < 10:
+                            tgt = cell
+                    if src and tgt:
+                        from game_objects import CellConnection
+                        new_conn = CellConnection(src, tgt, src.cell_type)
+                        new_conn.cost = cost
+                        new_conn.flash = True
+                        self.connections.append(new_conn)
+            return
+        # Obsługa usunięcia mostu
+        elif description.startswith("Usunięto most"):
+            import re
+            pattern = r"Usunięto most między \((\d+), (\d+)\) a \((\d+), (\d+)\)"
+            m = re.search(pattern, description)
+            if m:
+                x1, y1, x2, y2 = map(int, m.groups())
+                for conn in self.connections:
+                    sx, sy = int(conn.source_cell.x), int(conn.source_cell.y)
+                    tx, ty = int(conn.target_cell.x), int(conn.target_cell.y)
+                    if abs(sx - x1) < 10 and abs(sy - y1) < 10 and abs(tx - x2) < 10 and abs(ty - y2) < 10:
+                        self.removeItem(conn)
+                        self.connections.remove(conn)
+                        break
+            return
+        # Obsługa statusu punktowego – zawsze aktualizujemy typ i punkty komórki na podstawie opisu ruchu
         elif description.startswith("Status punktowy:"):
             import re
             matches = re.findall(r"\((\w+) @ (\d+),(\d+): (\d+) pts\)", description)
-            for cell_type, x, y, pts in matches:
+            for new_type, x, y, pts in matches:
                 x, y, pts = int(x), int(y), int(pts)
                 for cell in self.cells:
-                    if cell.cell_type == cell_type and abs(cell.x - x) < 10 and abs(cell.y - y) < 10:
+                    if abs(cell.x - x) < 10 and abs(cell.y - y) < 10:
+                        cell.cell_type = new_type  # aktualizacja typu zgodnie z opisem
                         cell.points = pts
                         cell.strength = (pts // 10) + 1
                         cell.update()
-        # ...dalsze parsowanie innych typów ruchów można dodać...
+            return
 
     def play_next_move(self):
         if self.current_move_index < len(self.move_history):
             move = self.move_history[self.current_move_index]
-            # zamiast wyświetlać tekst, stosujemy animację danego ruchu
             self.apply_move_event(move)
             self.current_move_index += 1
             self.playback_timer.start(int(self.speed_lineedit.text()))
         else:
             self.playback_timer.stop()
             self.animation_timer.stop()
-            # Opcjonalnie wyczyść lub zresetuj scenę po zakończeniu replay'a
+            self.show_game_result()
+
+    def show_game_result(self):
+        import re
+        # Szukamy ostatniego ruchu ze statusem punktowym
+        final_status = ""
+        for move in reversed(self.move_history):
+            if move.get("description", "").startswith("Status punktowy:"):
+                final_status = move["description"]
+                break
+        matches = re.findall(r"\((\w+) @ [\d,]+: \d+ pts\)", final_status)
+        player_count = matches.count("player")
+        enemy_count = matches.count("enemy")
+        if enemy_count == 0 and player_count > 0:
+            result = "Wygrana!"
+        elif player_count == 0 and enemy_count > 0:
+            result = "Przegrana!"
+        else:
+            result = "Gra zakończona."
+        from PyQt5.QtWidgets import QMessageBox
+        QMessageBox.information(None, "Koniec replay", result)
 
     def return_to_menu(self):
         if self.views() and self.views()[0].parent():

@@ -2,35 +2,35 @@
   {
     "name": "Wprowadzenie",
     "cells": [
-      {"x": 200, "y": 300, "type": "player", "points": 30},
-      {"x": 150, "y": 450, "type": "player", "points": 2},
-      {"x": 600, "y": 250, "type": "enemy", "points": 30},
-      {"x": 500, "y": 400, "type": "enemy", "points": 2},
-      {"x": 350, "y": 350, "type": "neutral", "points": 2}
+      {"x": 450,"y": 300,"type": "player","points": 30},
+      {"x": 400,"y": 450,"type": "player","points": 2},
+      {"x": 850,"y": 250,"type": "enemy","points": 30},
+      {"x": 750,"y": 400,"type": "enemy","points": 2},
+      {"x": 600,"y": 350,"type": "neutral","points": 2}
     ],
     "connections": []
   },
   {
     "name": "Plansza 1",
     "cells": [
-      {"x": 150, "y": 150, "type": "player", "points": 20},
-      {"x": 650, "y": 150, "type": "enemy", "points": 20},
-      {"x": 400, "y": 300, "type": "neutral", "points": 5},
-      {"x": 150, "y": 450, "type": "neutral", "points": 3},
-      {"x": 650, "y": 450, "type": "neutral", "points": 3}
+      {"x": 400,"y": 250,"type": "player","points": 200},
+      {"x": 900,"y": 250,"type": "enemy","points": 20},
+      {"x": 650,"y": 400,"type": "neutral","points": 5},
+      {"x": 400,"y": 550,"type": "neutral","points": 3},
+      {"x": 900,"y": 550,"type": "neutral","points": 3}
     ],
     "connections": []
   },
   {
     "name": "Plansza 2",
     "cells": [
-      {"x": 100, "y": 300, "type": "player", "points": 15},
-      {"x": 700, "y": 300, "type": "enemy", "points": 15},
-      {"x": 250, "y": 150, "type": "neutral", "points": 5},
-      {"x": 550, "y": 150, "type": "neutral", "points": 5},
-      {"x": 250, "y": 450, "type": "neutral", "points": 5},
-      {"x": 550, "y": 450, "type": "neutral", "points": 5},
-      {"x": 400, "y": 300, "type": "neutral", "points": 10}
+      {"x": 350,"y": 400,"type": "player","points": 15},
+      {"x": 950,"y": 400,"type": "enemy","points": 15},
+      {"x": 500,"y": 250,"type": "neutral","points": 5},
+      {"x": 800,"y": 250,"type": "neutral","points": 5},
+      {"x": 500,"y": 550,"type": "neutral","points": 5},
+      {"x": 800,"y": 550,"type": "neutral","points": 5},
+      {"x": 650,"y": 400,"type": "neutral","points": 10}
     ],
     "connections": []
   }

@@ -57,6 +57,7 @@ class GameScene(QGraphicsScene):
         self.single_player = False  # nowa flaga dla trybu 1 gracz
         self.enemy_timer = None
         self.move_history = []  # dodana historia ruchów do replay
+        self.last_state_record = 0  # nowa zmienna do kontrolowania interwału zapisu stanu
 
     def drawBackground(self, painter, rect):
         gradient = QLinearGradient(0, 0, 0, self.height())
@@ -234,6 +235,19 @@ class GameScene(QGraphicsScene):
                             conn.target_cell.connections.remove(conn)
                         self.connections.remove(conn)
                         cell.update()
+
+        # Po zakończeniu przetwarzania stanów komórek i mostów, zapisujemy stan pośredni
+        now = time.time()
+        if now - self.last_state_record >= 0.1:  # co 100 ms zapisujemy stan
+            points_status = "; ".join(
+                f"({cell.cell_type} @ {int(cell.x)},{int(cell.y)}: {cell.points} pts)"
+                for cell in self.cells
+            )
+            self.move_history.append({
+                "timestamp": now,
+                "description": f"Status punktowy: {points_status}"
+            })
+            self.last_state_record = now
 
         self.check_game_state()
 

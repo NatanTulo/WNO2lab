@@ -16,6 +16,7 @@ class CellUnit(QGraphicsItem):
         self.y = y
         self.radius = radius
         self.cell_type = cell_type
+        self.initial_type = cell_type  # nowa właściwość przechowująca oryginalny typ
         self.points = points
         self.strength = (self.points // POINTS_PER_STRENGTH) + 1
         self.connections = []

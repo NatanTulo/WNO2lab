@@ -4,8 +4,9 @@ import xml.etree.ElementTree as ET
 def save_game_history(game_scene, filename):
     """
     Zapisuje historię rozgrywki do pliku XML.
-    W zapisie znajduje się początkowy stan (lista komórek i powiązań)
-    oraz lista ruchów zapisanych w atrybucie move_history (jeśli istnieje).
+    W zapisie znajduje się początkowy stan (lista komórek i powiązań),
+    oraz lista ruchów zapisanych w atrybucie move_history.
+    Dodajemy też stan końcowy, aby replay zawierało informacje o ostatnim przejęciu.
     """
     root = ET.Element("GameHistory")
 
@@ -16,13 +17,12 @@ def save_game_history(game_scene, filename):
         cell_el = ET.SubElement(cells_el, "Cell")
         cell_el.set("x", str(cell.x))
         cell_el.set("y", str(cell.y))
-        cell_el.set("type", str(cell.cell_type))
+        # Zapisujemy oryginalny typ z initial_type
+        cell_el.set("type", str(getattr(cell, "initial_type", cell.cell_type)))
         cell_el.set("points", str(cell.points))
     connections_el = ET.SubElement(initial_state, "Connections")
     for conn in game_scene.connections:
         conn_el = ET.SubElement(connections_el, "Connection")
-        # Zakładamy, że scena zachowuje listę komórek jako game_scene.cells;
-        # zapamiętujemy indeksy komórek tworzących połączenie.
         try:
             src_index = game_scene.cells.index(conn.source_cell)
             tgt_index = game_scene.cells.index(conn.target_cell)
@@ -41,9 +41,34 @@ def save_game_history(game_scene, filename):
             move_el = ET.SubElement(moves_el, "Move")
             move_el.set("timestamp", str(move.get("timestamp", 0)))
             move_el.text = move.get("description", "")
+
+    # NOWY: Zapis stanu końcowego
+    final_state = ET.SubElement(root, "FinalState")
+    final_cells_el = ET.SubElement(final_state, "Cells")
+    for cell in game_scene.cells:
+        cell_el = ET.SubElement(final_cells_el, "Cell")
+        cell_el.set("x", str(cell.x))
+        cell_el.set("y", str(cell.y))
+        # Zapisujemy bieżący typ i punkty (po przejęciach)
+        cell_el.set("type", cell.cell_type)
+        cell_el.set("points", str(cell.points))
+    final_connections_el = ET.SubElement(final_state, "Connections")
+    for conn in game_scene.connections:
+        conn_el = ET.SubElement(final_connections_el, "Connection")
+        try:
+            src_index = game_scene.cells.index(conn.source_cell)
+            tgt_index = game_scene.cells.index(conn.target_cell)
+        except ValueError:
+            src_index = -1
+            tgt_index = -1
+        conn_el.set("source_index", str(src_index))
+        conn_el.set("target_index", str(tgt_index))
+        conn_el.set("type", str(conn.connection_type))
+        conn_el.set("cost", str(getattr(conn, "cost", 0)))
+
     # Zapis do pliku z czytelnym formatowaniem
     tree = ET.ElementTree(root)
-    ET.indent(tree, space="    ")  # dodanie wcięć dla czytelności XML-a
+    ET.indent(tree, space="    ")
     tree.write(filename, encoding="utf-8", xml_declaration=True)
 
 def load_game_history(filename):
