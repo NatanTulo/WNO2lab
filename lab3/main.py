@@ -1,4 +1,5 @@
 import sys
+import os
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit, QMessageBox
@@ -8,6 +9,7 @@ from game_scene import GameScene
 from level_editor_scene import LevelEditorScene
 from logger import Logger
 from menu_scene import MenuScene
+from playback_scene import PlaybackScene
 
 class DynamicGraphicsView(QGraphicsView):
     def resizeEvent(self, event):
@@ -63,6 +65,7 @@ class GameWindow(QMainWindow):
 
         self.menu_scene.level_selected = self.start_game
         self.menu_scene.editor_selected = self.start_editor
+        self.menu_scene.replay_selected = self.start_replay
 
         self.show_menu()
 
@@ -103,6 +106,16 @@ class GameWindow(QMainWindow):
         self.editor_scene = LevelEditorScene(level_id)
         self.editor_scene.logger = self.logger
         self.view.setScene(self.editor_scene)
+
+    def start_replay(self):
+        replay_file = "replay.xml"
+        if not os.path.exists(replay_file):
+            QMessageBox.critical(self, "Błąd", f"Plik replay '{replay_file}' nie istnieje!")
+            return
+        self.playback_scene = PlaybackScene(replay_file)
+        self.playback_scene.logger = self.logger
+        self.view.setScene(self.playback_scene)
+        self.playback_scene.start_playback()
 
     def activate_powerup(self, powerup_type):
         if self.game_scene:

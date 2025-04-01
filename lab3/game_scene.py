@@ -11,6 +11,7 @@ import config
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS, TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE, GAME_OVER_FONT_SIZE, FREEZE_DURATION_SECONDS, POWERUP_FREEZE, POWERUP_TAKEOVER, POWERUP_ADD_POINTS, POWERUP_NEW_CELL, NEW_CELL_COPY_RANGE_FACTOR, POINTS_PER_STRENGTH
 from game_ai import GameAI
 from game_objects import CellUnit, CellConnection
+import game_history  # dodany import do zapisu replay
 
 class GameScene(QGraphicsScene):
     """Main game scene class"""
@@ -55,6 +56,7 @@ class GameScene(QGraphicsScene):
 
         self.single_player = False  # nowa flaga dla trybu 1 gracz
         self.enemy_timer = None
+        self.move_history = []  # dodana historia ruchów do replay
 
     def drawBackground(self, painter, rect):
         gradient = QLinearGradient(0, 0, 0, self.height())
@@ -171,6 +173,11 @@ class GameScene(QGraphicsScene):
         self.connections.append(connection)
         if self.logger:
             self.logger.log(f"GameScene: Utworzono most między komórkami przy ({source.x:.0f}, {source.y:.0f}) i ({target.x:.0f}, {target.y:.0f}) o koszcie {connection.cost}.")
+        # Zapisujemy ruch w historii
+        self.move_history.append({
+            "timestamp": time.time(),
+            "description": f"Utworzono most między ({source.x:.0f}, {source.y:.0f}) a ({target.x:.0f}, {target.y:.0f}) o koszcie {connection.cost}"
+        })
         return connection
 
     def update_game(self):
@@ -598,7 +605,7 @@ class GameScene(QGraphicsScene):
         if self.logger:
             self.logger.log(f"GameScene: Gra zakończona - {self.game_over_text}.")
         self.update()
-
+        game_history.save_game_history(self, "replay.xml")  # automatyczny zapis replay
         QTimer.singleShot(2000, self.show_return_button)
 
     def show_return_button(self):
@@ -631,7 +638,7 @@ class GameScene(QGraphicsScene):
                     continue
                 if conn.source_cell.points >= 1:
                     conn.source_cell.points -= 1
-                    conn.source_cell.strength = (conn.source_cell.points // 10) + 1
+                    conn.source_cell.strength = (conn.source_cell.points // POINTS_PER_STRENGTH) + 1
                     conn.source_cell.update()
                     conn.dots.append(0)
 
@@ -641,6 +648,14 @@ class GameScene(QGraphicsScene):
                         self.reachable_cells = []
 
                         self.calculate_reachable_cells()
+        points_status = "; ".join(
+            f"({cell.cell_type} @ {int(cell.x)},{int(cell.y)}: {cell.points} pts)"
+            for cell in self.cells
+        )
+        self.move_history.append({
+            "timestamp": time.time(),
+            "description": f"Status punktowy: {points_status}"
+        })
 
     def drawForeground(self, painter, rect):
         if self.turn_based_mode and self.current_turn:

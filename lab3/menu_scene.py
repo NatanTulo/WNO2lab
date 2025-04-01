@@ -3,7 +3,7 @@ import os
 
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QRegExp
 from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap, QPainterPath, QRegExpValidator, QIntValidator
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsItem, QGraphicsEllipseItem, QLineEdit, QGraphicsProxyWidget
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsItem, QGraphicsEllipseItem, QLineEdit, QGraphicsProxyWidget, QPushButton
 
 import resources_rc
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, MENU_TITLE_FONT_SIZE, MENU_LEVEL_TITLE_FONT_SIZE, MENU_SWITCH_LABEL_FONT_SIZE, MENU_LEVEL_BUTTON_WIDTH, FONT_FAMILY, BUTTON_FONT_SIZE, COLOR_SWITCH_OFF, COLOR_SWITCH_ON, COLOR_BUTTON_LEFT, COLOR_BUTTON_RIGHT
@@ -114,7 +114,7 @@ class MenuScene(QGraphicsScene):
         title.setPos((self.width() - title_width) / 2, 100)
         self.addItem(title)
         
-        # PRZENOSIEMY WYBÓR TRYBU TUROWEGO NAD WYBÓR POZIOMÓW
+        # PRZENOSIMY WYBÓR TRYBU TUROWEGO NAD WYBÓR POZIOMÓW
         switch_label = QGraphicsTextItem("Tryb turowy")
         switch_label.setFont(QFont(FONT_FAMILY, MENU_SWITCH_LABEL_FONT_SIZE))
         switch_label.setDefaultTextColor(Qt.white)
@@ -125,7 +125,7 @@ class MenuScene(QGraphicsScene):
         self.switch = SwitchButton(60, 30)
         self.switch.setPos((self.width() - self.switch.width) / 2, 200)
         def switch_callback(state):
-            setattr(self, 'turn_based', state)
+            self.turn_based = state
             if self.logger:
                 self.logger.log(f"MenuScene: Tryb turowy {'włączony' if state else 'wyłączony'}.")
         self.switch.callback = switch_callback
@@ -211,6 +211,15 @@ class MenuScene(QGraphicsScene):
             port_proxy.setVisible(False)
         self._ip_proxy = ip_proxy
         self._port_proxy = port_proxy
+
+        # Dodanie przycisku Replay na dole ekranu
+        replay_button = QPushButton("Odtwórz replay")
+        replay_button.setFixedSize(150, 40)
+        replay_proxy = QGraphicsProxyWidget()
+        replay_proxy.setWidget(replay_button)
+        replay_proxy.setPos((self.width() - 150) / 2, self.height() - 100)  # pozycja przycisku
+        self.addItem(replay_proxy)
+        replay_button.clicked.connect(lambda: self.replay_selected() if hasattr(self, 'replay_selected') else None)
 
     def create_button(self, text, x, y, width=200):
         class Button(QGraphicsItemGroup):
