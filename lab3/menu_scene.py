@@ -3,7 +3,7 @@ import os
 
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal
 from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap, QPainterPath
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsItem
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsItem, QGraphicsEllipseItem
 
 import resources_rc
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, MENU_TITLE_FONT_SIZE, MENU_LEVEL_TITLE_FONT_SIZE, MENU_SWITCH_LABEL_FONT_SIZE, MENU_LEVEL_BUTTON_WIDTH, FONT_FAMILY, BUTTON_FONT_SIZE
@@ -46,6 +46,37 @@ class SwitchButton(QGraphicsItem):
             self.callback(self._state)
         event.accept()
 
+class GameModeRadioButton(QGraphicsItemGroup):
+    def __init__(self, mode_text, mode_value, x, y, selected=False, parent=None):
+        super().__init__(parent)
+        self.mode_text = mode_text
+        self.mode_value = mode_value
+        self.selected = selected
+        self.setAcceptHoverEvents(True)
+        self.circle_radius = 8
+        # Ustawienie pozycji kółka z dolnym offsetem
+        self.circle = QGraphicsEllipseItem(0, 8, self.circle_radius*2, self.circle_radius*2)
+        self.circle.setBrush(QBrush(QColor(0,150,136)) if self.selected else QBrush(Qt.white))
+        self.circle.setPen(QPen(Qt.white, 1))
+        self.addToGroup(self.circle)
+        # Ustawienie pozycji tekstu – przesunięcie o ten sam offset
+        self.text_item = QGraphicsTextItem(mode_text)
+        self.text_item.setDefaultTextColor(Qt.white)
+        self.text_item.setFont(QFont(FONT_FAMILY, MENU_SWITCH_LABEL_FONT_SIZE))
+        self.text_item.setPos(self.circle_radius*2 + 5, 0)
+        self.addToGroup(self.text_item)
+        self.setPos(x, y)
+    
+    def mousePressEvent(self, event):
+        if self.scene() and hasattr(self.scene(), 'update_game_mode'):
+            self.scene().update_game_mode(self.mode_value)
+        event.accept()
+    
+    def setSelected(self, selected):
+        self.selected = selected
+        self.circle.setBrush(QBrush(QColor(0,150,136)) if self.selected else QBrush(Qt.white))
+        self.update()
+
 class MenuScene(QGraphicsScene):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -54,6 +85,8 @@ class MenuScene(QGraphicsScene):
         self.level_buttons = []
         self.levels_data = []
         self.turn_based = False
+        self.game_mode = "2 graczy lokalnie"
+        self.radio_buttons = []
         self.load_levels()
         self.setup_menu()
         self.editor_selected = None
@@ -101,15 +134,44 @@ class MenuScene(QGraphicsScene):
             self.level_buttons.append(button)
             y_pos += 60
 
+        mode_title = QGraphicsTextItem("Wybierz tryb gry:")
+        mode_title.setFont(QFont(FONT_FAMILY, MENU_LEVEL_TITLE_FONT_SIZE))
+        mode_title.setDefaultTextColor(Qt.white)
+        mode_title_width = mode_title.boundingRect().width()
+        mode_title.setPos((self.width() - mode_title_width) / 2, y_pos + 10)
+        self.addItem(mode_title)
+
+        # Pierwsza grupa radio buttonów ("1 gracz" i "2 graczy lokalnie")
+        radio_y = y_pos + 50
+        first_group = [("1 gracz", "1 gracz"), ("2 graczy lokalnie", "2 graczy lokalnie")]
+        spacing = 110
+        group_width = len(first_group) * spacing
+        radio_start_x_1 = (self.width() - group_width) / 2
+        for i, (text, value) in enumerate(first_group):
+            selected = (value == self.game_mode)
+            radio = GameModeRadioButton(text, value, radio_start_x_1 + i * spacing, radio_y, selected)
+            self.radio_buttons.append(radio)
+            self.addItem(radio)
+
+        # Druga grupa radio buttonów ("gra sieciowa") – oddzielna linia wyśrodkowana
+        radio_y2 = radio_y + 25
+        second_group = [("gra sieciowa", "gra sieciowa")]
+        for text, value in second_group:
+            selected = (value == self.game_mode)
+            radio_x = (self.width() - 110) / 2  # przyjmujemy szerokość ~110 pikseli
+            radio = GameModeRadioButton(text, value, radio_x, radio_y2, selected)
+            self.radio_buttons.append(radio)
+            self.addItem(radio)
+
         switch_label = QGraphicsTextItem("Tryb turowy")
         switch_label.setFont(QFont(FONT_FAMILY, MENU_SWITCH_LABEL_FONT_SIZE))
         switch_label.setDefaultTextColor(Qt.white)
         switch_label_width = switch_label.boundingRect().width()
-        switch_label.setPos((self.width() - switch_label_width) / 2, 460)
+        switch_label.setPos((self.width() - switch_label_width) / 2, radio_y2 + 50)
         self.addItem(switch_label)
 
         self.switch = SwitchButton(60, 30)
-        self.switch.setPos((self.width() - self.switch.width) / 2, 490)
+        self.switch.setPos((self.width() - self.switch.width) / 2, radio_y2 + 80)
         def switch_callback(state):
             setattr(self, 'turn_based', state)
             if self.logger:
@@ -187,6 +249,13 @@ class MenuScene(QGraphicsScene):
 
     def level_selected(self, level_id):
         pass
+
+    def update_game_mode(self, selected_mode):
+        self.game_mode = selected_mode
+        for radio in self.radio_buttons:
+            radio.setSelected(radio.mode_value == selected_mode)
+        if self.logger:
+            self.logger.log(f"MenuScene: Wybrano tryb gry: {self.game_mode}")
 
     def drawBackground(self, painter, rect):
         gradient = QLinearGradient(0, 0, 0, self.height())
