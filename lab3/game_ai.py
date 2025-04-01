@@ -13,16 +13,17 @@ class GameAI:
         self.simulation_time = 0.5
         self.exploration_weight = 1.41
 
-    def analyze_best_move(self):
-        """Analiza obecnego stanu gry i sugestia najlepszego ruchu używając MCTS"""
-        player_cells = [cell for cell in self.game_scene.cells if cell.cell_type == "player"]
+    def analyze_best_move(self, cell_type="player"):
+        """Analiza obecnego stanu gry i sugestia najlepszego ruchu używając MCTS.
+           Parametr cell_type określa, dla których komórek obliczyć ruch (domyślnie 'player')."""
+        controlled_cells = [cell for cell in self.game_scene.cells if cell.cell_type == cell_type]
 
-        if not player_cells:
+        if not controlled_cells:
             return None
 
         mcts = MCTS(self.game_scene, self.exploration_weight)
 
-        possible_moves = self._get_possible_moves(player_cells)
+        possible_moves = self._get_possible_moves(controlled_cells)
 
         if not possible_moves:
             return None
@@ -31,11 +32,11 @@ class GameAI:
 
         return best_move
 
-    def _get_possible_moves(self, player_cells):
-        """Generuje listę wszystkich możliwych ruchów dla komórek gracza"""
+    def _get_possible_moves(self, controlled_cells):
+        """Generuje listę wszystkich możliwych ruchów dla zadanych komórek"""
         possible_moves = []
 
-        for source_cell in player_cells:
+        for source_cell in controlled_cells:
             if source_cell.points < 2:
                 continue
 

@@ -52,6 +52,9 @@ class GameScene(QGraphicsScene):
         self.powerup_active = None
         self.copy_source = None
 
+        self.single_player = False  # nowa flaga dla trybu 1 gracz
+        self.enemy_timer = None
+
     def drawBackground(self, painter, rect):
         center = self.sceneRect().center()
         radius = max(self.sceneRect().width(), self.sceneRect().height())
@@ -62,6 +65,8 @@ class GameScene(QGraphicsScene):
 
     def initialize_level(self, level_number):
         """Set up cells and connections for a specific level"""
+        if self.enemy_timer:
+            self.enemy_timer.stop()
         self.clear()
         self.cells = []
         self.connections = []
@@ -227,6 +232,11 @@ class GameScene(QGraphicsScene):
         self.update()
 
     def mousePressEvent(self, event):
+        # W trybie 1 gracz ignorujemy interakcję prawym przyciskiem myszy
+        if self.single_player and event.button() == Qt.RightButton:
+            event.accept()
+            return
+
         if self.powerup_active is not None:
             clicked_item = self.itemAt(event.scenePos(), QTransform())
             if self.powerup_active == POWERUP_NEW_CELL:
@@ -871,4 +881,25 @@ class GameScene(QGraphicsScene):
         self.round_time_remaining = self.turn_duration
         if self.logger:
             self.logger.log(f"GameScene: Zmiana tury, teraz: {self.current_turn}.")
+        self.update()
+
+    def start_enemy_timer(self):
+        """Uruchomienie timera do wykonywania ruchów AI dla przeciwnika"""
+        if self.enemy_timer:
+            self.enemy_timer.stop()
+        self.enemy_timer = QTimer()
+        self.enemy_timer.timeout.connect(self.enemy_move)
+        self.enemy_timer.start(3000)  # interwał 3000 ms
+
+    def enemy_move(self):
+        """Metoda wykonująca ruch przeciwnika przy użyciu AI"""
+        if not self.single_player:
+            return
+        best_move = self.game_ai.analyze_best_move(cell_type="enemy")
+        if best_move:
+            source, target, cost = best_move
+            if source.points >= cost:
+                source.points -= cost
+                source.strength = (source.points // POINTS_PER_STRENGTH) + 1
+                self.create_connection(source, target, "enemy", cost)
         self.update()

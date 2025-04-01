@@ -87,6 +87,12 @@ class GameWindow(QMainWindow):
         self.game_scene.logger = self.logger
         self.view.setScene(self.game_scene)
         self.game_scene.initialize_level(level_id)
+        # Ustawienie trybu single player w zależności od wybranej opcji
+        if self.menu_scene.game_mode == "1 gracz":
+            self.game_scene.single_player = True
+            self.game_scene.start_enemy_timer()
+        else:
+            self.game_scene.single_player = False
         if self.menu_scene.turn_based:
             self.game_scene.turn_based_mode = True
             self.game_scene.start_turn_timer()
