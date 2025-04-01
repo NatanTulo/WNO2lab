@@ -272,8 +272,8 @@ class GameScene(QGraphicsScene):
         self.update()
 
     def mousePressEvent(self, event):
-        # W trybie 1 gracz ignorujemy interakcję prawym przyciskiem myszy
-        if self.single_player and event.button() == Qt.RightButton:
+        # W trybie, gdy gramy w 1 gracz (self.single_player True) ignorujemy interakcję prawym przyciskiem
+        if event.button() == Qt.RightButton and self.single_player:
             event.accept()
             return
 
@@ -453,6 +453,9 @@ class GameScene(QGraphicsScene):
             self.update()
         else:
             buttons = event.buttons()
+            # W trybie 1 gracz (self.single_player True) ignorujemy interakcje z PPM
+            if buttons & Qt.RightButton and self.single_player:
+                return super().mouseMoveEvent(event)
             if buttons & Qt.LeftButton:
                 connection_filter = "player"
             elif buttons & Qt.RightButton:
