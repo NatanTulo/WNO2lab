@@ -159,6 +159,14 @@ class GameScene(QGraphicsScene):
         """Create a connection between two cells"""
         connection = CellConnection(source, target, conn_type)
         connection.cost = cost
+        # Dodajemy mechanizm konfliktu, jeśli istnieje most z przeciwnym typem
+        for conn in self.connections:
+            if conn.source_cell == target and conn.target_cell == source and conn.connection_type != conn_type:
+                connection.conflict = True
+                conn.conflict = True
+                break
+        if not hasattr(connection, 'conflict'):
+            connection.conflict = False
         source.connections.append(connection)
         target.connections.append(connection)
         self.connections.append(connection)
@@ -172,7 +180,7 @@ class GameScene(QGraphicsScene):
             cell.update()
 
         for conn in self.connections:
-            if conn.connection_type in ["player", "enemy"]:
+            if conn.connection_type in ["player", "enemy"] and not conn.conflict:
                 if conn.source_cell.frozen or conn.target_cell.frozen:
                     continue
                 finished = []
@@ -191,6 +199,35 @@ class GameScene(QGraphicsScene):
                         finished.append(i)
                 for index in sorted(finished, reverse=True):
                     del conn.dots[index]
+
+        # Now processing mosty konfliktowe
+        for conn in self.connections:
+            if hasattr(conn, 'conflict') and conn.conflict:
+                if not hasattr(conn, 'conflict_progress'):
+                    conn.conflict_progress = 0
+                conn.conflict_progress += 0.016
+                if conn.conflict_progress >= 1.0:
+                    conn.source_cell.points -= 1
+                    conn.target_cell.points -= 1
+                    conn.source_cell.strength = (conn.source_cell.points // POINTS_PER_STRENGTH) + 1
+                    conn.target_cell.strength = (conn.target_cell.points // POINTS_PER_STRENGTH) + 1
+                    conn.source_cell.update()
+                    conn.target_cell.update()
+                    conn.conflict_progress = 0
+
+        # Sprawdzenie czy którejś z komórek skończyły się punkty – usuwamy wszystkie konfliktowe mosty z nią związane
+        for cell in self.cells:
+            if cell.points <= 0:
+                for conn in list(self.connections):
+                    if hasattr(conn, 'conflict') and conn.conflict and (conn.source_cell == cell or conn.target_cell == cell):
+                        refund = conn.cost // 2
+                        cell.points += refund
+                        if conn in conn.source_cell.connections:
+                            conn.source_cell.connections.remove(conn)
+                        if conn in conn.target_cell.connections:
+                            conn.target_cell.connections.remove(conn)
+                        self.connections.remove(conn)
+                        cell.update()
 
         self.check_game_state()
 
@@ -214,9 +251,13 @@ class GameScene(QGraphicsScene):
             if cell == self.drag_start_cell:
                 continue
 
-            exists = any(((conn.source_cell == self.drag_start_cell and conn.target_cell == cell) or
-                         (conn.source_cell == cell and conn.target_cell == self.drag_start_cell))
-                         for conn in self.connections)
+            # Uaktualniony warunek: pomijamy istniejące mosty tylko, gdy ich connection_type odpowiada typowi początkowej komórki.
+            exists = any(
+                (((conn.source_cell == self.drag_start_cell and conn.target_cell == cell) or
+                  (conn.source_cell == cell and conn.target_cell == self.drag_start_cell))
+                 and conn.connection_type == self.drag_start_cell.cell_type)
+                for conn in self.connections
+            )
             if exists:
                 continue
 
@@ -505,9 +546,10 @@ class GameScene(QGraphicsScene):
                 distance = math.hypot(dx, dy)
                 cost = int(distance / 20)
                 if self.drag_start_cell.points >= cost:
+                    # Tylko jeśli nie ma już mostu o tym samym typie (np. "player")
                     exists = any(((conn.source_cell == self.drag_start_cell and conn.target_cell == release_item) or
-                                 (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
-                                 for conn in self.connections)
+                                  (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
+                                  and conn.connection_type == "player" for conn in self.connections)
                     if not exists:
                         self.drag_start_cell.points -= cost
                         self.drag_start_cell.strength = (self.drag_start_cell.points // POINTS_PER_STRENGTH) + 1
@@ -522,9 +564,10 @@ class GameScene(QGraphicsScene):
                 distance = math.hypot(dx, dy)
                 cost = int(distance / 20)
                 if self.drag_start_cell.points >= cost:
+                    # Tylko jeśli nie ma już mostu o tym samym typie ("enemy")
                     exists = any(((conn.source_cell == self.drag_start_cell and conn.target_cell == release_item) or
-                                 (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
-                                 for conn in self.connections)
+                                  (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
+                                  and conn.connection_type == "enemy" for conn in self.connections)
                     if not exists:
                         self.drag_start_cell.points -= cost
                         self.drag_start_cell.strength = (self.drag_start_cell.points // POINTS_PER_STRENGTH) + 1
@@ -627,22 +670,32 @@ class GameScene(QGraphicsScene):
         for conn in self.connections:
             source = QPointF(conn.source_cell.x, conn.source_cell.y)
             target = QPointF(conn.target_cell.x, conn.target_cell.y)
-            if conn.connection_type == "player":
-                painter.setPen(QPen(QColor(0,100,0), 3))
-            else:
+            if hasattr(conn, 'conflict') and conn.conflict:
+                # Rysujemy most konfliktowy jako dwie połowy: zieloną i czerwoną
+                mid_point = QPointF((source.x() + target.x())/2, (source.y() + target.y())/2)
+                painter.setPen(QPen(QColor(0,255,0), 3))
+                painter.drawLine(source, mid_point)
                 painter.setPen(QPen(QColor(139,0,0), 3))
-            painter.drawLine(source, target)
-            if conn.connection_type == "player":
-                dot_color = QColor(144,238,144)
+                painter.drawLine(mid_point, target)
             else:
-                dot_color = QColor(255,99,71)
-            for progress in conn.dots:
-                x = conn.source_cell.x + progress * (conn.target_cell.x - conn.source_cell.x)
-                y = conn.source_cell.y + progress * (conn.target_cell.y - conn.source_cell.y)
-                dot_radius = 4
-                painter.setPen(Qt.NoPen)
-                painter.setBrush(dot_color)
-                painter.drawEllipse(QRectF(x - dot_radius, y - dot_radius, dot_radius * 2, dot_radius * 2))
+                if conn.connection_type == "player":
+                    painter.setPen(QPen(QColor(0,100,0), 3))
+                else:
+                    painter.setPen(QPen(QColor(139,0,0), 3))
+                painter.drawLine(source, target)
+            # Rysowanie kropel, dla normalnych mostów pozostaje niezmienione
+            if not (hasattr(conn, 'conflict') and conn.conflict):
+                if conn.connection_type == "player":
+                    dot_color = QColor(144,238,144)
+                else:
+                    dot_color = QColor(255,99,71)
+                for progress in conn.dots:
+                    x = conn.source_cell.x + progress * (conn.target_cell.x - conn.source_cell.x)
+                    y = conn.source_cell.y + progress * (conn.target_cell.y - conn.source_cell.y)
+                    dot_radius = 4
+                    painter.setPen(Qt.NoPen)
+                    painter.setBrush(dot_color)
+                    painter.drawEllipse(QRectF(x - dot_radius, y - dot_radius, dot_radius * 2, dot_radius * 2))
         if self.game_over_text is not None:
             font = QFont(FONT_FAMILY, GAME_OVER_FONT_SIZE, QFont.Bold)
             painter.setFont(font)
