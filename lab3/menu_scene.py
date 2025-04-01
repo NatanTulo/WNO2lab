@@ -1,9 +1,9 @@
 import json
 import os
 
-from PyQt5.QtCore import Qt, QRectF, pyqtSignal
-from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap, QPainterPath
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsItem, QGraphicsEllipseItem
+from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QRegExp
+from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap, QPainterPath, QRegExpValidator, QIntValidator
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsItem, QGraphicsEllipseItem, QLineEdit, QGraphicsProxyWidget
 
 import resources_rc
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, MENU_TITLE_FONT_SIZE, MENU_LEVEL_TITLE_FONT_SIZE, MENU_SWITCH_LABEL_FONT_SIZE, MENU_LEVEL_BUTTON_WIDTH, FONT_FAMILY, BUTTON_FONT_SIZE, COLOR_SWITCH_OFF, COLOR_SWITCH_ON, COLOR_BUTTON_LEFT, COLOR_BUTTON_RIGHT
@@ -85,6 +85,12 @@ class MenuScene(QGraphicsScene):
         self.turn_based = False
         self.game_mode = "2 graczy lokalnie"
         self.radio_buttons = []
+        self.network_ip = ""
+        self.network_port = ""
+        self.ip_lineedit = None
+        self.port_lineedit = None
+        self._ip_proxy = None
+        self._port_proxy = None
         self.load_levels()
         self.setup_menu()
         self.editor_selected = None
@@ -104,20 +110,36 @@ class MenuScene(QGraphicsScene):
         title = QGraphicsTextItem("Cell Expansion Wars")
         title.setFont(QFont(FONT_FAMILY, MENU_TITLE_FONT_SIZE, QFont.Bold))
         title.setDefaultTextColor(Qt.white)
-
         title_width = title.boundingRect().width()
         title.setPos((self.width() - title_width) / 2, 100)
         self.addItem(title)
+        
+        # PRZENOSIEMY WYBÓR TRYBU TUROWEGO NAD WYBÓR POZIOMÓW
+        switch_label = QGraphicsTextItem("Tryb turowy")
+        switch_label.setFont(QFont(FONT_FAMILY, MENU_SWITCH_LABEL_FONT_SIZE))
+        switch_label.setDefaultTextColor(Qt.white)
+        switch_label_width = switch_label.boundingRect().width()
+        switch_label.setPos((self.width() - switch_label_width) / 2, 170)
+        self.addItem(switch_label)
+
+        self.switch = SwitchButton(60, 30)
+        self.switch.setPos((self.width() - self.switch.width) / 2, 200)
+        def switch_callback(state):
+            setattr(self, 'turn_based', state)
+            if self.logger:
+                self.logger.log(f"MenuScene: Tryb turowy {'włączony' if state else 'wyłączony'}.")
+        self.switch.callback = switch_callback
+        self.addItem(self.switch)
+        # KONIEC PRZENOSZENIA
 
         level_title = QGraphicsTextItem("Wybierz poziom:")
         level_title.setFont(QFont(FONT_FAMILY, MENU_LEVEL_TITLE_FONT_SIZE))
         level_title.setDefaultTextColor(Qt.white)
-
         level_title_width = level_title.boundingRect().width()
-        level_title.setPos((self.width() - level_title_width) / 2, 200)
+        level_title.setPos((self.width() - level_title_width) / 2, 250)
         self.addItem(level_title)
-
-        y_pos = 250
+        
+        y_pos = 300
         button_width = MENU_LEVEL_BUTTON_WIDTH
 
         for i, level in enumerate(self.levels_data):
@@ -158,22 +180,37 @@ class MenuScene(QGraphicsScene):
             radio = GameModeRadioButton(text, value, radio_x, radio_y2, selected)
             self.radio_buttons.append(radio)
             self.addItem(radio)
-
-        switch_label = QGraphicsTextItem("Tryb turowy")
-        switch_label.setFont(QFont(FONT_FAMILY, MENU_SWITCH_LABEL_FONT_SIZE))
-        switch_label.setDefaultTextColor(Qt.white)
-        switch_label_width = switch_label.boundingRect().width()
-        switch_label.setPos((self.width() - switch_label_width) / 2, radio_y2 + 50)
-        self.addItem(switch_label)
-
-        self.switch = SwitchButton(60, 30)
-        self.switch.setPos((self.width() - self.switch.width) / 2, radio_y2 + 80)
-        def switch_callback(state):
-            setattr(self, 'turn_based', state)
-            if self.logger:
-                self.logger.log(f"MenuScene: Tryb turowy {'włączony' if state else 'wyłączony'}.")
-        self.switch.callback = switch_callback
-        self.addItem(self.switch)
+        
+        # Dodajemy pola do wprowadzania adresu IP i portu dla trybu sieciowego
+        # Pole IP z maską i walidatorem
+        self.ip_lineedit = QLineEdit()
+        self.ip_lineedit.setPlaceholderText("Adres IP (np. 192.168.1.1)")
+        ip_regex = QRegExp(r"^((25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(25[0-5]|2[0-4]\d|[01]?\d?\d)$")
+        ip_validator = QRegExpValidator(ip_regex)
+        self.ip_lineedit.setValidator(ip_validator)
+        self.ip_lineedit.setFixedWidth(200)
+        ip_proxy = QGraphicsProxyWidget()
+        ip_proxy.setWidget(self.ip_lineedit)
+        ip_proxy.setPos((self.width() - 200) / 2, radio_y2 + 80)
+        self.addItem(ip_proxy)
+        
+        # Pole Port z walidacją liczb całkowitych (0-65535)
+        self.port_lineedit = QLineEdit()
+        self.port_lineedit.setPlaceholderText("Port (np. 12345)")
+        port_validator = QIntValidator(0, 65535)
+        self.port_lineedit.setValidator(port_validator)
+        self.port_lineedit.setFixedWidth(200)
+        port_proxy = QGraphicsProxyWidget()
+        port_proxy.setWidget(self.port_lineedit)
+        port_proxy.setPos((self.width() - 200) / 2, radio_y2 + 120)
+        self.addItem(port_proxy)
+        
+        # Pola widoczne tylko dla trybu "gra sieciowa"
+        if self.game_mode != "gra sieciowa":
+            ip_proxy.setVisible(False)
+            port_proxy.setVisible(False)
+        self._ip_proxy = ip_proxy
+        self._port_proxy = port_proxy
 
     def create_button(self, text, x, y, width=200):
         class Button(QGraphicsItemGroup):
@@ -252,6 +289,17 @@ class MenuScene(QGraphicsScene):
             radio.setSelected(radio.mode_value == selected_mode)
         if self.logger:
             self.logger.log(f"MenuScene: Wybrano tryb gry: {self.game_mode}")
+        # Pokazujemy pola sieciowe tylko wtedy, gdy wybrano "gra sieciowa"
+        if self.game_mode == "gra sieciowa":
+            if self._ip_proxy:
+                self._ip_proxy.setVisible(True)
+            if self._port_proxy:
+                self._port_proxy.setVisible(True)
+        else:
+            if self._ip_proxy:
+                self._ip_proxy.setVisible(False)
+            if self._port_proxy:
+                self._port_proxy.setVisible(False)
 
     def drawBackground(self, painter, rect):
         gradient = QLinearGradient(0, 0, 0, self.height())
