@@ -202,9 +202,18 @@ class GameScene(QGraphicsScene):
                         else:
                             conn.target_cell.points -= 1
                             if conn.target_cell.points <= 0:
-                                conn.target_cell.cell_type = conn.connection_type
-                                conn.target_cell.points = 1
-                        conn.target_cell.strength = (conn.target_cell.points // 10) + 1
+                                captured = conn.target_cell
+                                captured.cell_type = conn.connection_type
+                                captured.points = 1
+                                # Usuwamy wszystkie mosty wychodzące z przejmowanej komórki
+                                for rem_conn in list(self.connections):
+                                    if rem_conn.source_cell == captured:
+                                        if rem_conn in captured.connections:
+                                            captured.connections.remove(rem_conn)
+                                        if rem_conn in rem_conn.target_cell.connections:
+                                            rem_conn.target_cell.connections.remove(rem_conn)
+                                        self.connections.remove(rem_conn)
+                        conn.target_cell.strength = (conn.target_cell.points // POINTS_PER_STRENGTH) + 1
                         conn.target_cell.update()
                         finished.append(i)
                 for index in sorted(finished, reverse=True):

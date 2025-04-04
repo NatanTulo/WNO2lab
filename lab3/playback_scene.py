@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 
 from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
 from PyQt5.QtGui import QFont, QPen, QBrush, QColor, QLinearGradient
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsProxyWidget, QPushButton, QSlider, QLabel, QMessageBox
+from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsProxyWidget, QPushButton, QSlider, QLabel, QMessageBox, QProgressBar
 
 import config
 from game_history import load_game_history
@@ -21,6 +21,14 @@ class PlaybackScene(QGraphicsScene):
         self.history = load_game_history(history_file)
         self.move_history = self.history.get("moves", [])
         self.current_move_index = 0
+
+        # Obliczamy czas replay (na podstawie timestampów ruchów, jeśli dostępne)
+        if self.move_history:
+            self.replay_start_time = self.move_history[0].get("timestamp", 0)
+            self.replay_end_time = self.move_history[-1].get("timestamp", 0)
+            self.replay_duration = self.replay_end_time - self.replay_start_time
+        else:
+            self.replay_duration = 0
 
         # Odtwórz stan początkowy
         cells_data = self.history.get("initial_state", {}).get("cells", [])
@@ -49,31 +57,51 @@ class PlaybackScene(QGraphicsScene):
         self.addItem(self.move_display)
 
         # ZAMIENNIK: Suwak do ustawiania interwału wraz z etykietą prędkości
+        # Suwak prędkości - przesunięty do prawego górnego rogu
         self.speed_slider = QSlider(Qt.Horizontal)
-        # Ustawiamy zakres odpowiadający mnożnikowi szybkości od 1x do 10x
         self.speed_slider.setMinimum(1)
         self.speed_slider.setMaximum(10)
         self.speed_slider.setValue(1)
         self.speed_slider.setFixedWidth(150)
         self.speed_proxy = QGraphicsProxyWidget()
         self.speed_proxy.setWidget(self.speed_slider)
-        self.speed_proxy.setPos(config.WINDOW_WIDTH - 170, config.WINDOW_HEIGHT - 60)
+        self.speed_proxy.setPos(config.WINDOW_WIDTH-160, config.WINDOW_HEIGHT-30)  # zmieniona pozycja na prawy górny róg
         self.addItem(self.speed_proxy)
+        # Aktualizacja etykiety prędkości - przesunięta poniżej suwaka
         self.speed_label = QGraphicsTextItem("1.0x")
         self.speed_label.setDefaultTextColor(Qt.white)
         self.speed_label.setFont(QFont(config.FONT_FAMILY, 14))
-        self.speed_label.setPos(config.WINDOW_WIDTH - 170, config.WINDOW_HEIGHT - 90)
+        self.speed_label.setPos(config.WINDOW_WIDTH - 160, config.WINDOW_HEIGHT-60)
         self.addItem(self.speed_label)
         self.speed_slider.valueChanged.connect(lambda val: self.speed_label.setPlainText(f"{val:.1f}x"))
 
-        # Przycisk powrotu do menu
+        # Przycisk powrotu do menu - przesunięty do lewego górnego rogu
         back_button = QPushButton("Powrót do menu")
         back_button.setFixedSize(150, 40)
         back_proxy = QGraphicsProxyWidget()
         back_proxy.setWidget(back_button)
-        back_proxy.setPos(20, 20)
+        back_proxy.setPos(0, config.WINDOW_HEIGHT-50)  # zmieniona pozycja na lewy górny róg
         self.addItem(back_proxy)
         back_button.clicked.connect(self.return_to_menu)
+
+        # ----------------------- NOWE --------------------------
+        # Dodajemy progress bar do odtwarzania powtórki
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setFixedWidth(300)
+        progress_proxy = QGraphicsProxyWidget()
+        progress_proxy.setWidget(self.progress_bar)
+        progress_proxy.setPos((config.WINDOW_WIDTH - 300)/2, config.WINDOW_HEIGHT - 50)
+        self.addItem(progress_proxy)
+        # Dodajemy etykietę pokazującą aktualny czas replay (w formacie mm:ss)
+        self.clock_label = QLabel("00:00 / 00:00")
+        self.clock_label.setStyleSheet("color: white; background-color: transparent;")
+        clock_proxy = QGraphicsProxyWidget()
+        clock_proxy.setWidget(self.clock_label)
+        clock_proxy.setPos((config.WINDOW_WIDTH - 70)/2, config.WINDOW_HEIGHT - 70)
+        self.addItem(clock_proxy)
+        # --------------------- KONIEC NOWYCH --------------------
 
         self.playback_timer = QTimer()
         self.playback_timer.timeout.connect(self.play_next_move)
@@ -225,6 +253,20 @@ class PlaybackScene(QGraphicsScene):
             self.apply_move_event(move)
             self.current_move_index += 1
             self.playback_timer.start(int(1000 / self.speed_slider.value()))
+            # ----------------------- NOWE --------------------------
+            progress = int((self.current_move_index / len(self.move_history)) * 100)
+            self.progress_bar.setValue(progress)
+            if self.replay_duration > 0:
+                current_time = self.replay_start_time + (self.current_move_index / len(self.move_history)) * self.replay_duration
+                # Formatowanie do mm:ss
+                minutes = int((current_time - self.replay_start_time) // 60)
+                seconds = int((current_time - self.replay_start_time) % 60)
+                total_minutes = int(self.replay_duration // 60)
+                total_seconds = int(self.replay_duration % 60)
+                self.clock_label.setText(f"{minutes:02d}:{seconds:02d} / {total_minutes:02d}:{total_seconds:02d}")
+            else:
+                self.clock_label.setText("00:00 / 00:00")
+            # --------------------- KONIEC NOWYCH --------------------
         else:
             self.playback_timer.stop()
             self.animation_timer.stop()
