@@ -161,7 +161,11 @@ class GameScene(QGraphicsScene):
                 self.addItem(cell)
 
     def create_connection(self, source, target, conn_type, cost=0):
-        """Create a connection between two cells"""
+        # Wymuszamy spójność – typ mostu zawsze zgodny z typem komórki źródłowej
+        if source.cell_type != conn_type:
+            if self.logger:
+                self.logger.log(f"DEBUG: Niepoprawny typ mostu. Komórka ({source.x:.0f}, {source.y:.0f}) typu {source.cell_type} próbuje utworzyć most typu {conn_type}. Przypisano typ {source.cell_type}.")
+            conn_type = source.cell_type
         connection = CellConnection(source, target, conn_type)
         connection.cost = cost
         # Dodajemy mechanizm konfliktu, jeśli istnieje most z przeciwnym typem
@@ -185,6 +189,16 @@ class GameScene(QGraphicsScene):
         return connection
 
     def update_game(self):
+        # Przed rozpoczęciem aktualizacji, usuwamy niespójne mosty
+        for conn in list(self.connections):
+            if conn.source_cell.cell_type != conn.connection_type:
+                if self.logger:
+                    self.logger.log(f"DEBUG: Usunięto niespójny most: Komórka ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) typu {conn.source_cell.cell_type} ma most typu {conn.connection_type}.")
+                if conn in conn.source_cell.connections:
+                    conn.source_cell.connections.remove(conn)
+                if conn in conn.target_cell.connections:
+                    conn.target_cell.connections.remove(conn)
+                self.connections.remove(conn)
         """Main game update loop"""
         for cell in self.cells:
             cell.update()
@@ -203,9 +217,13 @@ class GameScene(QGraphicsScene):
                             conn.target_cell.points -= 1
                             if conn.target_cell.points <= 0:
                                 captured = conn.target_cell
+                                if self.logger:
+                                    self.logger.log(f"DEBUG: Przechwytywanie komórki ({captured.x:.0f}, {captured.y:.0f}). Punkty przed przejęciem: {captured.points}, typ docelowy: {conn.connection_type}.")
                                 captured.cell_type = conn.connection_type
                                 captured.points = 1
-                                # Usuwamy wszystkie mosty wychodzące z przejmowanej komórki
+                                if self.logger:
+                                    self.logger.log(f"DEBUG: Komórka przejęta. Nowy typ: {captured.cell_type}, punkty zresetowane do {captured.points}. Próba usunięcia mostów wychodzących...")
+                                removed_count = 0
                                 for rem_conn in list(self.connections):
                                     if rem_conn.source_cell == captured:
                                         if rem_conn in captured.connections:
@@ -213,9 +231,13 @@ class GameScene(QGraphicsScene):
                                         if rem_conn in rem_conn.target_cell.connections:
                                             rem_conn.target_cell.connections.remove(rem_conn)
                                         self.connections.remove(rem_conn)
+                                        removed_count += 1
+                                if self.logger:
+                                    self.logger.log(f"DEBUG: Usunięto {removed_count} mostów wychodzących z przejętej komórki ({captured.x:.0f}, {captured.y:.0f}).")
                         conn.target_cell.strength = (conn.target_cell.points // POINTS_PER_STRENGTH) + 1
                         conn.target_cell.update()
                         finished.append(i)
+
                 for index in sorted(finished, reverse=True):
                     del conn.dots[index]
 

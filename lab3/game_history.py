@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 def save_game_history(game_scene, filename):
     """
     Zapisuje historię rozgrywki do pliku XML.
-    W zapisie znajduje się początkowy stan (lista komórek),
+    W zapisie znajduje się początkowy stan (lista komórek i połączeń),
     lista ruchów oraz stan końcowy.
     """
     root = ET.Element("GameHistory")
@@ -17,9 +17,25 @@ def save_game_history(game_scene, filename):
         cell_el = ET.SubElement(cells_el, "Cell")
         cell_el.set("x", str(cell.x))
         cell_el.set("y", str(cell.y))
-        cell_el.set("type", str(getattr(cell, "initial_type", cell.cell_type)))
+        cell_el.set("type", str(getattr(cell, 'initial_type', cell.cell_type)))
         cell_el.set("points", str(cell.points))
-    
+    # ----------------- NOWA CZĘŚĆ -----------------
+    # Zapis mostów (połączeń) zgodnie z bieżącym stanem gry
+    initial_connections_el = ET.SubElement(initial_state, "Connections")
+    for conn in game_scene.connections:
+        conn_el = ET.SubElement(initial_connections_el, "Connection")
+        try:
+            src_index = game_scene.cells.index(conn.source_cell)
+            tgt_index = game_scene.cells.index(conn.target_cell)
+        except ValueError:
+            src_index = -1
+            tgt_index = -1
+        conn_el.set("source_index", str(src_index))
+        conn_el.set("target_index", str(tgt_index))
+        conn_el.set("type", str(conn.connection_type))
+        conn_el.set("cost", str(getattr(conn, "cost", 0)))
+    # ------------------------------------------------
+
     # Zapis ruchów – bardziej strukturalny
     moves_el = ET.SubElement(root, "Moves")
     if hasattr(game_scene, "move_history"):

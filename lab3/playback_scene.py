@@ -164,10 +164,8 @@ class PlaybackScene(QGraphicsScene):
         if DEBUG_MODE:
             print("DEBUG: apply_move_event - description:", description)
         if description.startswith("Utworzono most"):
-            if DEBUG_MODE:
-                print("DEBUG: Próba utworzenia mostu.")
-            pattern = r"Utworzono most między \(([\d.]+),\s*([\d.]+)\) a \(([\d.]+),\s*([\d.]+)\) o koszcie (\d+)"
-            m = re.search(pattern, description)
+            pattern = r"Utworzono most między \(([\d.]+),\s*([\d.]+)\)\s*a\s*\(([\d.]+),\s*([\d.]+)\)\s*o koszcie (\d+)"
+            m = re.search(pattern, description, flags=re.DOTALL)
             if m and DEBUG_MODE:
                 print("DEBUG: Wzorzec dopasowany! Dane mostu:", m.groups())
             elif not m and DEBUG_MODE:
@@ -179,7 +177,7 @@ class PlaybackScene(QGraphicsScene):
                     sx, sy = conn.source_cell.x, conn.source_cell.y
                     tx, ty = conn.target_cell.x, conn.target_cell.y
                     if abs(sx - x1) < 10 and abs(sy - y1) < 10 and abs(tx - x2) < 10 and abs(ty - y2) < 10:
-                        conn.flash = True  # podświetl istniejący most
+                        conn.flash = True
                         QTimer.singleShot(500, lambda: setattr(conn, 'flash', False))
                         found = True
                         break
@@ -197,12 +195,12 @@ class PlaybackScene(QGraphicsScene):
                         new_conn = CellConnection(src, tgt, src.cell_type)
                         new_conn.cost = cost
                         new_conn.flash = True
-                        new_conn.dots.append(0)  # Inicjujemy animowane kółko
+                        new_conn.dots.append(0)
                         self.connections.append(new_conn)
             return
         elif description.startswith("Usunięto most"):
-            pattern = r"Usunięto most między \(([\d.]+),\s*([\d.]+)\) a \(([\d.]+),\s*([\d.]+)\)"
-            m = re.search(pattern, description)
+            pattern = r"Usunięto most między \(([\d.]+),\s*([\d.]+)\)\s*a\s*\(([\d.]+),\s*([\d.]+)\)"
+            m = re.search(pattern, description, flags=re.DOTALL)
             if m:
                 if DEBUG_MODE:
                     print("DEBUG: Most do usunięcia znaleziony:", m.groups())
@@ -213,7 +211,6 @@ class PlaybackScene(QGraphicsScene):
                     if abs(sx - x1) < 10 and abs(sy - y1) < 10 and abs(tx - x2) < 10 and abs(ty - y2) < 10:
                         if DEBUG_MODE:
                             print("DEBUG: Usuwam most:", conn)
-                        # Usuwamy most tylko z listy połączeń, ponieważ nie jest QGraphicsItem
                         self.connections.remove(conn)
                         break
             else:
@@ -221,20 +218,20 @@ class PlaybackScene(QGraphicsScene):
                     print("DEBUG: Wzorzec usunięcia mostu nie dopasowany.")
             return
         elif description.startswith("Status punktowy:"):
-            matches = re.findall(r"\((\w+) @ ([\d.]+),([\d.]+): (\d+) pts\)", description)
+            matches = re.findall(r"\((\w+)\s+@\s+([\d.]+),([\d.]+):\s+(\d+)\s+pts\)", description)
             if DEBUG_MODE:
                 print("DEBUG: Aktualizacja statusu. Znalazłem komórki:", matches)
             for new_type, x, y, pts in matches:
                 x, y, pts = float(x), float(y), int(pts)
                 for cell in self.cells:
                     if abs(cell.x - x) < 10 and abs(cell.y - y) < 10:
-                        cell.cell_type = new_type  # aktualizacja typu zgodnie z opisem
+                        cell.cell_type = new_type
                         cell.points = pts
                         cell.strength = (pts // 10) + 1
                         cell.update()
             return
         elif description.startswith("Status po ogłoszeniu wyniku:"):
-            matches = re.findall(r"\((\w+) @ ([\d.]+),([\d.]+): (\d+) pts\)", description)
+            matches = re.findall(r"\((\w+)\s+@\s+([\d.]+),([\d.]+):\s+(\d+)\s+pts\)", description)
             if DEBUG_MODE:
                 print("DEBUG: Aktualizacja finalnego statusu. Znalazłem komórki:", matches)
             for new_type, x, y, pts in matches:
