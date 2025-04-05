@@ -194,9 +194,9 @@ def load_game_history(filename):
     return history
 
 def save_game_history_json(game_scene, filename):
-    # Przygotowanie słownika do zapisu
+    # Przygotowanie słownika z jasno rozdzielonymi polami dla każdego ruchu
+    import re
     data = {}
-    # Zapis początkowego stanu – tylko komórki
     data["initial_state"] = {
         "cells": [
             {
@@ -207,10 +207,74 @@ def save_game_history_json(game_scene, filename):
             } for cell in game_scene.cells
         ]
     }
-    # Zapis ruchów
-    data["moves"] = game_scene.move_history
-
-    # Zapis stanu końcowego – tylko komórki
+    # Parsujemy historię ruchów, rozdzielając dane na dedykowane pola
+    moves = []
+    for move in game_scene.move_history:
+        move_dict = {"timestamp": move.get("timestamp", 0)}
+        desc = move.get("description", "")
+        if desc.startswith("Utworzono most"):
+            m = re.search(r"Utworzono most między \(([\d.]+), ([\d.]+)\) a \(([\d.]+), ([\d.]+)\) o koszcie (\d+)", desc)
+            if m:
+                move_dict["move_type"] = "CreateBridge"
+                move_dict["Source"] = f"{m.group(1)},{m.group(2)}"
+                move_dict["Target"] = f"{m.group(3)},{m.group(4)}"
+                move_dict["Cost"] = int(m.group(5))
+            else:
+                move_dict["move_type"] = "CreateBridge"
+                move_dict["Info"] = desc
+        elif desc.startswith("Usunięto most"):
+            m = re.search(r"Usunięto most między \(([\d.]+), ([\d.]+)\) a \(([\d.]+), ([\d.]+)\)", desc)
+            if m:
+                move_dict["move_type"] = "RemoveBridge"
+                move_dict["Source"] = f"{m.group(1)},{m.group(2)}"
+                move_dict["Target"] = f"{m.group(3)},{m.group(4)}"
+            else:
+                move_dict["move_type"] = "RemoveBridge"
+                move_dict["Info"] = desc
+        elif desc.startswith("Status punktowy:"):
+            move_dict["move_type"] = "Status"
+            cells_list = []
+            parts = desc.replace("Status punktowy:", "").split(";")
+            for part in parts:
+                part = part.strip()
+                if part:
+                    m = re.search(r"\((\w+)\s+@\s+([\d.]+),([\d.]+):\s+(\d+)\s+pts\)", part)
+                    if m:
+                        cells_list.append({
+                            "type": m.group(1),
+                            "x": float(m.group(2)),
+                            "y": float(m.group(3)),
+                            "points": int(m.group(4))
+                        })
+                    else:
+                        cells_list.append({"Info": part})
+            move_dict["Cells"] = cells_list
+        elif desc.startswith("Status przed ostatnim ruchem:"):
+            move_dict["move_type"] = "PreFinalStatus"
+            cells_list = []
+            parts = desc.replace("Status przed ostatnim ruchem:", "").split(";")
+            for part in parts:
+                part = part.strip()
+                if part:
+                    m = re.search(r"\((\w+)\s+@\s+([\d.]+),([\d.]+):\s+(\d+)\s+pts\)", part)
+                    if m:
+                        cells_list.append({
+                            "type": m.group(1),
+                            "x": float(m.group(2)),
+                            "y": float(m.group(3)),
+                            "points": int(m.group(4))
+                        })
+                    else:
+                        cells_list.append({"Info": part})
+            move_dict["Cells"] = cells_list
+        elif desc.startswith("Wynik:"):
+            move_dict["move_type"] = "Result"
+            move_dict["Result"] = desc.replace("Wynik:", "").strip()
+        else:
+            move_dict["move_type"] = "Description"
+            move_dict["Description"] = desc
+        moves.append(move_dict)
+    data["moves"] = moves
     data["final_state"] = {
         "cells": [
             {

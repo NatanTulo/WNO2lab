@@ -24,6 +24,29 @@ class PlaybackScene(QGraphicsScene):
             from game_history import load_game_history
             self.history = load_game_history(history_file)
         self.move_history = self.history.get("moves", [])
+        # Nowa zmiana: dla ruchów z JSONa wygeneruj pole "description", jeśli go nie ma
+        for move in self.move_history:
+            if "description" not in move:
+                if move.get("move_type") == "CreateBridge":
+                    move["description"] = f"Utworzono most między ({move['Source']}) a ({move['Target']}) o koszcie {move['Cost']}"
+                elif move.get("move_type") == "RemoveBridge":
+                    move["description"] = f"Usunięto most między ({move['Source']}) a ({move['Target']})"
+                elif move.get("move_type") == "Status":
+                    cells = move.get("Cells", [])
+                    move["description"] = "Status punktowy: " + "; ".join(
+                        f"({c.get('type')} @ {c.get('x')},{c.get('y')}: {c.get('points')} pts)" for c in cells
+                    )
+                elif move.get("move_type") == "PreFinalStatus":
+                    cells = move.get("Cells", [])
+                    move["description"] = "Status przed ostatnim ruchem: " + "; ".join(
+                        f"({c.get('type')} @ {c.get('x')},{c.get('y')}: {c.get('points')} pts)" for c in cells
+                    )
+                elif move.get("move_type") == "Result":
+                    move["description"] = "Wynik: " + move.get("Result", "")
+                elif move.get("move_type") == "Description":
+                    move["description"] = move.get("Description", "")
+                else:
+                    move["description"] = ""
         self.current_move_index = 0
 
         # Obliczamy czas replay (na podstawie timestampów ruchów, jeśli dostępne)
