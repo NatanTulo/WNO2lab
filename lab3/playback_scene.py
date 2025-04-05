@@ -8,23 +8,19 @@ from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsProxyWid
 
 import config
 from game_objects import CellUnit, CellConnection
+from game_history import load_game_history, load_game_history_json
 
-# Dodajemy globalną flagę debugowania (domyślnie wyłączoną)
 DEBUG_MODE = False
 
 class PlaybackScene(QGraphicsScene):
     def __init__(self, history_file, parent=None):
         super().__init__(parent)
         self.setSceneRect(0, 0, config.WINDOW_WIDTH, config.WINDOW_HEIGHT)
-        # Wybieramy metodę odczytu w zależności od rozszerzenia pliku
         if history_file.lower().endswith('.json'):
-            from game_history import load_game_history_json
             self.history = load_game_history_json(history_file)
         else:
-            from game_history import load_game_history
             self.history = load_game_history(history_file)
         self.move_history = self.history.get("moves", [])
-        # Nowa zmiana: dla ruchów z JSONa wygeneruj pole "description", jeśli go nie ma
         for move in self.move_history:
             if "description" not in move:
                 if move.get("move_type") == "CreateBridge":
@@ -49,7 +45,6 @@ class PlaybackScene(QGraphicsScene):
                     move["description"] = ""
         self.current_move_index = 0
 
-        # Obliczamy czas replay (na podstawie timestampów ruchów, jeśli dostępne)
         if self.move_history:
             self.replay_start_time = self.move_history[0].get("timestamp", 0)
             self.replay_end_time = self.move_history[-1].get("timestamp", 0)
@@ -57,16 +52,13 @@ class PlaybackScene(QGraphicsScene):
         else:
             self.replay_duration = 0
 
-        # Odtwórz stan początkowy
         cells_data = self.history.get("initial_state", {}).get("cells", [])
         self.cells = []
         for cell_data in cells_data:
-            # Zmiana: używamy get() aby właściwy typ został przypisany (domyślnie "neutral")
             cell = CellUnit(cell_data["x"], cell_data["y"],
                             cell_data.get("type", "neutral"), cell_data["points"])
             self.cells.append(cell)
             self.addItem(cell)
-        # Odtwórz połączenia – zakładamy, że indeksy odpowiadają liście cells
         conns_data = self.history.get("initial_state", {}).get("connections", [])
         self.connections = []
         for conn in conns_data:
@@ -76,15 +68,12 @@ class PlaybackScene(QGraphicsScene):
                 connection = CellConnection(src, tgt, conn["type"])
                 connection.cost = conn["cost"]
                 self.connections.append(connection)
-        # Element wyświetlający aktualny ruch
         self.move_display = QGraphicsTextItem("")
         self.move_display.setDefaultTextColor(Qt.white)
         self.move_display.setFont(QFont(config.FONT_FAMILY, 20))
         self.move_display.setPos(20, config.WINDOW_HEIGHT - 60)
         self.addItem(self.move_display)
 
-        # ZAMIENNIK: Suwak do ustawiania interwału wraz z etykietą prędkości
-        # Suwak prędkości - przesunięty do prawego górnego rogu
         self.speed_slider = QSlider(Qt.Horizontal)
         self.speed_slider.setMinimum(1)
         self.speed_slider.setMaximum(10)
@@ -92,9 +81,8 @@ class PlaybackScene(QGraphicsScene):
         self.speed_slider.setFixedWidth(150)
         self.speed_proxy = QGraphicsProxyWidget()
         self.speed_proxy.setWidget(self.speed_slider)
-        self.speed_proxy.setPos(config.WINDOW_WIDTH-160, config.WINDOW_HEIGHT-30)  # zmieniona pozycja na prawy górny róg
+        self.speed_proxy.setPos(config.WINDOW_WIDTH-160, config.WINDOW_HEIGHT-30)
         self.addItem(self.speed_proxy)
-        # Aktualizacja etykiety prędkości - przesunięta poniżej suwaka
         self.speed_label = QGraphicsTextItem("1.0x")
         self.speed_label.setDefaultTextColor(Qt.white)
         self.speed_label.setFont(QFont(config.FONT_FAMILY, 14))
@@ -102,17 +90,14 @@ class PlaybackScene(QGraphicsScene):
         self.addItem(self.speed_label)
         self.speed_slider.valueChanged.connect(lambda val: self.speed_label.setPlainText(f"{val:.1f}x"))
 
-        # Przycisk powrotu do menu - przesunięty do lewego górnego rogu
         back_button = QPushButton("Powrót do menu")
         back_button.setFixedSize(150, 40)
         back_proxy = QGraphicsProxyWidget()
         back_proxy.setWidget(back_button)
-        back_proxy.setPos(0, config.WINDOW_HEIGHT-50)  # zmieniona pozycja na lewy górny róg
+        back_proxy.setPos(0, config.WINDOW_HEIGHT-50)
         self.addItem(back_proxy)
         back_button.clicked.connect(self.return_to_menu)
 
-        # ----------------------- NOWE --------------------------
-        # Dodajemy progress bar do odtwarzania powtórki
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
@@ -121,14 +106,12 @@ class PlaybackScene(QGraphicsScene):
         progress_proxy.setWidget(self.progress_bar)
         progress_proxy.setPos((config.WINDOW_WIDTH - 300)/2, config.WINDOW_HEIGHT - 50)
         self.addItem(progress_proxy)
-        # Dodajemy etykietę pokazującą aktualny czas replay (w formacie mm:ss)
         self.clock_label = QLabel("00:00 / 00:00")
         self.clock_label.setStyleSheet("color: white; background-color: transparent;")
         clock_proxy = QGraphicsProxyWidget()
         clock_proxy.setWidget(self.clock_label)
         clock_proxy.setPos((config.WINDOW_WIDTH - 70)/2, config.WINDOW_HEIGHT - 70)
         self.addItem(clock_proxy)
-        # --------------------- KONIEC NOWYCH --------------------
 
         self.playback_timer = QTimer()
         self.playback_timer.timeout.connect(self.play_next_move)
@@ -136,10 +119,9 @@ class PlaybackScene(QGraphicsScene):
         self.animation_timer.timeout.connect(self.animate_dots)
 
     def drawBackground(self, painter, rect):
-        # Używamy niebieskiego gradientu dla replay
         gradient = QLinearGradient(0, 0, 0, self.height())
-        gradient.setColorAt(0, QColor(180, 220, 250))  # jasnoniebieski
-        gradient.setColorAt(1, QColor(0, 100, 200))    # ciemnoniebieski
+        gradient.setColorAt(0, QColor(180, 220, 250))
+        gradient.setColorAt(1, QColor(0, 100, 200))
         painter.fillRect(rect, gradient)
 
     def drawForeground(self, painter, rect):
@@ -156,8 +138,7 @@ class PlaybackScene(QGraphicsScene):
                 pen = QPen(pen_color, 3)
             painter.setPen(pen)
             painter.drawLine(source, target)
-            
-            # Dodajemy animowane kółka (dots) analogicznie do głównej gry
+
             if not (hasattr(conn, 'conflict') and conn.conflict):
                 if conn.connection_type == "player":
                     dot_color = config.COLOR_DOT_PLAYER
@@ -172,13 +153,12 @@ class PlaybackScene(QGraphicsScene):
                     painter.drawEllipse(QRectF(x - dot_radius, y - dot_radius, dot_radius * 2, dot_radius * 2))
 
     def animate_dots(self):
-        # Zwiększ przyrost animacji zgodnie z ustawioną prędkością replay (speed_slider)
         delta = 0.016 * self.speed_slider.value()
         for conn in self.connections:
             for i in range(len(conn.dots)):
                 conn.dots[i] += delta
                 if conn.dots[i] >= 1.0:
-                    conn.dots[i] = 0.0  # resetujemy, by animacja była ciągła
+                    conn.dots[i] = 0.0
         self.update()
 
     def start_playback(self):
@@ -252,7 +232,6 @@ class PlaybackScene(QGraphicsScene):
                         cell.points = pts
                         cell.strength = (pts // 10) + 1
                         cell.update()
-                        # Nowe: Usuń tylko mosty wychodzące z tej komórki, których typ jest niezgodny
                         for conn in self.connections[:]:
                             if conn.source_cell == cell and conn.connection_type != cell.cell_type:
                                 if DEBUG_MODE:
@@ -271,7 +250,6 @@ class PlaybackScene(QGraphicsScene):
                         cell.points = pts
                         cell.strength = (pts // 10) + 1
                         cell.update()
-                        # Nowe: Usuń tylko mosty wychodzące z tej komórki, których typ jest niezgodny
                         for conn in self.connections[:]:
                             if conn.source_cell == cell and conn.connection_type != cell.cell_type:
                                 if DEBUG_MODE:
@@ -285,12 +263,10 @@ class PlaybackScene(QGraphicsScene):
             self.apply_move_event(move)
             self.current_move_index += 1
             self.playback_timer.start(int(1000 / self.speed_slider.value()))
-            # ----------------------- NOWE --------------------------
             progress = int((self.current_move_index / len(self.move_history)) * 100)
             self.progress_bar.setValue(progress)
             if self.replay_duration > 0:
                 current_time = self.replay_start_time + (self.current_move_index / len(self.move_history)) * self.replay_duration
-                # Formatowanie do mm:ss
                 minutes = int((current_time - self.replay_start_time) // 60)
                 seconds = int((current_time - self.replay_start_time) % 60)
                 total_minutes = int(self.replay_duration // 60)
@@ -298,14 +274,12 @@ class PlaybackScene(QGraphicsScene):
                 self.clock_label.setText(f"{minutes:02d}:{seconds:02d} / {total_minutes:02d}:{total_seconds:02d}")
             else:
                 self.clock_label.setText("00:00 / 00:00")
-            # --------------------- KONIEC NOWYCH --------------------
         else:
             self.playback_timer.stop()
             self.animation_timer.stop()
             self.show_game_result()
 
     def show_game_result(self):
-        # Szukamy ostatniego ruchu ze statusem punktowym
         final_status = ""
         for move in reversed(self.move_history):
             desc = move.get("description", "")
@@ -324,11 +298,8 @@ class PlaybackScene(QGraphicsScene):
         QMessageBox.information(None, "Koniec replay", result)
 
     def return_to_menu(self):
-        # Zatrzymujemy wszystkie timery replay
         self.playback_timer.stop()
         self.animation_timer.stop()
-        # Czyszczenie stanu replay (nie zapamiętujemy żadnych danych)
         self.move_history.clear()
-        # Przechodzimy do menu
         if self.views() and self.views()[0].parent():
             self.views()[0].parent().show_menu()

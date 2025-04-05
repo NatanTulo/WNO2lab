@@ -2,26 +2,22 @@ import json
 import math
 import os
 import time
-
+import datetime
 from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
 from PyQt5.QtGui import QCursor, QColor, QLinearGradient, QPen, QFont, QTransform
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsDropShadowEffect, QGraphicsItem, QMenu, QMessageBox, QGraphicsTextItem
 
 import config
-from config import (WINDOW_WIDTH, WINDOW_HEIGHT, FRAME_INTERVAL_MS, POINTS_INTERVAL_MS,
-                    TURN_TIMER_INTERVAL_MS, TURN_DURATION_SECONDS, FONT_FAMILY, GAME_TURN_FONT_SIZE,
-                    GAME_OVER_FONT_SIZE, FREEZE_DURATION_SECONDS, POWERUP_FREEZE, POWERUP_TAKEOVER,
-                    POWERUP_ADD_POINTS, POWERUP_NEW_CELL, NEW_CELL_COPY_RANGE_FACTOR, POINTS_PER_STRENGTH)
 from game_ai import GameAI
 from game_objects import CellUnit, CellConnection
-import game_history  # dodany import do zapisu replay
+import game_history
 
 class GameScene(QGraphicsScene):
     """Main game scene class"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setSceneRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.setSceneRect(0, 0, config.WINDOW_WIDTH, config.WINDOW_HEIGHT)
         self.cells = []
         self.connections = []
         self.current_level = 1
@@ -33,7 +29,7 @@ class GameScene(QGraphicsScene):
 
         self.points_timer = QTimer()
         self.points_timer.timeout.connect(self.add_points)
-        self.points_timer.start(POINTS_INTERVAL_MS)
+        self.points_timer.start(config.POINTS_INTERVAL_MS)
         self.game_over_text = None
 
         self.game_ai = GameAI(self)
@@ -49,7 +45,7 @@ class GameScene(QGraphicsScene):
 
         self.turn_based_mode = False
         self.current_turn = None
-        self.turn_duration = TURN_DURATION_SECONDS
+        self.turn_duration = config.TURN_DURATION_SECONDS
         self.round_time_remaining = self.turn_duration
         self.turn_timer = QTimer()
 
@@ -57,10 +53,10 @@ class GameScene(QGraphicsScene):
         self.powerup_active = None
         self.copy_source = None
 
-        self.single_player = False  # nowa flaga dla trybu 1 gracz
+        self.single_player = False
         self.enemy_timer = None
-        self.move_history = []  # dodana historia ruchów do replay
-        self.last_state_record = 0  # nowa zmienna do kontrolowania interwału zapisu stanu
+        self.move_history = []
+        self.last_state_record = 0
 
     def drawBackground(self, painter, rect):
         gradient = QLinearGradient(0, 0, 0, self.height())
@@ -161,14 +157,12 @@ class GameScene(QGraphicsScene):
                 self.addItem(cell)
 
     def create_connection(self, source, target, conn_type, cost=0):
-        # Wymuszamy spójność – typ mostu zawsze zgodny z typem komórki źródłowej
         if source.cell_type != conn_type:
             if self.logger:
                 self.logger.log(f"DEBUG: Niepoprawny typ mostu. Komórka ({source.x:.0f}, {source.y:.0f}) typu {source.cell_type} próbuje utworzyć most typu {conn_type}. Przypisano typ {source.cell_type}.")
             conn_type = source.cell_type
         connection = CellConnection(source, target, conn_type)
         connection.cost = cost
-        # Dodajemy mechanizm konfliktu, jeśli istnieje most z przeciwnym typem
         for conn in self.connections:
             if conn.source_cell == target and conn.target_cell == source and conn.connection_type != conn_type:
                 connection.conflict = True
@@ -181,7 +175,6 @@ class GameScene(QGraphicsScene):
         self.connections.append(connection)
         if self.logger:
             self.logger.log(f"GameScene: Utworzono most między komórkami przy ({source.x:.0f}, {source.y:.0f}) i ({target.x:.0f}, {target.y:.0f}) o koszcie {connection.cost}.")
-        # Zapisujemy ruch w historii
         self.move_history.append({
             "timestamp": time.time(),
             "description": f"Utworzono most między ({source.x:.0f}, {source.y:.0f}) a ({target.x:.0f}, {target.y:.0f}) o koszcie {connection.cost}"
@@ -189,12 +182,10 @@ class GameScene(QGraphicsScene):
         return connection
 
     def update_game(self):
-        # Przed rozpoczęciem aktualizacji, usuwamy niespójne mosty
         for conn in list(self.connections):
             if conn.source_cell.cell_type != conn.connection_type:
                 if self.logger:
                     self.logger.log(f"DEBUG: Usunięto niespójny most: Komórka ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) typu {conn.source_cell.cell_type} ma most typu {conn.connection_type}.")
-                # Dodaj wpis do historii usunięcia mostu
                 self.move_history.append({
                     "timestamp": time.time(),
                     "description": f"Usunięto most między ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) a ({conn.target_cell.x:.0f}, {conn.target_cell.y:.0f})"
@@ -239,14 +230,13 @@ class GameScene(QGraphicsScene):
                                         removed_count += 1
                                 if self.logger:
                                     self.logger.log(f"DEBUG: Usunięto {removed_count} mostów wychodzących z przejętej komórki ({captured.x:.0f}, {captured.y:.0f}).")
-                        conn.target_cell.strength = (conn.target_cell.points // POINTS_PER_STRENGTH) + 1
+                        conn.target_cell.strength = (conn.target_cell.points // config.POINTS_PER_STRENGTH) + 1
                         conn.target_cell.update()
                         finished.append(i)
 
                 for index in sorted(finished, reverse=True):
                     del conn.dots[index]
 
-        # Now processing mosty konfliktowe
         for conn in self.connections:
             if hasattr(conn, 'conflict') and conn.conflict:
                 if not hasattr(conn, 'conflict_progress'):
@@ -255,20 +245,18 @@ class GameScene(QGraphicsScene):
                 if conn.conflict_progress >= 1.0:
                     conn.source_cell.points -= 1
                     conn.target_cell.points -= 1
-                    conn.source_cell.strength = (conn.source_cell.points // POINTS_PER_STRENGTH) + 1
-                    conn.target_cell.strength = (conn.target_cell.points // POINTS_PER_STRENGTH) + 1
+                    conn.source_cell.strength = (conn.source_cell.points // config.POINTS_PER_STRENGTH) + 1
+                    conn.target_cell.strength = (conn.target_cell.points // config.POINTS_PER_STRENGTH) + 1
                     conn.source_cell.update()
                     conn.target_cell.update()
                     conn.conflict_progress = 0
 
-        # Sprawdzenie czy którejś z komórek skończyły się punkty – usuwamy wszystkie konfliktowe mosty z nią związane
         for cell in self.cells:
             if cell.points <= 0:
                 for conn in list(self.connections):
                     if hasattr(conn, 'conflict') and conn.conflict and (conn.source_cell == cell or conn.target_cell == cell):
                         refund = conn.cost // 2
                         cell.points += refund
-                        # Dodaj wpis do historii usunięcia mostu
                         self.move_history.append({
                             "timestamp": time.time(),
                             "description": f"Usunięto most między ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) a ({conn.target_cell.x:.0f}, {conn.target_cell.y:.0f})"
@@ -280,9 +268,8 @@ class GameScene(QGraphicsScene):
                         self.connections.remove(conn)
                         cell.update()
 
-        # Po zakończeniu przetwarzania stanów komórek i mostów, zapisujemy stan pośredni
         now = time.time()
-        if now - self.last_state_record >= 1.0:  # co 1 s zapisujemy stan
+        if now - self.last_state_record >= 1.0:
             points_status = "; ".join(
                 f"({cell.cell_type} @ {int(cell.x)},{int(cell.y)}: {cell.points} pts)"
                 for cell in self.cells
@@ -302,7 +289,7 @@ class GameScene(QGraphicsScene):
 
         if self.turn_based_mode and self.drag_start_cell.cell_type != self.current_turn:
             return
-            
+
         if not self.drag_start_cell.can_create_new_connection():
             if self.logger:
                 self.logger.log(f"GameScene: Komórka osiągnęła maksymalną liczbę mostów ({self.drag_start_cell.strength}).")
@@ -315,7 +302,6 @@ class GameScene(QGraphicsScene):
             if cell == self.drag_start_cell:
                 continue
 
-            # Uaktualniony warunek: pomijamy istniejące mosty tylko, gdy ich connection_type odpowiada typowi początkowej komórki.
             exists = any(
                 (((conn.source_cell == self.drag_start_cell and conn.target_cell == cell) or
                   (conn.source_cell == cell and conn.target_cell == self.drag_start_cell))
@@ -337,21 +323,20 @@ class GameScene(QGraphicsScene):
         self.update()
 
     def mousePressEvent(self, event):
-        # W trybie, gdy gramy w 1 gracz (self.single_player True) ignorujemy interakcję prawym przyciskiem
         if event.button() == Qt.RightButton and self.single_player:
             event.accept()
             return
 
         if self.powerup_active is not None:
             clicked_item = self.itemAt(event.scenePos(), QTransform())
-            if self.powerup_active == POWERUP_NEW_CELL:
+            if self.powerup_active == config.POWERUP_NEW_CELL:
                 if self.copy_source is None:
                     if isinstance(clicked_item, CellUnit):
                         self.copy_source = clicked_item
                         if self.logger:
                             self.logger.log("GameScene: Komórka wybrana do kopiowania. Teraz wybierz miejsce, gdzie ją postawić.")
                         if hasattr(self, 'powerup_label'):
-                            self.powerup_label.setPlainText("Wybierz miejsce: odległość ≥ 2*promień i ≤ {}*promień".format(NEW_CELL_COPY_RANGE_FACTOR))
+                            self.powerup_label.setPlainText("Wybierz miejsce: odległość ≥ 2*promień i ≤ {}*promień".format(config.NEW_CELL_COPY_RANGE_FACTOR))
                         event.accept()
                         return
                     else:
@@ -374,7 +359,7 @@ class GameScene(QGraphicsScene):
                     distance = math.hypot(dx, dy)
                     radius = self.copy_source.radius
                     min_dist = 2 * radius
-                    max_dist = NEW_CELL_COPY_RANGE_FACTOR * radius
+                    max_dist = config.NEW_CELL_COPY_RANGE_FACTOR * radius
                     if distance < min_dist or distance > max_dist:
                         if self.powerup_label is None:
                             self.powerup_label = QGraphicsTextItem("Błędna odległość. Wybierz miejsce między {} a {} pikseli.".format(min_dist, max_dist))
@@ -402,11 +387,11 @@ class GameScene(QGraphicsScene):
                     event.accept()
                     return
             elif isinstance(clicked_item, QGraphicsItem):
-                if self.powerup_active == POWERUP_FREEZE:
+                if self.powerup_active == config.POWERUP_FREEZE:
                     if isinstance(clicked_item, CellUnit):
                         if clicked_item.cell_type == "enemy":
                             clicked_item.frozen = True
-                            clicked_item.freeze_end_time = time.time() + FREEZE_DURATION_SECONDS
+                            clicked_item.freeze_end_time = time.time() + config.FREEZE_DURATION_SECONDS
                             if self.logger:
                                 self.logger.log("GameScene: Komórka przeciwnika zamrożona.")
                             if hasattr(self, 'powerup_label') and self.powerup_label is not None:
@@ -427,7 +412,7 @@ class GameScene(QGraphicsScene):
                     self.update()
                     event.accept()
                     return
-                elif self.powerup_active == POWERUP_TAKEOVER:
+                elif self.powerup_active == config.POWERUP_TAKEOVER:
                     if isinstance(clicked_item, CellUnit):
                         if clicked_item.cell_type == "enemy":
                             clicked_item.cell_type = "player"
@@ -452,7 +437,7 @@ class GameScene(QGraphicsScene):
                     self.update()
                     event.accept()
                     return
-                elif self.powerup_active == POWERUP_ADD_POINTS:
+                elif self.powerup_active == config.POWERUP_ADD_POINTS:
                     if isinstance(clicked_item, CellUnit):
                         if clicked_item.cell_type in ["player", "enemy"]:
                             clicked_item.points += 10
@@ -513,12 +498,11 @@ class GameScene(QGraphicsScene):
                 self.reachable_cells = []
                 self.update()
                 return
-                
+
             self.drag_current_pos = event.scenePos()
             self.update()
         else:
             buttons = event.buttons()
-            # W trybie 1 gracz (self.single_player True) ignorujemy interakcje z PPM
             if buttons & Qt.RightButton and self.single_player:
                 return super().mouseMoveEvent(event)
             if buttons & Qt.LeftButton:
@@ -545,7 +529,6 @@ class GameScene(QGraphicsScene):
                     Qx = A.x() + t * AB.x()
                     Qy = A.y() + t * AB.y()
                     if math.hypot(P.x() - Qx, P.y() - Qy) < 5:
-                        # Dodajemy logowanie usunięcia mostu
                         self.move_history.append({
                             "timestamp": time.time(),
                             "description": f"Usunięto most między ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) a ({conn.target_cell.x:.0f}, {conn.target_cell.y:.0f})"
@@ -598,13 +581,13 @@ class GameScene(QGraphicsScene):
 
         if self.drag_start_cell is None:
             return
-            
+
         if not self.drag_start_cell.can_create_new_connection():
             self.drag_start_cell = None
             self.drag_current_pos = None
             self.update()
             return
-            
+
         release_item = self.itemAt(event.scenePos(), QTransform())
         if self.turn_based_mode:
             if event.button() == Qt.LeftButton and self.current_turn != "player":
@@ -618,13 +601,12 @@ class GameScene(QGraphicsScene):
                 distance = math.hypot(dx, dy)
                 cost = int(distance / 20)
                 if self.drag_start_cell.points >= cost:
-                    # Tylko jeśli nie ma już mostu o tym samym typie (np. "player")
                     exists = any(((conn.source_cell == self.drag_start_cell and conn.target_cell == release_item) or
                                   (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
                                   and conn.connection_type == "player" for conn in self.connections)
                     if not exists:
                         self.drag_start_cell.points -= cost
-                        self.drag_start_cell.strength = (self.drag_start_cell.points // POINTS_PER_STRENGTH) + 1
+                        self.drag_start_cell.strength = (self.drag_start_cell.points // config.POINTS_PER_STRENGTH) + 1
                         self.drag_start_cell.update()
                         new_conn = self.create_connection(self.drag_start_cell, release_item, "player", cost)
                         if self.turn_based_mode:
@@ -636,13 +618,12 @@ class GameScene(QGraphicsScene):
                 distance = math.hypot(dx, dy)
                 cost = int(distance / 20)
                 if self.drag_start_cell.points >= cost:
-                    # Tylko jeśli nie ma już mostu o tym samym typie ("enemy")
                     exists = any(((conn.source_cell == self.drag_start_cell and conn.target_cell == release_item) or
                                   (conn.source_cell == release_item and conn.target_cell == self.drag_start_cell))
                                   and conn.connection_type == "enemy" for conn in self.connections)
                     if not exists:
                         self.drag_start_cell.points -= cost
-                        self.drag_start_cell.strength = (self.drag_start_cell.points // POINTS_PER_STRENGTH) + 1
+                        self.drag_start_cell.strength = (self.drag_start_cell.points // config.POINTS_PER_STRENGTH) + 1
                         self.drag_start_cell.update()
                         new_conn = self.create_connection(self.drag_start_cell, release_item, "enemy", cost)
                         if self.turn_based_mode:
@@ -668,21 +649,17 @@ class GameScene(QGraphicsScene):
         self.game_over_text = final_result
         if self.logger:
             self.logger.log(f"GameScene: Gra zakończona - {self.game_over_text}.")
-        # Zapis stanu przed ostatnim ruchem
         points_status = "; ".join(
-            f"({cell.cell_type} @ {int(cell.x)},{int(cell.y)}: {cell.points} pts)"
-            for cell in self.cells
+            f"({cell.cell_type} @ {int(cell.x)},{int(cell.y)}: {cell.points} pts)" for cell in self.cells
         )
         self.move_history.append({
             "timestamp": time.time(),
             "description": f"Status przed ostatnim ruchem: {points_status}"
         })
-        # Zapis ostatecznego wyniku
         self.move_history.append({
             "timestamp": time.time(),
             "description": f"Wynik: {final_result}"
         })
-        # Dodane: ponowny zapis finalnego stanu po ogłoszeniu wyniku
         final_status = "; ".join(
             f"({cell.cell_type} @ {int(cell.x)},{int(cell.y)}: {cell.points} pts)"
             for cell in self.cells
@@ -692,13 +669,11 @@ class GameScene(QGraphicsScene):
             "description": f"Status po ogłoszeniu wyniku: {final_status}"
         })
         self.update()
-        from datetime import datetime
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         xml_filename = f"replay_{timestamp}.xml"
         json_filename = f"replay_{timestamp}.json"
-        game_history.save_game_history(self, xml_filename)  # zapis XML do replay_<data>_.xml
-        game_history.save_game_history_json(self, json_filename)  # zapis JSON do replay_<data>_.json
-        # Dodajemy zapis do bazy MongoDB
+        game_history.save_game_history(self, xml_filename)
+        game_history.save_game_history_json(self, json_filename)
         mongodb_id = game_history.save_game_history_mongodb(self)
         if self.logger:
             self.logger.log(f"Replay zapisany do MongoDB z id: {mongodb_id}")
@@ -734,7 +709,7 @@ class GameScene(QGraphicsScene):
                     continue
                 if conn.source_cell.points >= 1:
                     conn.source_cell.points -= 1
-                    conn.source_cell.strength = (conn.source_cell.points // POINTS_PER_STRENGTH) + 1
+                    conn.source_cell.strength = (conn.source_cell.points // config.POINTS_PER_STRENGTH) + 1
                     conn.source_cell.update()
                     conn.dots.append(0)
 
@@ -756,7 +731,7 @@ class GameScene(QGraphicsScene):
     def drawForeground(self, painter, rect):
         if self.turn_based_mode and self.current_turn:
             info_text = f"Runda: {self.current_turn.upper()} - Pozostało: {self.round_time_remaining}s"
-            font = QFont(FONT_FAMILY, GAME_TURN_FONT_SIZE, QFont.Bold)
+            font = QFont(config.FONT_FAMILY, config.GAME_TURN_FONT_SIZE, QFont.Bold)
             painter.setFont(font)
             painter.setPen(QPen(Qt.white))
             painter.drawText(rect.adjusted(10, 10, -10, -10), Qt.AlignTop | Qt.AlignHCenter, info_text)
@@ -808,7 +783,7 @@ class GameScene(QGraphicsScene):
                     painter.setBrush(dot_color)
                     painter.drawEllipse(QRectF(x - dot_radius, y - dot_radius, dot_radius * 2, dot_radius * 2))
         if self.game_over_text is not None:
-            font = QFont(FONT_FAMILY, GAME_OVER_FONT_SIZE, QFont.Bold)
+            font = QFont(config.FONT_FAMILY, config.GAME_OVER_FONT_SIZE, QFont.Bold)
             painter.setFont(font)
             text = self.game_over_text
             scene_rect = self.sceneRect()
@@ -925,7 +900,7 @@ class GameScene(QGraphicsScene):
         """Pokazuje podpowiedź strategiczną od AI"""
         best_move = self.game_ai.analyze_best_move()
 
-        if best_move:
+        if (best_move):
             self.hint_source, self.hint_target, self.hint_cost = best_move
             self.hint_active = True
             self.hint_visible = True
@@ -1025,7 +1000,7 @@ class GameScene(QGraphicsScene):
         self.current_turn = "player"
         self.round_time_remaining = self.turn_duration
         self.turn_timer.timeout.connect(self.update_turn_timer)
-        self.turn_timer.start(TURN_TIMER_INTERVAL_MS)
+        self.turn_timer.start(config.TURN_TIMER_INTERVAL_MS)
         self.update()
 
     def update_turn_timer(self):
@@ -1050,7 +1025,7 @@ class GameScene(QGraphicsScene):
             self.enemy_timer.stop()
         self.enemy_timer = QTimer()
         self.enemy_timer.timeout.connect(self.enemy_move)
-        self.enemy_timer.start(3000)  # interwał 3000 ms
+        self.enemy_timer.start(3000)
 
     def enemy_move(self):
         """Metoda wykonująca ruch przeciwnika przy użyciu AI"""
@@ -1061,6 +1036,6 @@ class GameScene(QGraphicsScene):
             source, target, cost = best_move
             if source.points >= cost:
                 source.points -= cost
-                source.strength = (source.points // POINTS_PER_STRENGTH) + 1
+                source.strength = (source.points // config.POINTS_PER_STRENGTH) + 1
                 self.create_connection(source, target, "enemy", cost)
         self.update()

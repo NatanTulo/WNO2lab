@@ -1,15 +1,17 @@
 import sys
 import os
-
+import json
+import tempfile
+import datetime
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit, QMessageBox, QDialog, QVBoxLayout, QListWidget, QPushButton, QHBoxLayout, QLabel
-
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, POWERUP_FREEZE, POWERUP_TAKEOVER, POWERUP_ADD_POINTS, POWERUP_NEW_CELL
+import config                                                                                                                                      
 from game_scene import GameScene
 from level_editor_scene import LevelEditorScene
 from logger import Logger
 from menu_scene import MenuScene
 from playback_scene import PlaybackScene
+import game_history
 
 class DynamicGraphicsView(QGraphicsView):
     def resizeEvent(self, event):
@@ -25,7 +27,6 @@ class GameWindow(QMainWindow):
         self.logger = Logger(max_lines=100)
 
         self.log_dock = QDockWidget("Log", self)
-        # Removed QDockWidget.Floatable due to compatibility issues
         self.log_dock.setFeatures(QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetMovable)
         self.log_view = QTextEdit()
         self.log_view.setReadOnly(True)
@@ -46,10 +47,10 @@ class GameWindow(QMainWindow):
         takeover_action = powerup_menu.addAction("Przejęcie komórki")
         addpoints_action = powerup_menu.addAction("Dodaj 10 punktów")
         newcell_action = powerup_menu.addAction("Dodaj nową komórkę")
-        freeze_action.triggered.connect(lambda: self.activate_powerup(POWERUP_FREEZE))
-        takeover_action.triggered.connect(lambda: self.activate_powerup(POWERUP_TAKEOVER))
-        addpoints_action.triggered.connect(lambda: self.activate_powerup(POWERUP_ADD_POINTS))
-        newcell_action.triggered.connect(lambda: self.activate_powerup(POWERUP_NEW_CELL))
+        freeze_action.triggered.connect(lambda: self.activate_powerup(config.POWERUP_FREEZE))
+        takeover_action.triggered.connect(lambda: self.activate_powerup(config.POWERUP_TAKEOVER))
+        addpoints_action.triggered.connect(lambda: self.activate_powerup(config.POWERUP_ADD_POINTS))
+        newcell_action.triggered.connect(lambda: self.activate_powerup(config.POWERUP_NEW_CELL))
 
         self.menu_scene = MenuScene()
         self.menu_scene.logger = self.logger
@@ -60,7 +61,7 @@ class GameWindow(QMainWindow):
         self.view.setRenderHints(self.view.renderHints())
         self.view.setViewportUpdateMode(self.view.FullViewportUpdate)
         self.setCentralWidget(self.view)
-        self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.resize(config.WINDOW_WIDTH, config.WINDOW_HEIGHT)
 
         self.menu_scene.level_selected = self.start_game
         self.menu_scene.editor_selected = self.start_editor
@@ -89,7 +90,6 @@ class GameWindow(QMainWindow):
         self.game_scene.logger = self.logger
         self.view.setScene(self.game_scene)
         self.game_scene.initialize_level(level_id)
-        # Ustawienie trybu single player w zależności od wybranej opcji
         if self.menu_scene.game_mode == "1 gracz":
             self.game_scene.single_player = True
             self.game_scene.start_enemy_timer()
@@ -114,11 +114,8 @@ class GameWindow(QMainWindow):
         layout.addWidget(label)
         list_widget = QListWidget()
         layout.addWidget(list_widget)
-        # Wybieramy rozszerzenie na podstawie źródła replay
         ext = ".xml" if replay_source == "XML" else ".json" if replay_source == "JSON" else ""
-        import os
         pliki = [f for f in os.listdir(".") if f.startswith("replay_") and f.endswith(ext)]
-        # Sortowanie według daty modyfikacji malejąco
         pliki = sorted(pliki, key=lambda f: os.path.getmtime(f), reverse=True)
         for f in pliki:
             list_widget.addItem(f)
@@ -142,8 +139,6 @@ class GameWindow(QMainWindow):
         return None
 
     def select_replay_document(self):
-        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QListWidget, QPushButton, QHBoxLayout, QLabel
-        import game_history, datetime
         dialog = QDialog(self)
         dialog.setWindowTitle("Wybór replay z MongoDB")
         layout = QVBoxLayout(dialog)
@@ -188,10 +183,8 @@ class GameWindow(QMainWindow):
             selected_doc = self.select_replay_document()
             if not selected_doc:
                 return
-            # Konwertujemy ObjectId na string dla poprawnej serializacji
             if "_id" in selected_doc:
                 selected_doc["_id"] = str(selected_doc["_id"])
-            import json, tempfile
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w", encoding="utf-8")
             json.dump(selected_doc, temp_file, indent=4, ensure_ascii=False)
             temp_file.close()

@@ -5,20 +5,20 @@ from PyQt5.QtCore import QRectF, QPointF, Qt
 from PyQt5.QtGui import QPainterPath, QPen, QRadialGradient, QFont, QColor
 from PyQt5.QtWidgets import QGraphicsItem
 
-from config import DEFAULT_CELL_RADIUS, POINTS_PER_STRENGTH, COLOR_PLAYER, COLOR_ENEMY, COLOR_NEUTRAL, FONT_FAMILY, COLOR_FROZEN_OUTLINE
+import config
 
 class CellUnit(QGraphicsItem):
     """Base class for all cell units in the game"""
 
-    def __init__(self, x, y, cell_type, points=10, radius=DEFAULT_CELL_RADIUS):
+    def __init__(self, x, y, cell_type, points=10, radius=config.DEFAULT_CELL_RADIUS):
         super().__init__()
         self.x = x
         self.y = y
         self.radius = radius
         self.cell_type = cell_type
-        self.initial_type = cell_type  # nowa właściwość przechowująca oryginalny typ
+        self.initial_type = cell_type
         self.points = points
-        self.strength = (self.points // POINTS_PER_STRENGTH) + 1
+        self.strength = (self.points // config.POINTS_PER_STRENGTH) + 1
         self.connections = []
         self.highlighted = False
         self.frozen = False
@@ -46,11 +46,11 @@ class CellUnit(QGraphicsItem):
         """Draw the cell with proper color and effects"""
         effective_radius = self.radius * (1 + 0.2 * (self.strength - 1))
         if self.cell_type == "player":
-            base_color = COLOR_PLAYER
+            base_color = config.COLOR_PLAYER
         elif self.cell_type == "enemy":
-            base_color = COLOR_ENEMY
+            base_color = config.COLOR_ENEMY
         elif self.cell_type == "neutral":
-            base_color = COLOR_NEUTRAL
+            base_color = config.COLOR_NEUTRAL
 
         gradient = QRadialGradient(self.x, self.y, effective_radius)
         gradient.setColorAt(0, base_color.lighter(150))
@@ -69,7 +69,7 @@ class CellUnit(QGraphicsItem):
         font_size = int(effective_radius / 1.5)
         if len(str(self.points)) > 2:
             font_size = int(effective_radius / 2)
-        font = QFont(FONT_FAMILY, font_size)
+        font = QFont(config.FONT_FAMILY, font_size)
         painter.setFont(font)
         painter.setPen(Qt.white)
         text_rect = QRectF(self.x - effective_radius, self.y - effective_radius, effective_radius * 2, effective_radius * 2)
@@ -104,13 +104,13 @@ class CellUnit(QGraphicsItem):
         if self.frozen:
             current_time = time.time()
             if current_time < self.freeze_end_time:
-                painter.setPen(QPen(COLOR_FROZEN_OUTLINE, 4))
+                painter.setPen(QPen(config.COLOR_FROZEN_OUTLINE, 4))
                 painter.setBrush(Qt.NoBrush)
                 painter.drawEllipse(QRectF(self.x - effective_radius, self.y - effective_radius,
                                            effective_radius * 2, effective_radius * 2))
                 remaining = max(0, int(self.freeze_end_time - current_time))
                 counter_text = str(remaining)
-                font = QFont(FONT_FAMILY, int(effective_radius / 2))
+                font = QFont(config.FONT_FAMILY, int(effective_radius / 2))
                 painter.setFont(font)
                 painter.setPen(QPen(QColor(0, 150, 255), 2))
                 text_rect = QRectF(self.x + effective_radius - 20, self.y + effective_radius - 20, 40, 40)
@@ -125,13 +125,13 @@ class CellUnit(QGraphicsItem):
         if self.frozen:
             return
         self.points += 1
-        self.strength = (self.points // POINTS_PER_STRENGTH) + 1
+        self.strength = (self.points // config.POINTS_PER_STRENGTH) + 1
         self.update()
-        
+
     def get_outgoing_connections_count(self):
         """Zwraca liczbę połączeń wychodzących z komórki"""
         return sum(1 for conn in self.connections if conn.source_cell is self)
-        
+
     def can_create_new_connection(self):
         """Sprawdza czy komórka może utworzyć nowe połączenie"""
         return self.get_outgoing_connections_count() < self.strength

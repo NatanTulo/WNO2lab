@@ -2,12 +2,8 @@ import os
 import re
 import xml.etree.ElementTree as ET
 import json
-
-# Dodaj import pymongo
 from pymongo import MongoClient
 
-# Konfiguracja MongoDB – domyślnie łączymy się z mongodb://localhost:27017,
-# używamy bazy "wno2lab" i kolekcji "replays".
 client = MongoClient("mongodb://localhost:27017")
 db = client["wno2lab"]
 replays_collection = db["replays"]
@@ -20,7 +16,6 @@ def save_game_history(game_scene, filename):
     """
     root = ET.Element("GameHistory")
 
-    # Zapis stanu początkowego – tylko komórki
     initial_state = ET.SubElement(root, "InitialState")
     cells_el = ET.SubElement(initial_state, "Cells")
     for cell in game_scene.cells:
@@ -29,9 +24,7 @@ def save_game_history(game_scene, filename):
         cell_el.set("y", str(cell.y))
         cell_el.set("type", str(getattr(cell, 'initial_type', cell.cell_type)))
         cell_el.set("points", str(cell.points))
-    # Usunięto zapis połączeń z początkowego stanu, ponieważ na starcie nie powinno ich być.
 
-    # Zapis ruchów – bardziej strukturalny
     moves_el = ET.SubElement(root, "Moves")
     if hasattr(game_scene, "move_history"):
         for move in game_scene.move_history:
@@ -91,7 +84,6 @@ def save_game_history(game_scene, filename):
             else:
                 ET.SubElement(move_el, "Description").text = description
 
-    # Zapis stanu końcowego – tylko komórki
     final_state = ET.SubElement(root, "FinalState")
     final_cells_el = ET.SubElement(final_state, "Cells")
     for cell in game_scene.cells:
@@ -100,9 +92,7 @@ def save_game_history(game_scene, filename):
         cell_el.set("y", str(cell.y))
         cell_el.set("type", cell.cell_type)
         cell_el.set("points", str(cell.points))
-    # Usunięto zapis połączeń z końcowego stanu, ponieważ na końcu gry nie powinny być mosty.
 
-    # Zapis do pliku z czytelnym formatowaniem
     tree = ET.ElementTree(root)
     ET.indent(tree, space="    ")
     tree.write(filename, encoding="utf-8", xml_declaration=True)
@@ -111,11 +101,10 @@ def load_game_history(filename):
     """
     Odczytuje historię rozgrywki zapisaną w formacie XML
     i zwraca słownik z kluczami:
-      - "initial_state": zawiera listy komórek (każda jako słownik) 
+      - "initial_state": zawiera listy komórek (każda jako słownik)
                          i połączeń (jako słownik z indeksami i danymi)
       - "moves": lista ruchów, każdy jako słownik (timestamp, description)
     """
-    # Dodane zabezpieczenie przed brakiem pliku
     if not os.path.exists(filename):
         return {"initial_state": {"cells": [], "connections": []}, "moves": []}
     tree = ET.parse(filename)
@@ -154,7 +143,6 @@ def load_game_history(filename):
     if moves_el is not None:
         for move_el in moves_el.findall("Move"):
             timestamp = float(move_el.get("timestamp", 0))
-            # Jeśli <Move> posiada dzieci, złożymy opis z podtagów
             if len(move_el):
                 description_parts = []
                 for child in move_el:
@@ -203,8 +191,6 @@ def load_game_history(filename):
     return history
 
 def save_game_history_json(game_scene, filename):
-    # Przygotowanie słownika z jasno rozdzielonymi polami dla każdego ruchu
-    import re
     data = {}
     data["initial_state"] = {
         "cells": [
@@ -216,7 +202,6 @@ def save_game_history_json(game_scene, filename):
             } for cell in game_scene.cells
         ]
     }
-    # Parsujemy historię ruchów, rozdzielając dane na dedykowane pola
     moves = []
     for move in game_scene.move_history:
         move_dict = {"timestamp": move.get("timestamp", 0)}
@@ -231,57 +216,6 @@ def save_game_history_json(game_scene, filename):
             else:
                 move_dict["move_type"] = "CreateBridge"
                 move_dict["Info"] = desc
-        elif desc.startswith("Usunięto most"):
-            m = re.search(r"Usunięto most między \(([\d.]+), ([\d.]+)\) a \(([\d.]+), ([\d.]+)\)", desc)
-            if m:
-                move_dict["move_type"] = "RemoveBridge"
-                move_dict["Source"] = f"{m.group(1)},{m.group(2)}"
-                move_dict["Target"] = f"{m.group(3)},{m.group(4)}"
-            else:
-                move_dict["move_type"] = "RemoveBridge"
-                move_dict["Info"] = desc
-        elif desc.startswith("Status punktowy:"):
-            move_dict["move_type"] = "Status"
-            cells_list = []
-            parts = desc.replace("Status punktowy:", "").split(";")
-            for part in parts:
-                part = part.strip()
-                if part:
-                    m = re.search(r"\((\w+)\s+@\s+([\d.]+),([\d.]+):\s+(\d+)\s+pts\)", part)
-                    if m:
-                        cells_list.append({
-                            "type": m.group(1),
-                            "x": float(m.group(2)),
-                            "y": float(m.group(3)),
-                            "points": int(m.group(4))
-                        })
-                    else:
-                        cells_list.append({"Info": part})
-            move_dict["Cells"] = cells_list
-        elif desc.startswith("Status przed ostatnim ruchem:"):
-            move_dict["move_type"] = "PreFinalStatus"
-            cells_list = []
-            parts = desc.replace("Status przed ostatnim ruchem:", "").split(";")
-            for part in parts:
-                part = part.strip()
-                if part:
-                    m = re.search(r"\((\w+)\s+@\s+([\d.]+),([\d.]+):\s+(\d+)\s+pts\)", part)
-                    if m:
-                        cells_list.append({
-                            "type": m.group(1),
-                            "x": float(m.group(2)),
-                            "y": float(m.group(3)),
-                            "points": int(m.group(4))
-                        })
-                    else:
-                        cells_list.append({"Info": part})
-            move_dict["Cells"] = cells_list
-        elif desc.startswith("Wynik:"):
-            move_dict["move_type"] = "Result"
-            move_dict["Result"] = desc.replace("Wynik:", "").strip()
-        else:
-            move_dict["move_type"] = "Description"
-            move_dict["Description"] = desc
         moves.append(move_dict)
     data["moves"] = moves
     data["final_state"] = {
@@ -304,7 +238,6 @@ def load_game_history_json(filename):
         data = json.load(f)
     return data
 
-# ----- Nowe funkcje dla MongoDB -----
 
 def save_game_history_mongodb(game_scene):
     """
@@ -324,7 +257,7 @@ def save_game_history_mongodb(game_scene):
             } for cell in game_scene.cells
         ]
     }
-    history["moves"] = game_scene.move_history  # zakładamy, że move_history to lista słowników
+    history["moves"] = game_scene.move_history
     history["final_state"] = {
         "cells": [
             {

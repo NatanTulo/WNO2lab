@@ -8,13 +8,13 @@ from PyQt5.QtWidgets import (
     QMessageBox, QMenu, QGraphicsView, QPushButton, QGraphicsProxyWidget
 )
 
-from config import WINDOW_WIDTH, WINDOW_HEIGHT, FONT_FAMILY, EDITOR_TITLE_FONT_SIZE, EDITOR_SUBTITLE_FONT_SIZE, EDITOR_INSTRUCTION_FONT_SIZE
+import config                                                                                                                                                             
 from game_objects import CellUnit
 
 class LevelEditorScene(QGraphicsScene):
     def __init__(self, level_id=1, parent=None):
         super().__init__(parent)
-        self.setSceneRect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.setSceneRect(0, 0, config.WINDOW_WIDTH, config.WINDOW_HEIGHT)
         self.level_id = level_id
         self.cells = []
         self.dragging_cell = None
@@ -26,14 +26,14 @@ class LevelEditorScene(QGraphicsScene):
 
     def setup_ui(self):
         title = QGraphicsTextItem("Edytor poziomów")
-        title.setFont(QFont(FONT_FAMILY, EDITOR_TITLE_FONT_SIZE, QFont.Bold))
+        title.setFont(QFont(config.FONT_FAMILY, config.EDITOR_TITLE_FONT_SIZE, QFont.Bold))
         title.setDefaultTextColor(Qt.white)
         title_width = title.boundingRect().width()
         title.setPos((self.width() - title_width) / 2, 20)
         self.addItem(title)
 
         level_text = QGraphicsTextItem(f"Edycja poziomu {self.level_id}: {self.level_name}")
-        level_text.setFont(QFont(FONT_FAMILY, EDITOR_SUBTITLE_FONT_SIZE))
+        level_text.setFont(QFont(config.FONT_FAMILY, config.EDITOR_SUBTITLE_FONT_SIZE))
         level_text.setDefaultTextColor(Qt.white)
         level_text_width = level_text.boundingRect().width()
         level_text.setPos((self.width() - level_text_width) / 2, 60)
@@ -51,7 +51,7 @@ class LevelEditorScene(QGraphicsScene):
         y_pos = 100
         for instruction in instructions:
             text = QGraphicsTextItem(instruction)
-            text.setFont(QFont(FONT_FAMILY, EDITOR_INSTRUCTION_FONT_SIZE))
+            text.setFont(QFont(config.FONT_FAMILY, config.EDITOR_INSTRUCTION_FONT_SIZE))
             text.setDefaultTextColor(Qt.white)
             text.setPos(20, y_pos)
             self.addItem(text)
