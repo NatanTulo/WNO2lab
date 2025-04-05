@@ -194,6 +194,11 @@ class GameScene(QGraphicsScene):
             if conn.source_cell.cell_type != conn.connection_type:
                 if self.logger:
                     self.logger.log(f"DEBUG: Usunięto niespójny most: Komórka ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) typu {conn.source_cell.cell_type} ma most typu {conn.connection_type}.")
+                # Dodaj wpis do historii usunięcia mostu
+                self.move_history.append({
+                    "timestamp": time.time(),
+                    "description": f"Usunięto most między ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) a ({conn.target_cell.x:.0f}, {conn.target_cell.y:.0f})"
+                })
                 if conn in conn.source_cell.connections:
                     conn.source_cell.connections.remove(conn)
                 if conn in conn.target_cell.connections:
@@ -263,6 +268,11 @@ class GameScene(QGraphicsScene):
                     if hasattr(conn, 'conflict') and conn.conflict and (conn.source_cell == cell or conn.target_cell == cell):
                         refund = conn.cost // 2
                         cell.points += refund
+                        # Dodaj wpis do historii usunięcia mostu
+                        self.move_history.append({
+                            "timestamp": time.time(),
+                            "description": f"Usunięto most między ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) a ({conn.target_cell.x:.0f}, {conn.target_cell.y:.0f})"
+                        })
                         if conn in conn.source_cell.connections:
                             conn.source_cell.connections.remove(conn)
                         if conn in conn.target_cell.connections:

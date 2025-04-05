@@ -11,7 +11,7 @@ from game_history import load_game_history
 from game_objects import CellUnit, CellConnection
 
 # Dodajemy globalną flagę debugowania (domyślnie wyłączoną)
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 class PlaybackScene(QGraphicsScene):
     def __init__(self, history_file, parent=None):
@@ -161,8 +161,6 @@ class PlaybackScene(QGraphicsScene):
 
     def apply_move_event(self, move):
         description = move.get("description", "").strip()
-        if DEBUG_MODE:
-            print("DEBUG: apply_move_event - description:", description)
         if description.startswith("Utworzono most"):
             pattern = r"Utworzono most między \(([\d.]+),\s*([\d.]+)\)\s*a\s*\(([\d.]+),\s*([\d.]+)\)\s*o koszcie (\d+)"
             m = re.search(pattern, description, flags=re.DOTALL)
@@ -219,8 +217,6 @@ class PlaybackScene(QGraphicsScene):
             return
         elif description.startswith("Status punktowy:"):
             matches = re.findall(r"\((\w+)\s+@\s+([\d.]+),([\d.]+):\s+(\d+)\s+pts\)", description)
-            if DEBUG_MODE:
-                print("DEBUG: Aktualizacja statusu. Znalazłem komórki:", matches)
             for new_type, x, y, pts in matches:
                 x, y, pts = float(x), float(y), int(pts)
                 for cell in self.cells:
@@ -229,6 +225,12 @@ class PlaybackScene(QGraphicsScene):
                         cell.points = pts
                         cell.strength = (pts // 10) + 1
                         cell.update()
+                        # Nowe: Usuń tylko mosty wychodzące z tej komórki, których typ jest niezgodny
+                        for conn in self.connections[:]:
+                            if conn.source_cell == cell and conn.connection_type != cell.cell_type:
+                                if DEBUG_MODE:
+                                    print("DEBUG: Usuwam niezgodny most wychodzący z komórki", cell.x, cell.y)
+                                self.connections.remove(conn)
             return
         elif description.startswith("Status po ogłoszeniu wyniku:"):
             matches = re.findall(r"\((\w+)\s+@\s+([\d.]+),([\d.]+):\s+(\d+)\s+pts\)", description)
@@ -242,6 +244,12 @@ class PlaybackScene(QGraphicsScene):
                         cell.points = pts
                         cell.strength = (pts // 10) + 1
                         cell.update()
+                        # Nowe: Usuń tylko mosty wychodzące z tej komórki, których typ jest niezgodny
+                        for conn in self.connections[:]:
+                            if conn.source_cell == cell and conn.connection_type != cell.cell_type:
+                                if DEBUG_MODE:
+                                    print("DEBUG: Usuwam niezgodny most wychodzący z komórki", cell.x, cell.y)
+                                self.connections.remove(conn)
             return
 
     def play_next_move(self):

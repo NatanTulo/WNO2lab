@@ -19,22 +19,7 @@ def save_game_history(game_scene, filename):
         cell_el.set("y", str(cell.y))
         cell_el.set("type", str(getattr(cell, 'initial_type', cell.cell_type)))
         cell_el.set("points", str(cell.points))
-    # ----------------- NOWA CZĘŚĆ -----------------
-    # Zapis mostów (połączeń) zgodnie z bieżącym stanem gry
-    initial_connections_el = ET.SubElement(initial_state, "Connections")
-    for conn in game_scene.connections:
-        conn_el = ET.SubElement(initial_connections_el, "Connection")
-        try:
-            src_index = game_scene.cells.index(conn.source_cell)
-            tgt_index = game_scene.cells.index(conn.target_cell)
-        except ValueError:
-            src_index = -1
-            tgt_index = -1
-        conn_el.set("source_index", str(src_index))
-        conn_el.set("target_index", str(tgt_index))
-        conn_el.set("type", str(conn.connection_type))
-        conn_el.set("cost", str(getattr(conn, "cost", 0)))
-    # ------------------------------------------------
+    # Usunięto zapis połączeń z początkowego stanu, ponieważ na starcie nie powinno ich być.
 
     # Zapis ruchów – bardziej strukturalny
     moves_el = ET.SubElement(root, "Moves")
@@ -96,7 +81,7 @@ def save_game_history(game_scene, filename):
             else:
                 ET.SubElement(move_el, "Description").text = description
 
-    # Zapis stanu końcowego
+    # Zapis stanu końcowego – tylko komórki
     final_state = ET.SubElement(root, "FinalState")
     final_cells_el = ET.SubElement(final_state, "Cells")
     for cell in game_scene.cells:
@@ -105,19 +90,7 @@ def save_game_history(game_scene, filename):
         cell_el.set("y", str(cell.y))
         cell_el.set("type", cell.cell_type)
         cell_el.set("points", str(cell.points))
-    final_connections_el = ET.SubElement(final_state, "Connections")
-    for conn in game_scene.connections:
-        conn_el = ET.SubElement(final_connections_el, "Connection")
-        try:
-            src_index = game_scene.cells.index(conn.source_cell)
-            tgt_index = game_scene.cells.index(conn.target_cell)
-        except ValueError:
-            src_index = -1
-            tgt_index = -1
-        conn_el.set("source_index", str(src_index))
-        conn_el.set("target_index", str(tgt_index))
-        conn_el.set("type", str(conn.connection_type))
-        conn_el.set("cost", str(getattr(conn, "cost", 0)))
+    # Usunięto zapis połączeń z końcowego stanu, ponieważ na końcu gry nie powinny być mosty.
 
     # Zapis do pliku z czytelnym formatowaniem
     tree = ET.ElementTree(root)
