@@ -25,9 +25,8 @@ class GameWindow(QMainWindow):
         self.logger = Logger(max_lines=100)
 
         self.log_dock = QDockWidget("Log", self)
-        self.log_dock.setFeatures(QDockWidget.DockWidgetClosable |
-                                  QDockWidget.DockWidgetMovable |
-                                  QDockWidget.DockWidgetFloatable)
+        # Removed QDockWidget.Floatable due to compatibility issues
+        self.log_dock.setFeatures(QDockWidget.DockWidgetClosable | QDockWidget.DockWidgetMovable)
         self.log_view = QTextEdit()
         self.log_view.setReadOnly(True)
         self.log_dock.setWidget(self.log_view)
@@ -108,7 +107,16 @@ class GameWindow(QMainWindow):
         self.view.setScene(self.editor_scene)
 
     def start_replay(self):
-        replay_file = "replay.xml"
+        replay_source = getattr(self.menu_scene, "replay_source", "XML")
+        if replay_source == "XML":
+            replay_file = "replay.xml"
+        elif replay_source == "JSON":
+            replay_file = "replay.json"
+        elif replay_source == "NoSQL":
+            QMessageBox.information(self, "Replay", "Funkcjonalność NoSQL jest niedostępna.")
+            return
+        else:
+            replay_file = "replay.xml"
         if not os.path.exists(replay_file):
             QMessageBox.critical(self, "Błąd", f"Plik replay '{replay_file}' nie istnieje!")
             return

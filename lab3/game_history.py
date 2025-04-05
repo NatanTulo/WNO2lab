@@ -1,6 +1,7 @@
 import os
 import re
 import xml.etree.ElementTree as ET
+import json
 
 def save_game_history(game_scene, filename):
     """
@@ -191,3 +192,41 @@ def load_game_history(filename):
             history["moves"].append(move)
 
     return history
+
+def save_game_history_json(game_scene, filename):
+    # Przygotowanie słownika do zapisu
+    data = {}
+    # Zapis początkowego stanu – tylko komórki
+    data["initial_state"] = {
+        "cells": [
+            {
+                "x": cell.x,
+                "y": cell.y,
+                "type": str(getattr(cell, 'initial_type', cell.cell_type)),
+                "points": cell.points
+            } for cell in game_scene.cells
+        ]
+    }
+    # Zapis ruchów
+    data["moves"] = game_scene.move_history
+
+    # Zapis stanu końcowego – tylko komórki
+    data["final_state"] = {
+        "cells": [
+            {
+                "x": cell.x,
+                "y": cell.y,
+                "type": cell.cell_type,
+                "points": cell.points
+            } for cell in game_scene.cells
+        ]
+    }
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+
+def load_game_history_json(filename):
+    if not os.path.exists(filename):
+        return {"initial_state": {"cells": []}, "moves": []}
+    with open(filename, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data

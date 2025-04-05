@@ -692,7 +692,9 @@ class GameScene(QGraphicsScene):
             "description": f"Status po ogłoszeniu wyniku: {final_status}"
         })
         self.update()
-        game_history.save_game_history(self, "replay.xml")  # automatyczny zapis replay
+        game_history.save_game_history(self, "replay.xml")  # zapis XML
+        # Nowe: Zapis do pliku JSON
+        game_history.save_game_history_json(self, "replay.json")
         QTimer.singleShot(2000, self.show_return_button)
 
     def show_return_button(self):

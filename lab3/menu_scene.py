@@ -212,12 +212,41 @@ class MenuScene(QGraphicsScene):
         self._ip_proxy = ip_proxy
         self._port_proxy = port_proxy
 
-        # Dodanie przycisku Replay na dole ekranu
+        # Dodajemy grupę wyboru źródła replay (przesunięto niżej)
+        replay_source_title = QGraphicsTextItem("Źródło replay:")
+        replay_source_title.setFont(QFont(FONT_FAMILY, MENU_LEVEL_TITLE_FONT_SIZE))
+        replay_source_title.setDefaultTextColor(Qt.white)
+        replay_source_title_width = replay_source_title.boundingRect().width()
+        replay_source_title.setPos((self.width() - replay_source_title_width) / 2, self.height() - 110)
+        self.addItem(replay_source_title)
+        self.replay_source = "XML"  # domyślnie
+        replay_options = [("XML", "XML"), ("JSON", "JSON"), ("NoSQL", "NoSQL")]
+        radio_y = self.height() - 80
+        spacing = 100
+        group_width = len(replay_options) * spacing
+        radio_start_x = (self.width() - group_width) / 2
+        self.replay_radio_buttons = []
+        # Definiujemy funkcję obsługi kliknięcia dla radio buttona
+        def create_radio_handler(radio):
+            def handler(event):
+                self.replay_source = radio.mode_value
+                for rb in self.replay_radio_buttons:
+                    rb.setSelected(rb.mode_value == radio.mode_value)
+                if self.logger:
+                    self.logger.log(f"MenuScene: Wybrane źródło replay: {radio.mode_value}")
+                event.accept()
+            return handler
+        for i, (text, value) in enumerate(replay_options):
+            selected = (value == self.replay_source)
+            radio = GameModeRadioButton(text, value, radio_start_x + i * spacing, radio_y, selected)
+            radio.mousePressEvent = create_radio_handler(radio)
+            self.replay_radio_buttons.append(radio)
+            self.addItem(radio)
         replay_button = QPushButton("Odtwórz replay")
         replay_button.setFixedSize(150, 40)
         replay_proxy = QGraphicsProxyWidget()
         replay_proxy.setWidget(replay_button)
-        replay_proxy.setPos((self.width() - 150) / 2, self.height() - 100)  # pozycja przycisku
+        replay_proxy.setPos((self.width() - 150) / 2, self.height() - 50)
         self.addItem(replay_proxy)
         replay_button.clicked.connect(lambda: self.replay_selected() if hasattr(self, 'replay_selected') else None)
 

@@ -7,7 +7,6 @@ from PyQt5.QtGui import QFont, QPen, QBrush, QColor, QLinearGradient
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsProxyWidget, QPushButton, QSlider, QLabel, QMessageBox, QProgressBar
 
 import config
-from game_history import load_game_history
 from game_objects import CellUnit, CellConnection
 
 # Dodajemy globalną flagę debugowania (domyślnie wyłączoną)
@@ -17,8 +16,13 @@ class PlaybackScene(QGraphicsScene):
     def __init__(self, history_file, parent=None):
         super().__init__(parent)
         self.setSceneRect(0, 0, config.WINDOW_WIDTH, config.WINDOW_HEIGHT)
-        # Załaduj historię z pliku XML
-        self.history = load_game_history(history_file)
+        # Wybieramy metodę odczytu w zależności od rozszerzenia pliku
+        if history_file.lower().endswith('.json'):
+            from game_history import load_game_history_json
+            self.history = load_game_history_json(history_file)
+        else:
+            from game_history import load_game_history
+            self.history = load_game_history(history_file)
         self.move_history = self.history.get("moves", [])
         self.current_move_index = 0
 
