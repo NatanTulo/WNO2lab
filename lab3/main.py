@@ -2,7 +2,7 @@ import sys
 import os
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit, QMessageBox
+from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit, QMessageBox, QDialog, QVBoxLayout, QListWidget, QPushButton, QHBoxLayout, QLabel
 
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, POWERUP_FREEZE, POWERUP_TAKEOVER, POWERUP_ADD_POINTS, POWERUP_NEW_CELL
 from game_scene import GameScene
@@ -106,30 +106,105 @@ class GameWindow(QMainWindow):
         self.editor_scene.logger = self.logger
         self.view.setScene(self.editor_scene)
 
+    def select_replay_file(self, replay_source):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Wybór replay")
+        layout = QVBoxLayout(dialog)
+        label = QLabel("Wybierz plik replay:")
+        layout.addWidget(label)
+        list_widget = QListWidget()
+        layout.addWidget(list_widget)
+        # Wybieramy rozszerzenie na podstawie źródła replay
+        ext = ".xml" if replay_source == "XML" else ".json" if replay_source == "JSON" else ""
+        import os
+        pliki = [f for f in os.listdir(".") if f.startswith("replay_") and f.endswith(ext)]
+        # Sortowanie według daty modyfikacji malejąco
+        pliki = sorted(pliki, key=lambda f: os.path.getmtime(f), reverse=True)
+        for f in pliki:
+            list_widget.addItem(f)
+        buttons_layout = QHBoxLayout()
+        ok_button = QPushButton("OK")
+        cancel_button = QPushButton("Anuluj")
+        buttons_layout.addWidget(ok_button)
+        buttons_layout.addWidget(cancel_button)
+        layout.addLayout(buttons_layout)
+        selected_file = [None]
+
+        def on_ok():
+            item = list_widget.currentItem()
+            if item:
+                selected_file[0] = item.text()
+                dialog.accept()
+        ok_button.clicked.connect(on_ok)
+        cancel_button.clicked.connect(dialog.reject)
+        if dialog.exec_() == QDialog.Accepted:
+            return selected_file[0]
+        return None
+
+    def select_replay_document(self):
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QListWidget, QPushButton, QHBoxLayout, QLabel
+        import game_history, datetime
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Wybór replay z MongoDB")
+        layout = QVBoxLayout(dialog)
+        label = QLabel("Wybierz replay z bazy MongoDB:")
+        layout.addWidget(label)
+        list_widget = QListWidget()
+        layout.addWidget(list_widget)
+        documents = list(game_history.replays_collection.find())
+        items = []
+        for doc in documents:
+            id_str = str(doc["_id"])
+            if doc.get("moves"):
+                ts = doc["moves"][0].get("timestamp", 0)
+                time_str = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                time_str = "Brak znacznika czasu"
+            display_text = f"{time_str} - {id_str}"
+            list_widget.addItem(display_text)
+            items.append(doc)
+        buttons_layout = QHBoxLayout()
+        ok_button = QPushButton("OK")
+        cancel_button = QPushButton("Anuluj")
+        buttons_layout.addWidget(ok_button)
+        buttons_layout.addWidget(cancel_button)
+        layout.addLayout(buttons_layout)
+        selected_doc = [None]
+
+        def on_ok():
+            idx = list_widget.currentRow()
+            if idx >= 0:
+                selected_doc[0] = items[idx]
+                dialog.accept()
+        ok_button.clicked.connect(on_ok)
+        cancel_button.clicked.connect(dialog.reject)
+        if dialog.exec_() == QDialog.Accepted:
+            return selected_doc[0]
+        return None
+
     def start_replay(self):
         replay_source = getattr(self.menu_scene, "replay_source", "XML")
-        if replay_source == "XML":
-            replay_file = "replay.xml"
-        elif replay_source == "JSON":
-            replay_file = "replay.json"
-        elif replay_source == "NoSQL":
-            QMessageBox.information(self, "Replay", "Funkcjonalność NoSQL jest niedostępna.")
-            return
+        if replay_source == "NoSQL":
+            selected_doc = self.select_replay_document()
+            if not selected_doc:
+                return
+            # Konwertujemy ObjectId na string dla poprawnej serializacji
+            if "_id" in selected_doc:
+                selected_doc["_id"] = str(selected_doc["_id"])
+            import json, tempfile
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w", encoding="utf-8")
+            json.dump(selected_doc, temp_file, indent=4, ensure_ascii=False)
+            temp_file.close()
+            filename = temp_file.name
         else:
-            replay_file = "replay.xml"
-        if not os.path.exists(replay_file):
-            QMessageBox.critical(self, "Błąd", f"Plik replay '{replay_file}' nie istnieje!")
-            return
-        self.playback_scene = PlaybackScene(replay_file)
+            selected = self.select_replay_file(replay_source)
+            if not selected:
+                return
+            filename = selected
+        self.playback_scene = PlaybackScene(filename)
         self.playback_scene.logger = self.logger
         self.view.setScene(self.playback_scene)
         self.playback_scene.start_playback()
-
-    def activate_powerup(self, powerup_type):
-        if self.game_scene:
-            self.game_scene.activate_powerup(powerup_type)
-        else:
-            QMessageBox.information(self, "Powerup", "Brak aktywnej sceny gry.")
 
 def main():
     app = QApplication(sys.argv)

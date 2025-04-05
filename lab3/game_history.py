@@ -3,6 +3,15 @@ import re
 import xml.etree.ElementTree as ET
 import json
 
+# Dodaj import pymongo
+from pymongo import MongoClient
+
+# Konfiguracja MongoDB – domyślnie łączymy się z mongodb://localhost:27017,
+# używamy bazy "wno2lab" i kolekcji "replays".
+client = MongoClient("mongodb://localhost:27017")
+db = client["wno2lab"]
+replays_collection = db["replays"]
+
 def save_game_history(game_scene, filename):
     """
     Zapisuje historię rozgrywki do pliku XML.
@@ -294,3 +303,45 @@ def load_game_history_json(filename):
     with open(filename, "r", encoding="utf-8") as f:
         data = json.load(f)
     return data
+
+# ----- Nowe funkcje dla MongoDB -----
+
+def save_game_history_mongodb(game_scene):
+    """
+    Zapisuje historię gry do bazy MongoDB.
+    Tworzy dokument zawierający: początkowy stan (cells),
+    listę ruchów (moves) oraz stan końcowy (final_state).
+    Zwraca identyfikator wstawionego rekordu.
+    """
+    history = {}
+    history["initial_state"] = {
+        "cells": [
+            {
+                "x": cell.x,
+                "y": cell.y,
+                "type": str(getattr(cell, 'initial_type', cell.cell_type)),
+                "points": cell.points
+            } for cell in game_scene.cells
+        ]
+    }
+    history["moves"] = game_scene.move_history  # zakładamy, że move_history to lista słowników
+    history["final_state"] = {
+        "cells": [
+            {
+                "x": cell.x,
+                "y": cell.y,
+                "type": cell.cell_type,
+                "points": cell.points
+            } for cell in game_scene.cells
+        ]
+    }
+    result = replays_collection.insert_one(history)
+    return result.inserted_id
+
+def load_game_history_mongodb(replay_id):
+    """
+    Odczytuje historię gry z bazy MongoDB na podstawie podanego identyfikatora.
+    Zwraca dokument (słownik) lub None, jeśli rekord nie został znaleziony.
+    """
+    document = replays_collection.find_one({"_id": replay_id})
+    return document

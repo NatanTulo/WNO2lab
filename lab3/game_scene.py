@@ -692,9 +692,16 @@ class GameScene(QGraphicsScene):
             "description": f"Status po ogłoszeniu wyniku: {final_status}"
         })
         self.update()
-        game_history.save_game_history(self, "replay.xml")  # zapis XML
-        # Nowe: Zapis do pliku JSON
-        game_history.save_game_history_json(self, "replay.json")
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        xml_filename = f"replay_{timestamp}.xml"
+        json_filename = f"replay_{timestamp}.json"
+        game_history.save_game_history(self, xml_filename)  # zapis XML do replay_<data>_.xml
+        game_history.save_game_history_json(self, json_filename)  # zapis JSON do replay_<data>_.json
+        # Dodajemy zapis do bazy MongoDB
+        mongodb_id = game_history.save_game_history_mongodb(self)
+        if self.logger:
+            self.logger.log(f"Replay zapisany do MongoDB z id: {mongodb_id}")
         QTimer.singleShot(2000, self.show_return_button)
 
     def show_return_button(self):

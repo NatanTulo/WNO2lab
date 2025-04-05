@@ -10,7 +10,7 @@ import config
 from game_objects import CellUnit, CellConnection
 
 # Dodajemy globalną flagę debugowania (domyślnie wyłączoną)
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 class PlaybackScene(QGraphicsScene):
     def __init__(self, history_file, parent=None):
@@ -324,5 +324,11 @@ class PlaybackScene(QGraphicsScene):
         QMessageBox.information(None, "Koniec replay", result)
 
     def return_to_menu(self):
+        # Zatrzymujemy wszystkie timery replay
+        self.playback_timer.stop()
+        self.animation_timer.stop()
+        # Czyszczenie stanu replay (nie zapamiętujemy żadnych danych)
+        self.move_history.clear()
+        # Przechodzimy do menu
         if self.views() and self.views()[0].parent():
             self.views()[0].parent().show_menu()
