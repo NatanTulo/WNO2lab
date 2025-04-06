@@ -4,7 +4,7 @@ import json
 import tempfile
 import datetime
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit, QMessageBox, QDialog, QVBoxLayout, QListWidget, QPushButton, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit, QMessageBox, QDialog, QVBoxLayout, QListWidget, QPushButton, QHBoxLayout, QLabel, QComboBox
 import config                                                                                                                                      
 from game_scene import GameScene
 from level_editor_scene import LevelEditorScene
@@ -86,10 +86,27 @@ class GameWindow(QMainWindow):
         self.view.setScene(self.menu_scene)
 
     def start_game(self, level_id):
+        import os
         self.game_scene = GameScene()
         self.game_scene.logger = self.logger
+        self.game_scene.current_level = level_id
+        # Aktualizacja ścieżek do folderu saves
+        quicksave_xml = os.path.join("saves", f"quicksave_level{level_id}.xml")
+        quicksave_json = os.path.join("saves", f"quicksave_level{level_id}.json")
+        if os.path.exists(quicksave_xml) or os.path.exists(quicksave_json):
+            result = QMessageBox.question(None, "Wczytaj quicksave?",
+                f"Znaleziono quicksave dla poziomu {level_id}. Czy chcesz z niego skorzystać?",
+                QMessageBox.Yes | QMessageBox.No)
+            if result == QMessageBox.Yes:
+                if not self.game_scene.quickload():
+                    # Jeśli wczytanie quicksave'a nie powiodło się, pokazujemy menu zamiast ładować świeży poziom
+                    self.show_menu()
+                    return
+            else:
+                self.game_scene.initialize_level(level_id)
+        else:
+            self.game_scene.initialize_level(level_id)
         self.view.setScene(self.game_scene)
-        self.game_scene.initialize_level(level_id)
         if self.menu_scene.game_mode == "1 gracz":
             self.game_scene.single_player = True
             self.game_scene.start_enemy_timer()
@@ -112,13 +129,28 @@ class GameWindow(QMainWindow):
         layout = QVBoxLayout(dialog)
         label = QLabel("Wybierz plik replay:")
         layout.addWidget(label)
+        # Dodanie rozwijanej listy do wyboru poziomu
+        level_combo = QComboBox()
+        level_combo.addItems(["Poziom 1", "Poziom 2", "Poziom 3"])
+        layout.addWidget(level_combo)
         list_widget = QListWidget()
         layout.addWidget(list_widget)
         ext = ".xml" if replay_source == "XML" else ".json" if replay_source == "JSON" else ""
-        pliki = [f for f in os.listdir(".") if f.startswith("replay_") and f.endswith(ext)]
-        pliki = sorted(pliki, key=lambda f: os.path.getmtime(f), reverse=True)
-        for f in pliki:
-            list_widget.addItem(f)
+        replays_dir = "replays"
+        if not os.path.exists(replays_dir):
+            os.makedirs(replays_dir)
+        
+        def update_list():
+            list_widget.clear()
+            selected_level = int(level_combo.currentText().split()[1])
+            level_prefix = f"replay_level{selected_level}_"
+            files = [f for f in os.listdir(replays_dir) if f.startswith(level_prefix) and f.endswith(ext)]
+            sorted_files = sorted(files, key=lambda f: os.path.getmtime(os.path.join(replays_dir, f)), reverse=True)
+            for f in sorted_files:
+                list_widget.addItem(f)
+        update_list()
+        level_combo.currentIndexChanged.connect(update_list)
+        
         buttons_layout = QHBoxLayout()
         ok_button = QPushButton("OK")
         cancel_button = QPushButton("Anuluj")
@@ -126,11 +158,11 @@ class GameWindow(QMainWindow):
         buttons_layout.addWidget(cancel_button)
         layout.addLayout(buttons_layout)
         selected_file = [None]
-
+        
         def on_ok():
             item = list_widget.currentItem()
             if item:
-                selected_file[0] = item.text()
+                selected_file[0] = os.path.join(replays_dir, item.text())
                 dialog.accept()
         ok_button.clicked.connect(on_ok)
         cancel_button.clicked.connect(dialog.reject)
@@ -142,22 +174,34 @@ class GameWindow(QMainWindow):
         dialog = QDialog(self)
         dialog.setWindowTitle("Wybór replay z MongoDB")
         layout = QVBoxLayout(dialog)
-        label = QLabel("Wybierz replay z bazy MongoDB:")
-        layout.addWidget(label)
+        lbl = QLabel("Wybierz replay z bazy MongoDB:")
+        layout.addWidget(lbl)
+        # Dodajemy rozwijaną listę do wyboru poziomu
+        level_combo = QComboBox()
+        level_combo.addItems(["Poziom 1", "Poziom 2", "Poziom 3"])
+        layout.addWidget(level_combo)
         list_widget = QListWidget()
         layout.addWidget(list_widget)
-        documents = list(game_history.replays_collection.find())
         items = []
-        for doc in documents:
-            id_str = str(doc["_id"])
-            if doc.get("moves"):
-                ts = doc["moves"][0].get("timestamp", 0)
-                time_str = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
-            else:
-                time_str = "Brak znacznika czasu"
-            display_text = f"{time_str} - {id_str}"
-            list_widget.addItem(display_text)
-            items.append(doc)
+        def update_list():
+            list_widget.clear()
+            items.clear()
+            selected_level = int(level_combo.currentText().split()[1])
+            documents = list(game_history.replays_collection.find({"level": selected_level}))
+            # Sortuj dokumenty według znacznika czasu (najpierw najnowsze)
+            documents = sorted(documents, key=lambda doc: doc.get("moves", [{}])[0].get("timestamp", 0), reverse=True)
+            for doc in documents:
+                ts = doc.get("moves", [{}])[0].get("timestamp", 0)
+                try:
+                    time_str = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    time_str = "Brak daty"
+                id_short = str(doc["_id"])[:8]
+                display_text = f"{time_str} - {id_short}"
+                list_widget.addItem(display_text)
+                items.append(doc)
+        update_list()
+        level_combo.currentIndexChanged.connect(update_list)
         buttons_layout = QHBoxLayout()
         ok_button = QPushButton("OK")
         cancel_button = QPushButton("Anuluj")

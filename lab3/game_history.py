@@ -187,6 +187,23 @@ def load_game_history(filename):
                 "description": full_description.strip()
             }
             history["moves"].append(move)
+            
+    final_state_el = root.find("FinalState")
+    if final_state_el is not None:
+        final_cells_el = final_state_el.find("Cells")
+        final_cells = []
+        if final_cells_el is not None:
+            for cell_el in final_cells_el.findall("Cell"):
+                cell = {
+                    "x": float(cell_el.get("x", 0)),
+                    "y": float(cell_el.get("y", 0)),
+                    "type": cell_el.get("type", "neutral"),
+                    "points": int(cell_el.get("points", 0))
+                }
+                final_cells.append(cell)
+        history["final_state"] = {"cells": final_cells}
+    else:
+        history["final_state"] = {"cells": []}
 
     return history
 
@@ -202,22 +219,8 @@ def save_game_history_json(game_scene, filename):
             } for cell in game_scene.cells
         ]
     }
-    moves = []
-    for move in game_scene.move_history:
-        move_dict = {"timestamp": move.get("timestamp", 0)}
-        desc = move.get("description", "")
-        if desc.startswith("Utworzono most"):
-            m = re.search(r"Utworzono most między \(([\d.]+), ([\d.]+)\) a \(([\d.]+), ([\d.]+)\) o koszcie (\d+)", desc)
-            if m:
-                move_dict["move_type"] = "CreateBridge"
-                move_dict["Source"] = f"{m.group(1)},{m.group(2)}"
-                move_dict["Target"] = f"{m.group(3)},{m.group(4)}"
-                move_dict["Cost"] = int(m.group(5))
-            else:
-                move_dict["move_type"] = "CreateBridge"
-                move_dict["Info"] = desc
-        moves.append(move_dict)
-    data["moves"] = moves
+    # Zapisujemy całą historię ruchów bez modyfikacji
+    data["moves"] = game_scene.move_history
     data["final_state"] = {
         "cells": [
             {
@@ -239,14 +242,14 @@ def load_game_history_json(filename):
     return data
 
 
-def save_game_history_mongodb(game_scene):
+def save_game_history_mongodb(game_scene, is_quicksave=False):
     """
     Zapisuje historię gry do bazy MongoDB.
-    Tworzy dokument zawierający: początkowy stan (cells),
-    listę ruchów (moves) oraz stan końcowy (final_state).
-    Zwraca identyfikator wstawionego rekordu.
+    Dodaje dodatkowe pole "is_quicksave" określające czy dokument to quicksave.
     """
     history = {}
+    history["level"] = game_scene.current_level
+    history["is_quicksave"] = is_quicksave
     history["initial_state"] = {
         "cells": [
             {

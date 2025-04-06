@@ -670,8 +670,12 @@ class GameScene(QGraphicsScene):
         })
         self.update()
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        xml_filename = f"replay_{timestamp}.xml"
-        json_filename = f"replay_{timestamp}.json"
+        # Utwórz folder replays, jeśli nie istnieje
+        replays_dir = "replays"
+        if not os.path.exists(replays_dir):
+            os.makedirs(replays_dir)
+        xml_filename = os.path.join(replays_dir, f"replay_level{self.current_level}_{timestamp}.xml")
+        json_filename = os.path.join(replays_dir, f"replay_level{self.current_level}_{timestamp}.json")
         game_history.save_game_history(self, xml_filename)
         game_history.save_game_history_json(self, json_filename)
         mongodb_id = game_history.save_game_history_mongodb(self)
@@ -940,7 +944,14 @@ class GameScene(QGraphicsScene):
             self.show_hint()
             event.accept()
             return
-
+        if event.key() == Qt.Key_Q:
+            self.quicksave()
+            event.accept()
+            return
+        if event.key() == Qt.Key_L:
+            self.quickload()
+            event.accept()
+            return
         if event.key() == Qt.Key_Escape:
             if self.logger:
                 self.logger.log("GameScene: Gracz przerwał rozgrywkę.")
@@ -1039,3 +1050,135 @@ class GameScene(QGraphicsScene):
                 source.strength = (source.points // config.POINTS_PER_STRENGTH) + 1
                 self.create_connection(source, target, "enemy", cost)
         self.update()
+
+    def quicksave(self):
+        import os, game_history
+        saves_dir = "saves"
+        if not os.path.exists(saves_dir):
+            os.makedirs(saves_dir)
+        xml_filename = os.path.join(saves_dir, f"quicksave_level{self.current_level}.xml")
+        game_history.save_game_history(self, xml_filename)
+        json_filename = os.path.join(saves_dir, f"quicksave_level{self.current_level}.json")
+        game_history.save_game_history_json(self, json_filename)
+        # Przekazujemy is_quicksave=True dla quicksave'ów zapisywanych w MongoDB
+        mongodb_id = game_history.save_game_history_mongodb(self, is_quicksave=True)
+        if self.logger:
+            self.logger.log(f"Quicksave wykonany: XML: {xml_filename}, JSON: {json_filename}, MongoDB id: {mongodb_id}")
+    
+    def quickload(self):
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QMessageBox, QListWidget
+        import os, game_history, datetime
+        level = self.current_level
+        dialog = QDialog()
+        dialog.setWindowTitle("Wczytaj quicksave")
+        v_layout = QVBoxLayout(dialog)
+        label = QLabel("Wybierz typ quicksave:")
+        v_layout.addWidget(label)
+        h_layout = QHBoxLayout()
+        btn_xml = QPushButton("XML")
+        btn_json = QPushButton("JSON")
+        btn_nosql = QPushButton("NoSQL")
+        h_layout.addWidget(btn_xml)
+        h_layout.addWidget(btn_json)
+        h_layout.addWidget(btn_nosql)
+        v_layout.addLayout(h_layout)
+        choice = [None]
+        def select_xml():
+            choice[0] = "XML"
+            dialog.accept()
+        def select_json():
+            choice[0] = "JSON"
+            dialog.accept()
+        def select_nosql():
+            choice[0] = "NoSQL"
+            dialog.accept()
+        btn_xml.clicked.connect(select_xml)
+        btn_json.clicked.connect(select_json)
+        btn_nosql.clicked.connect(select_nosql)
+        if not dialog.exec_():
+            return
+        selected = choice[0]
+        if not selected:
+            return
+
+        if selected == "XML":
+            # Pliki quicksave są w folderze saves:
+            filename = os.path.join("saves", f"quicksave_level{level}.xml")
+            state = game_history.load_game_history(filename)
+            if not state or "final_state" not in state or "cells" not in state["final_state"]:
+                if self.logger:
+                    self.logger.log("Quicksave XML nie znaleziony lub uszkodzony.")
+                QMessageBox.warning(None, "Błąd", "Quicksave XML nie znaleziony lub uszkodzony.")
+                if self.views() and self.views()[0].parent():
+                    self.views()[0].parent().show_menu()
+                return False
+        elif selected == "JSON":
+            filename = os.path.join("saves", f"quicksave_level{level}.json")
+            state = game_history.load_game_history_json(filename)
+            if not state or "final_state" not in state or "cells" not in state["final_state"]:
+                if self.logger:
+                    self.logger.log("Quicksave JSON nie znaleziony lub uszkodzony.")
+                QMessageBox.warning(None, "Błąd", "Quicksave JSON nie znaleziony lub uszkodzony.")
+                if self.views() and self.views()[0].parent():
+                    self.views()[0].parent().show_menu()
+                return False
+        elif selected == "NoSQL":
+            # Ustawienie filtru po poziomie
+            level = self.current_level
+            dialog = QDialog()
+            dialog.setWindowTitle("Wybierz quicksave z MongoDB")
+            layout = QVBoxLayout(dialog)
+            lbl = QLabel("Wybierz quicksave:")
+            layout.addWidget(lbl)
+            list_widget = QListWidget()
+            layout.addWidget(list_widget)
+            # Filtrujemy dokumenty po bieżącym poziomie
+            documents = list(game_history.replays_collection.find({"level": level}))
+            # Sortuj dokumenty według znacznika czasu (najpierw najnowsze)
+            documents = sorted(documents, key=lambda doc: doc.get("moves", [{}])[0].get("timestamp", 0), reverse=True)
+            items = []
+            for doc in documents:
+                ts = doc.get("moves", [{}])[0].get("timestamp", 0)
+                try:
+                    time_str = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    time_str = "Brak daty"
+                id_short = str(doc["_id"])[:8]
+                display_text = f"{time_str} - {id_short}"
+                list_widget.addItem(display_text)
+                items.append(doc)
+            buttons_layout = QHBoxLayout()
+            ok_button = QPushButton("OK")
+            cancel_button = QPushButton("Anuluj")
+            buttons_layout.addWidget(ok_button)
+            buttons_layout.addWidget(cancel_button)
+            layout.addLayout(buttons_layout)
+            selected_doc = [None]
+            def on_ok():
+                idx = list_widget.currentRow()
+                if idx >= 0:
+                    selected_doc[0] = items[idx]
+                    dialog.accept()
+            ok_button.clicked.connect(on_ok)
+            cancel_button.clicked.connect(dialog.reject)
+            if dialog.exec_() == QDialog.Accepted:
+                if selected_doc[0]:
+                    state = selected_doc[0]
+                else:
+                    return
+            else:
+                return
+
+        # ...existing code to load state...
+        self.clear()
+        self.cells = []
+        from game_objects import CellUnit
+        for cell_data in state["final_state"]["cells"]:
+            cell = CellUnit(cell_data["x"], cell_data["y"], cell_data["type"], cell_data["points"])
+            self.cells.append(cell)
+            self.addItem(cell)
+        if self.logger:
+            self.logger.log(f"Quicksave wczytany z {selected}.")
+        self.timer.start(16)
+        self.points_timer.start(2000)
+        return True
