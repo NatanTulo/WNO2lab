@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
     QMessageBox, QMenu, QGraphicsView, QPushButton, QGraphicsProxyWidget
 )
 
-import config                                                                                                                                                             
+import config
 from game_objects import CellUnit
 
 class LevelEditorScene(QGraphicsScene):
@@ -245,7 +245,7 @@ class LevelEditorScene(QGraphicsScene):
         super().mouseDoubleClickEvent(event)
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Delete:
+        if event.key() == config.KEY_DELETE:
             selected_items = self.selectedItems()
             if not selected_items:
                 if self.views():
@@ -260,9 +260,9 @@ class LevelEditorScene(QGraphicsScene):
                     if isinstance(item, CellUnit):
                         self.cells.remove(item)
                         self.removeItem(item)
-        elif event.key() == Qt.Key_S:
+        elif event.key() == config.KEY_SAVE:
             self.save_level()
-        elif event.key() == Qt.Key_Escape:
+        elif event.key() == config.KEY_EDITOR_ESCAPE:
             self.return_to_menu()
 
         super().keyPressEvent(event)

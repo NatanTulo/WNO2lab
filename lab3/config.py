@@ -1,4 +1,5 @@
 from PyQt5.QtGui import QColor
+from PyQt5.QtCore import Qt
 
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
@@ -70,3 +71,30 @@ POWERUP_NEW_CELL = "stawiający"
 
 # Dodana stała określająca maksymalną odległość dla kopiowania komórki  //FACTOR*radius
 NEW_CELL_COPY_RANGE_FACTOR = 5
+
+# Stałe pozycjonowania elementów menu
+MENU_TITLE_Y_POSITION = 50                              # tytuł gry
+MENU_SWITCH_LABEL_Y_POSITION = 120                      # etykieta "Tryb turowy"
+MENU_SWITCH_Y_POSITION = 150                            # pozycja przełącznika
+MENU_LEVEL_TITLE_Y_POSITION = 200                       # tytuł wyboru poziomu
+MENU_LEVEL_START_Y_POSITION = 250                       # początkowa pozycja przycisków poziomów
+MENU_MODE_TITLE_Y_OFFSET = 10                           # offset od START_Y dla tytułu trybu gry
+MENU_RADIO_FIRST_Y_OFFSET = 50                          # od poziomu START_Y dla pierwszej grupy radio
+MENU_RADIO_SECOND_Y_OFFSET = 25                         # dodatkowy offset dla drugiej grupy radio
+MENU_IP_Y_OFFSET = 30                                   # offset Y dla pola IP względem radio_y2
+MENU_PORT_Y_OFFSET = 70                                 # offset Y dla pola Port względem radio_y2
+MENU_IP_X_OFFSET = 0                                    # margines od prawej krawędzi
+MENU_REPLAY_TITLE_Y_OFFSET = 115                        # odległość od dołu dla tytułu replay
+MENU_REPLAY_BUTTON_Y_OFFSET = 50                        # odległość od dołu dla przycisku replay
+
+# Stałe skrótów klawiszowych
+KEY_HINT =  Qt.Key_H
+KEY_QUICKSAVE = Qt.Key_Q
+KEY_QUICKLOAD = Qt.Key_L
+KEY_ESCAPE = Qt.Key_Escape
+KEY_INFO = Qt.Key_I
+
+# Skróty w edytorze poziomów
+KEY_DELETE = Qt.Key_Delete
+KEY_SAVE = Qt.Key_S
+KEY_EDITOR_ESCAPE = Qt.Key_Escape

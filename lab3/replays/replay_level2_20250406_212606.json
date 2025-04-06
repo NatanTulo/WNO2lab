@@ -1,0 +1,312 @@
+{
+    "initial_state": {
+        "cells": [
+            {
+                "x": 390.0,
+                "y": 210.0,
+                "type": "player",
+                "points": 2
+            },
+            {
+                "x": 890.0,
+                "y": 210.0,
+                "type": "enemy",
+                "points": 2
+            },
+            {
+                "x": 640.0,
+                "y": 360.0,
+                "type": "neutral",
+                "points": 6
+            },
+            {
+                "x": 390.0,
+                "y": 510.0,
+                "type": "neutral",
+                "points": 0
+            },
+            {
+                "x": 890.0,
+                "y": 510.0,
+                "type": "neutral",
+                "points": 3
+            }
+        ]
+    },
+    "moves": [
+        {
+            "timestamp": 1743967566.5979817,
+            "description": "Status punktowy: (player @ 390,210: 40 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967567.6052005,
+            "description": "Status punktowy: (player @ 390,210: 40 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967568.017394,
+            "description": "Utworzono most między (390, 210) a (640, 360) o koszcie 14"
+        },
+        {
+            "timestamp": 1743967568.574883,
+            "description": "Status punktowy: (player @ 390,210: 26 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967568.613881,
+            "description": "Status punktowy: (player @ 390,210: 26 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967568.835085,
+            "description": "Usunięto most między (390, 210) a (640, 360)"
+        },
+        {
+            "timestamp": 1743967569.6219862,
+            "description": "Status punktowy: (player @ 390,210: 30 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967570.0618558,
+            "description": "Utworzono most między (390, 210) a (390, 510) o koszcie 15"
+        },
+        {
+            "timestamp": 1743967570.545966,
+            "description": "Usunięto most między (390, 210) a (390, 510)"
+        },
+        {
+            "timestamp": 1743967570.5768595,
+            "description": "Status punktowy: (player @ 390,210: 23 pts); (enemy @ 890,210: 22 pts); (player @ 640,360: 6 pts); (player @ 390,510: 6 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967570.6309454,
+            "description": "Status punktowy: (player @ 390,210: 23 pts); (enemy @ 890,210: 22 pts); (player @ 640,360: 6 pts); (player @ 390,510: 6 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967571.6370091,
+            "description": "Status punktowy: (player @ 390,210: 23 pts); (enemy @ 890,210: 22 pts); (player @ 640,360: 6 pts); (player @ 390,510: 6 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967572.5770705,
+            "description": "Status punktowy: (player @ 390,210: 24 pts); (enemy @ 890,210: 23 pts); (player @ 640,360: 7 pts); (player @ 390,510: 7 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967572.645038,
+            "description": "Status punktowy: (player @ 390,210: 24 pts); (enemy @ 890,210: 23 pts); (player @ 640,360: 7 pts); (player @ 390,510: 7 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967573.6540904,
+            "description": "Status punktowy: (player @ 390,210: 24 pts); (enemy @ 890,210: 23 pts); (player @ 640,360: 7 pts); (player @ 390,510: 7 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967574.575007,
+            "description": "Status punktowy: (player @ 390,210: 25 pts); (enemy @ 890,210: 24 pts); (player @ 640,360: 8 pts); (player @ 390,510: 8 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967574.6620219,
+            "description": "Status punktowy: (player @ 390,210: 25 pts); (enemy @ 890,210: 24 pts); (player @ 640,360: 8 pts); (player @ 390,510: 8 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967575.0875351,
+            "description": "Utworzono most między (390, 210) a (890, 210) o koszcie 25"
+        },
+        {
+            "timestamp": 1743967575.6695912,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 24 pts); (player @ 640,360: 8 pts); (player @ 390,510: 8 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967576.5815113,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 9 pts); (player @ 390,510: 9 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967576.6779115,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 9 pts); (player @ 390,510: 9 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967577.68597,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 24 pts); (player @ 640,360: 9 pts); (player @ 390,510: 9 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967578.5810337,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 10 pts); (player @ 390,510: 10 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967578.6930356,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 10 pts); (player @ 390,510: 10 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967579.701349,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 24 pts); (player @ 640,360: 10 pts); (player @ 390,510: 10 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967580.5810292,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 11 pts); (player @ 390,510: 11 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967580.7094142,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 11 pts); (player @ 390,510: 11 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967581.7169943,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 24 pts); (player @ 640,360: 11 pts); (player @ 390,510: 11 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967582.5809822,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 12 pts); (player @ 390,510: 12 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967582.7249851,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 12 pts); (player @ 390,510: 12 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967583.7333694,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 24 pts); (player @ 640,360: 12 pts); (player @ 390,510: 12 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967584.575678,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 13 pts); (player @ 390,510: 13 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967584.7409852,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 13 pts); (player @ 390,510: 13 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967585.7495162,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 24 pts); (player @ 640,360: 13 pts); (player @ 390,510: 13 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967586.5819998,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 14 pts); (player @ 390,510: 14 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967586.7569947,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 14 pts); (player @ 390,510: 14 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967586.9199727,
+            "description": "Utworzono most między (390, 510) a (640, 360) o koszcie 14"
+        },
+        {
+            "timestamp": 1743967587.7656457,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 24 pts); (player @ 640,360: 14 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967588.581205,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 15 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967588.7730856,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 15 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967589.073518,
+            "description": "Utworzono most między (640, 360) a (890, 210) o koszcie 14"
+        },
+        {
+            "timestamp": 1743967589.7819684,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 24 pts); (player @ 640,360: 2 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967590.5810401,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 2 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967590.7890472,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 25 pts); (player @ 640,360: 2 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967591.7975197,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 23 pts); (player @ 640,360: 3 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967592.5800266,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 24 pts); (player @ 640,360: 3 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967592.8054335,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 24 pts); (player @ 640,360: 3 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967593.8130133,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 22 pts); (player @ 640,360: 4 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967594.5810602,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 23 pts); (player @ 640,360: 4 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967594.8214781,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 23 pts); (player @ 640,360: 4 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967595.8289855,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 5 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967596.5819197,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 22 pts); (player @ 640,360: 5 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967596.836994,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 22 pts); (player @ 640,360: 5 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967597.845811,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 20 pts); (player @ 640,360: 6 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967598.5810146,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 6 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967598.8535695,
+            "description": "Status punktowy: (player @ 390,210: 0 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 6 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967598.9373946,
+            "description": "Usunięto most między (390, 210) a (890, 210)"
+        },
+        {
+            "timestamp": 1743967598.9513924,
+            "description": "Status przed ostatnim ruchem: (player @ 390,210: 2 pts); (player @ 890,210: 2 pts); (player @ 640,360: 6 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967598.9513924,
+            "description": "Wynik: Wygrana!"
+        },
+        {
+            "timestamp": 1743967598.9513924,
+            "description": "Status po ogłoszeniu wyniku: (player @ 390,210: 2 pts); (player @ 890,210: 2 pts); (player @ 640,360: 6 pts); (player @ 390,510: 0 pts); (neutral @ 890,510: 3 pts)"
+        }
+    ],
+    "final_state": {
+        "cells": [
+            {
+                "x": 390.0,
+                "y": 210.0,
+                "type": "player",
+                "points": 2
+            },
+            {
+                "x": 890.0,
+                "y": 210.0,
+                "type": "player",
+                "points": 2
+            },
+            {
+                "x": 640.0,
+                "y": 360.0,
+                "type": "player",
+                "points": 6
+            },
+            {
+                "x": 390.0,
+                "y": 510.0,
+                "type": "player",
+                "points": 0
+            },
+            {
+                "x": 890.0,
+                "y": 510.0,
+                "type": "neutral",
+                "points": 3
+            }
+        ]
+    }
+}

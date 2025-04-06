@@ -3,9 +3,15 @@ import os
 import json
 import tempfile
 import datetime
+
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QGraphicsView, QMainWindow, QDockWidget, QTextEdit, QMessageBox, QDialog, QVBoxLayout, QListWidget, QPushButton, QHBoxLayout, QLabel, QComboBox
-import config                                                                                                                                      
+from PyQt5.QtWidgets import (
+    QApplication, QGraphicsView, QMainWindow, QDockWidget, 
+    QTextEdit, QMessageBox, QDialog, QVBoxLayout, QListWidget, 
+    QPushButton, QHBoxLayout, QLabel, QComboBox, QListWidgetItem
+)
+
+import config
 from game_scene import GameScene
 from level_editor_scene import LevelEditorScene
 from logger import Logger
@@ -86,11 +92,9 @@ class GameWindow(QMainWindow):
         self.view.setScene(self.menu_scene)
 
     def start_game(self, level_id):
-        import os
         self.game_scene = GameScene()
         self.game_scene.logger = self.logger
         self.game_scene.current_level = level_id
-        # Aktualizacja ścieżek do folderu saves
         quicksave_xml = os.path.join("saves", f"quicksave_level{level_id}.xml")
         quicksave_json = os.path.join("saves", f"quicksave_level{level_id}.json")
         if os.path.exists(quicksave_xml) or os.path.exists(quicksave_json):
@@ -99,7 +103,6 @@ class GameWindow(QMainWindow):
                 QMessageBox.Yes | QMessageBox.No)
             if result == QMessageBox.Yes:
                 if not self.game_scene.quickload():
-                    # Jeśli wczytanie quicksave'a nie powiodło się, pokazujemy menu zamiast ładować świeży poziom
                     self.show_menu()
                     return
             else:
@@ -129,7 +132,6 @@ class GameWindow(QMainWindow):
         layout = QVBoxLayout(dialog)
         label = QLabel("Wybierz plik replay:")
         layout.addWidget(label)
-        # Dodanie rozwijanej listy do wyboru poziomu
         level_combo = QComboBox()
         level_combo.addItems(["Poziom 1", "Poziom 2", "Poziom 3"])
         layout.addWidget(level_combo)
@@ -139,7 +141,7 @@ class GameWindow(QMainWindow):
         replays_dir = "replays"
         if not os.path.exists(replays_dir):
             os.makedirs(replays_dir)
-        
+
         def update_list():
             list_widget.clear()
             selected_level = int(level_combo.currentText().split()[1])
@@ -150,7 +152,7 @@ class GameWindow(QMainWindow):
                 list_widget.addItem(f)
         update_list()
         level_combo.currentIndexChanged.connect(update_list)
-        
+
         buttons_layout = QHBoxLayout()
         ok_button = QPushButton("OK")
         cancel_button = QPushButton("Anuluj")
@@ -158,7 +160,7 @@ class GameWindow(QMainWindow):
         buttons_layout.addWidget(cancel_button)
         layout.addLayout(buttons_layout)
         selected_file = [None]
-        
+
         def on_ok():
             item = list_widget.currentItem()
             if item:
@@ -171,8 +173,6 @@ class GameWindow(QMainWindow):
         return None
 
     def select_replay_document(self):
-        from PyQt5.QtWidgets import QListWidgetItem
-        import datetime
         dialog = QDialog(self)
         dialog.setWindowTitle("Wybór replay z MongoDB")
         layout = QVBoxLayout(dialog)
@@ -183,7 +183,6 @@ class GameWindow(QMainWindow):
         layout.addWidget(level_combo)
         list_widget = QListWidget()
         layout.addWidget(list_widget)
-        # Nowa mapa: klucz = numer wiersza, wartość = dokument
         doc_mapping = {}
         def update_list():
             list_widget.clear()
@@ -240,7 +239,6 @@ class GameWindow(QMainWindow):
         selected_doc = [None]
         def on_ok():
             idx = list_widget.currentRow()
-            # Upewnij się, że kliknięty wiersz jest w mapie (czyli nie jest nagłówkiem)
             if idx in doc_mapping:
                 selected_doc[0] = doc_mapping[idx]
                 dialog.accept()

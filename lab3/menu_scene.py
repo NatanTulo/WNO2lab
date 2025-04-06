@@ -2,8 +2,15 @@ import json
 import os
 
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QRegExp
-from PyQt5.QtGui import QColor, QBrush, QPen, QFont, QLinearGradient, QPixmap, QPainterPath, QRegExpValidator, QIntValidator
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, QGraphicsPixmapItem, QGraphicsItem, QGraphicsEllipseItem, QLineEdit, QGraphicsProxyWidget, QPushButton
+from PyQt5.QtGui import (
+    QColor, QBrush, QPen, QFont, QLinearGradient, 
+    QPixmap, QPainterPath, QRegExpValidator, QIntValidator
+)
+from PyQt5.QtWidgets import (
+    QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, 
+    QGraphicsPixmapItem, QGraphicsItem, QGraphicsEllipseItem, QLineEdit, 
+    QGraphicsProxyWidget, QPushButton
+)
 
 import resources_rc
 import config
@@ -111,18 +118,18 @@ class MenuScene(QGraphicsScene):
         title.setFont(QFont(config.FONT_FAMILY, config.MENU_TITLE_FONT_SIZE, QFont.Bold))
         title.setDefaultTextColor(Qt.white)
         title_width = title.boundingRect().width()
-        title.setPos((self.width() - title_width) / 2, 100)
+        title.setPos((self.width() - title_width) / 2, config.MENU_TITLE_Y_POSITION)
         self.addItem(title)
 
         switch_label = QGraphicsTextItem("Tryb turowy")
         switch_label.setFont(QFont(config.FONT_FAMILY, config.MENU_SWITCH_LABEL_FONT_SIZE))
         switch_label.setDefaultTextColor(Qt.white)
         switch_label_width = switch_label.boundingRect().width()
-        switch_label.setPos((self.width() - switch_label_width) / 2, 170)
+        switch_label.setPos((self.width() - switch_label_width) / 2, config.MENU_SWITCH_LABEL_Y_POSITION)
         self.addItem(switch_label)
 
         self.switch = SwitchButton(60, 30)
-        self.switch.setPos((self.width() - self.switch.width) / 2, 200)
+        self.switch.setPos((self.width() - self.switch.width) / 2, config.MENU_SWITCH_Y_POSITION)
         def switch_callback(state):
             self.turn_based = state
             if self.logger:
@@ -134,10 +141,10 @@ class MenuScene(QGraphicsScene):
         level_title.setFont(QFont(config.FONT_FAMILY, config.MENU_LEVEL_TITLE_FONT_SIZE))
         level_title.setDefaultTextColor(Qt.white)
         level_title_width = level_title.boundingRect().width()
-        level_title.setPos((self.width() - level_title_width) / 2, 250)
+        level_title.setPos((self.width() - level_title_width) / 2, config.MENU_LEVEL_TITLE_Y_POSITION)
         self.addItem(level_title)
 
-        y_pos = 300
+        y_pos = config.MENU_LEVEL_START_Y_POSITION
         button_width = config.MENU_LEVEL_BUTTON_WIDTH
 
         for i, level in enumerate(self.levels_data):
@@ -156,13 +163,13 @@ class MenuScene(QGraphicsScene):
         mode_title.setFont(QFont(config.FONT_FAMILY, config.MENU_LEVEL_TITLE_FONT_SIZE))
         mode_title.setDefaultTextColor(Qt.white)
         mode_title_width = mode_title.boundingRect().width()
-        mode_title.setPos((self.width() - mode_title_width) / 2, y_pos + 10)
+        mode_title.setPos((self.width() - mode_title_width) / 2, y_pos + config.MENU_MODE_TITLE_Y_OFFSET)
         self.addItem(mode_title)
 
-        radio_y = y_pos + 50
+        radio_y = y_pos + config.MENU_RADIO_FIRST_Y_OFFSET
         first_group = [("1 gracz", "1 gracz"), ("2 graczy lokalnie", "2 graczy lokalnie")]
         spacing = 110
-        group_width = len(first_group) * spacing
+        group_width = len(first_group) * spacing + 60
         radio_start_x_1 = (self.width() - group_width) / 2
         for i, (text, value) in enumerate(first_group):
             selected = (value == self.game_mode)
@@ -170,11 +177,11 @@ class MenuScene(QGraphicsScene):
             self.radio_buttons.append(radio)
             self.addItem(radio)
 
-        radio_y2 = radio_y + 25
+        radio_y2 = radio_y + config.MENU_RADIO_SECOND_Y_OFFSET
         second_group = [("gra sieciowa", "gra sieciowa")]
         for text, value in second_group:
             selected = (value == self.game_mode)
-            radio_x = (self.width() - 110) / 2
+            radio_x = (self.width() - 140) / 2
             radio = GameModeRadioButton(text, value, radio_x, radio_y2, selected)
             self.radio_buttons.append(radio)
             self.addItem(radio)
@@ -184,20 +191,24 @@ class MenuScene(QGraphicsScene):
         ip_regex = QRegExp(r"^((25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(25[0-5]|2[0-4]\d|[01]?\d?\d)$")
         ip_validator = QRegExpValidator(ip_regex)
         self.ip_lineedit.setValidator(ip_validator)
-        self.ip_lineedit.setFixedWidth(200)
+        ip_width = int(self.width() * 0.25)
+        self.ip_lineedit.setFixedWidth(ip_width)
+        self.ip_lineedit.setStyleSheet("font-size: {}px;".format(int(self.width()/75)))
         ip_proxy = QGraphicsProxyWidget()
         ip_proxy.setWidget(self.ip_lineedit)
-        ip_proxy.setPos((self.width() - 200) / 2, radio_y2 + 80)
+        ip_proxy.setPos((self.width() - ip_width) / 2, radio_y2 + config.MENU_IP_Y_OFFSET)
         self.addItem(ip_proxy)
 
         self.port_lineedit = QLineEdit()
         self.port_lineedit.setPlaceholderText("Port (np. 12345)")
         port_validator = QIntValidator(0, 65535)
         self.port_lineedit.setValidator(port_validator)
-        self.port_lineedit.setFixedWidth(200)
+        port_width = int(self.width() * 0.25)
+        self.port_lineedit.setFixedWidth(port_width)
+        self.port_lineedit.setStyleSheet("font-size: {}px;".format(int(self.width()/75)))
         port_proxy = QGraphicsProxyWidget()
         port_proxy.setWidget(self.port_lineedit)
-        port_proxy.setPos((self.width() - 200) / 2, radio_y2 + 120)
+        port_proxy.setPos((self.width() - port_width) / 2, radio_y2 + config.MENU_PORT_Y_OFFSET)
         self.addItem(port_proxy)
 
         if self.game_mode != "gra sieciowa":
@@ -210,7 +221,7 @@ class MenuScene(QGraphicsScene):
         replay_source_title.setFont(QFont(config.FONT_FAMILY, config.MENU_LEVEL_TITLE_FONT_SIZE))
         replay_source_title.setDefaultTextColor(Qt.white)
         replay_source_title_width = replay_source_title.boundingRect().width()
-        replay_source_title.setPos((self.width() - replay_source_title_width) / 2, self.height() - 110)
+        replay_source_title.setPos((self.width() - replay_source_title_width) / 2, self.height() - config.MENU_REPLAY_TITLE_Y_OFFSET)
         self.addItem(replay_source_title)
         self.replay_source = "XML"
         replay_options = [("XML", "XML"), ("JSON", "JSON"), ("NoSQL", "NoSQL")]
@@ -238,7 +249,7 @@ class MenuScene(QGraphicsScene):
         replay_button.setFixedSize(150, 40)
         replay_proxy = QGraphicsProxyWidget()
         replay_proxy.setWidget(replay_button)
-        replay_proxy.setPos((self.width() - 150) / 2, self.height() - 50)
+        replay_proxy.setPos((self.width() - 150) / 2, self.height() - config.MENU_REPLAY_BUTTON_Y_OFFSET)
         self.addItem(replay_proxy)
         replay_button.clicked.connect(lambda: self.replay_selected() if hasattr(self, 'replay_selected') else None)
 

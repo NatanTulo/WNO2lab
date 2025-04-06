@@ -2,6 +2,7 @@ import os
 import re
 import xml.etree.ElementTree as ET
 import json
+
 from pymongo import MongoClient
 
 client = MongoClient("mongodb://localhost:27017")
@@ -187,7 +188,7 @@ def load_game_history(filename):
                 "description": full_description.strip()
             }
             history["moves"].append(move)
-            
+
     final_state_el = root.find("FinalState")
     if final_state_el is not None:
         final_cells_el = final_state_el.find("Cells")
@@ -219,7 +220,6 @@ def save_game_history_json(game_scene, filename):
             } for cell in game_scene.cells
         ]
     }
-    # Zapisujemy całą historię ruchów bez modyfikacji
     data["moves"] = game_scene.move_history
     data["final_state"] = {
         "cells": [

@@ -3,9 +3,14 @@ import math
 import os
 import time
 import datetime
+
 from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
 from PyQt5.QtGui import QCursor, QColor, QLinearGradient, QPen, QFont, QTransform
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsDropShadowEffect, QGraphicsItem, QMenu, QMessageBox, QGraphicsTextItem
+from PyQt5.QtWidgets import (
+    QGraphicsScene, QGraphicsDropShadowEffect, QGraphicsItem, QMenu, 
+    QMessageBox, QGraphicsTextItem, QDialog, QVBoxLayout, QHBoxLayout, 
+    QLabel, QPushButton, QListWidget
+)
 
 import config
 from game_ai import GameAI
@@ -668,12 +673,10 @@ class GameScene(QGraphicsScene):
             "timestamp": time.time(),
             "description": f"Status po ogłoszeniu wyniku: {final_status}"
         })
-        # Użyj znacznika czasu pierwszego ruchu, jeśli move_history nie jest puste
         if self.move_history and "timestamp" in self.move_history[0]:
             timestamp = datetime.datetime.fromtimestamp(self.move_history[0]["timestamp"]).strftime("%Y%m%d_%H%M%S")
         else:
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        # Utwórz folder replays, jeśli nie istnieje
         replays_dir = "replays"
         if not os.path.exists(replays_dir):
             os.makedirs(replays_dir)
@@ -943,19 +946,19 @@ class GameScene(QGraphicsScene):
         self.addItem(self.powerup_label)
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_H:
+        if event.key() == config.KEY_HINT:
             self.show_hint()
             event.accept()
             return
-        if event.key() == Qt.Key_Q:
+        if event.key() == config.KEY_QUICKSAVE:
             self.quicksave()
             event.accept()
             return
-        if event.key() == Qt.Key_L:
+        if event.key() == config.KEY_QUICKLOAD:
             self.quickload()
             event.accept()
             return
-        if event.key() == Qt.Key_Escape:
+        if event.key() == config.KEY_ESCAPE:
             if self.logger:
                 self.logger.log("GameScene: Gracz przerwał rozgrywkę.")
             self.timer.stop()
@@ -966,7 +969,7 @@ class GameScene(QGraphicsScene):
             event.accept()
             return
 
-        if event.key() == Qt.Key_I:
+        if event.key() == config.KEY_INFO:
             if self.views():
                 view = self.views()[0]
                 scene_pos = view.mapToScene(view.mapFromGlobal(QCursor.pos()))
@@ -1055,7 +1058,6 @@ class GameScene(QGraphicsScene):
         self.update()
 
     def quicksave(self):
-        import os, game_history
         saves_dir = "saves"
         if not os.path.exists(saves_dir):
             os.makedirs(saves_dir)
@@ -1063,14 +1065,11 @@ class GameScene(QGraphicsScene):
         game_history.save_game_history(self, xml_filename)
         json_filename = os.path.join(saves_dir, f"quicksave_level{self.current_level}.json")
         game_history.save_game_history_json(self, json_filename)
-        # Przekazujemy is_quicksave=True dla quicksave'ów zapisywanych w MongoDB
         mongodb_id = game_history.save_game_history_mongodb(self, is_quicksave=True)
         if self.logger:
             self.logger.log(f"Quicksave wykonany: XML: {xml_filename}, JSON: {json_filename}, MongoDB id: {mongodb_id}")
-    
+
     def quickload(self):
-        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QMessageBox, QListWidget
-        import os, game_history, datetime
         level = self.current_level
         dialog = QDialog()
         dialog.setWindowTitle("Wczytaj quicksave")
@@ -1124,7 +1123,6 @@ class GameScene(QGraphicsScene):
                     self.views()[0].parent().show_menu()
                 return False
         elif selected == "NoSQL":
-            # Filtrujemy dokumenty tylko dla quicksave-ów
             level = self.current_level
             dialog = QDialog()
             dialog.setWindowTitle("Wybierz quicksave z MongoDB")
@@ -1170,10 +1168,8 @@ class GameScene(QGraphicsScene):
                     state["_id"] = str(state["_id"])
             else:
                 return
-        # ...existing code do wczytywania stanu...
         self.clear()
         self.cells = []
-        from game_objects import CellUnit
         for cell_data in state["final_state"]["cells"]:
             cell = CellUnit(cell_data["x"], cell_data["y"], cell_data["type"], cell_data["points"])
             self.cells.append(cell)
@@ -1183,4 +1179,3 @@ class GameScene(QGraphicsScene):
         self.timer.start(16)
         self.points_timer.start(2000)
         return True
-# ...existing code...

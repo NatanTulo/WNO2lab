@@ -1,0 +1,116 @@
+{
+    "initial_state": {
+        "cells": [
+            {
+                "x": 390.0,
+                "y": 210.0,
+                "type": "player",
+                "points": 23
+            },
+            {
+                "x": 890.0,
+                "y": 210.0,
+                "type": "enemy",
+                "points": 22
+            },
+            {
+                "x": 640.0,
+                "y": 360.0,
+                "type": "neutral",
+                "points": 6
+            },
+            {
+                "x": 390.0,
+                "y": 510.0,
+                "type": "neutral",
+                "points": 6
+            },
+            {
+                "x": 890.0,
+                "y": 510.0,
+                "type": "neutral",
+                "points": 3
+            }
+        ]
+    },
+    "moves": [
+        {
+            "timestamp": 1743967566.5979817,
+            "description": "Status punktowy: (player @ 390,210: 40 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967567.6052005,
+            "description": "Status punktowy: (player @ 390,210: 40 pts); (enemy @ 890,210: 20 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967568.017394,
+            "description": "Utworzono most między (390, 210) a (640, 360) o koszcie 14"
+        },
+        {
+            "timestamp": 1743967568.574883,
+            "description": "Status punktowy: (player @ 390,210: 26 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967568.613881,
+            "description": "Status punktowy: (player @ 390,210: 26 pts); (enemy @ 890,210: 21 pts); (neutral @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967568.835085,
+            "description": "Usunięto most między (390, 210) a (640, 360)"
+        },
+        {
+            "timestamp": 1743967569.6219862,
+            "description": "Status punktowy: (player @ 390,210: 30 pts); (enemy @ 890,210: 21 pts); (player @ 640,360: 5 pts); (neutral @ 390,510: 3 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967570.0618558,
+            "description": "Utworzono most między (390, 210) a (390, 510) o koszcie 15"
+        },
+        {
+            "timestamp": 1743967570.545966,
+            "description": "Usunięto most między (390, 210) a (390, 510)"
+        },
+        {
+            "timestamp": 1743967570.5768595,
+            "description": "Status punktowy: (player @ 390,210: 23 pts); (enemy @ 890,210: 22 pts); (player @ 640,360: 6 pts); (player @ 390,510: 6 pts); (neutral @ 890,510: 3 pts)"
+        },
+        {
+            "timestamp": 1743967570.6309454,
+            "description": "Status punktowy: (player @ 390,210: 23 pts); (enemy @ 890,210: 22 pts); (player @ 640,360: 6 pts); (player @ 390,510: 6 pts); (neutral @ 890,510: 3 pts)"
+        }
+    ],
+    "final_state": {
+        "cells": [
+            {
+                "x": 390.0,
+                "y": 210.0,
+                "type": "player",
+                "points": 23
+            },
+            {
+                "x": 890.0,
+                "y": 210.0,
+                "type": "enemy",
+                "points": 22
+            },
+            {
+                "x": 640.0,
+                "y": 360.0,
+                "type": "player",
+                "points": 6
+            },
+            {
+                "x": 390.0,
+                "y": 510.0,
+                "type": "player",
+                "points": 6
+            },
+            {
+                "x": 890.0,
+                "y": 510.0,
+                "type": "neutral",
+                "points": 3
+            }
+        ]
+    }
+}
