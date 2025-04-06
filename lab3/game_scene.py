@@ -668,8 +668,11 @@ class GameScene(QGraphicsScene):
             "timestamp": time.time(),
             "description": f"Status po ogłoszeniu wyniku: {final_status}"
         })
-        self.update()
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Użyj znacznika czasu pierwszego ruchu, jeśli move_history nie jest puste
+        if self.move_history and "timestamp" in self.move_history[0]:
+            timestamp = datetime.datetime.fromtimestamp(self.move_history[0]["timestamp"]).strftime("%Y%m%d_%H%M%S")
+        else:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         # Utwórz folder replays, jeśli nie istnieje
         replays_dir = "replays"
         if not os.path.exists(replays_dir):
@@ -1072,7 +1075,7 @@ class GameScene(QGraphicsScene):
         dialog = QDialog()
         dialog.setWindowTitle("Wczytaj quicksave")
         v_layout = QVBoxLayout(dialog)
-        label = QLabel("Wybierz typ quicksave:")
+        label = QLabel("Wybierz quicksave (tylko zapisy z flagą quicksave):")
         v_layout.addWidget(label)
         h_layout = QHBoxLayout()
         btn_xml = QPushButton("XML")
@@ -1100,9 +1103,7 @@ class GameScene(QGraphicsScene):
         selected = choice[0]
         if not selected:
             return
-
         if selected == "XML":
-            # Pliki quicksave są w folderze saves:
             filename = os.path.join("saves", f"quicksave_level{level}.xml")
             state = game_history.load_game_history(filename)
             if not state or "final_state" not in state or "cells" not in state["final_state"]:
@@ -1123,53 +1124,53 @@ class GameScene(QGraphicsScene):
                     self.views()[0].parent().show_menu()
                 return False
         elif selected == "NoSQL":
-            # Ustawienie filtru po poziomie
+            # Filtrujemy dokumenty tylko dla quicksave-ów
             level = self.current_level
             dialog = QDialog()
             dialog.setWindowTitle("Wybierz quicksave z MongoDB")
             layout = QVBoxLayout(dialog)
-            lbl = QLabel("Wybierz quicksave:")
+            lbl = QLabel("Wybierz quicksave (MongoDB):")
             layout.addWidget(lbl)
             list_widget = QListWidget()
             layout.addWidget(list_widget)
-            # Filtrujemy dokumenty po bieżącym poziomie
-            documents = list(game_history.replays_collection.find({"level": level}))
-            # Sortuj dokumenty według znacznika czasu (najpierw najnowsze)
-            documents = sorted(documents, key=lambda doc: doc.get("moves", [{}])[0].get("timestamp", 0), reverse=True)
             items = []
-            for doc in documents:
-                ts = doc.get("moves", [{}])[0].get("timestamp", 0)
-                try:
-                    time_str = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
-                except Exception:
-                    time_str = "Brak daty"
-                id_short = str(doc["_id"])[:8]
-                display_text = f"{time_str} - {id_short}"
-                list_widget.addItem(display_text)
-                items.append(doc)
+            def update_list():
+                list_widget.clear()
+                items.clear()
+                documents = list(game_history.replays_collection.find({"level": level, "is_quicksave": True}))
+                documents = sorted(documents, key=lambda doc: doc.get("moves", [{}])[0].get("timestamp", 0), reverse=True)
+                for doc in documents:
+                    ts = doc.get("moves", [{}])[0].get("timestamp", 0)
+                    try:
+                        time_str = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        time_str = "Brak daty"
+                    id_short = str(doc["_id"])[:8]
+                    display_text = f"{time_str} - {id_short}"
+                    list_widget.addItem(display_text)
+                    items.append(doc)
+            update_list()
             buttons_layout = QHBoxLayout()
             ok_button = QPushButton("OK")
             cancel_button = QPushButton("Anuluj")
             buttons_layout.addWidget(ok_button)
             buttons_layout.addWidget(cancel_button)
             layout.addLayout(buttons_layout)
-            selected_doc = [None]
+            selected_file = [None]
             def on_ok():
                 idx = list_widget.currentRow()
                 if idx >= 0:
-                    selected_doc[0] = items[idx]
+                    selected_file[0] = items[idx]
                     dialog.accept()
             ok_button.clicked.connect(on_ok)
             cancel_button.clicked.connect(dialog.reject)
             if dialog.exec_() == QDialog.Accepted:
-                if selected_doc[0]:
-                    state = selected_doc[0]
-                else:
-                    return
+                state = selected_file[0]
+                if state and "_id" in state:
+                    state["_id"] = str(state["_id"])
             else:
                 return
-
-        # ...existing code to load state...
+        # ...existing code do wczytywania stanu...
         self.clear()
         self.cells = []
         from game_objects import CellUnit
@@ -1182,3 +1183,4 @@ class GameScene(QGraphicsScene):
         self.timer.start(16)
         self.points_timer.start(2000)
         return True
+# ...existing code...

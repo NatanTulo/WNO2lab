@@ -171,35 +171,64 @@ class GameWindow(QMainWindow):
         return None
 
     def select_replay_document(self):
+        from PyQt5.QtWidgets import QListWidgetItem
+        import datetime
         dialog = QDialog(self)
         dialog.setWindowTitle("Wybór replay z MongoDB")
         layout = QVBoxLayout(dialog)
         lbl = QLabel("Wybierz replay z bazy MongoDB:")
         layout.addWidget(lbl)
-        # Dodajemy rozwijaną listę do wyboru poziomu
         level_combo = QComboBox()
         level_combo.addItems(["Poziom 1", "Poziom 2", "Poziom 3"])
         layout.addWidget(level_combo)
         list_widget = QListWidget()
         layout.addWidget(list_widget)
-        items = []
+        # Nowa mapa: klucz = numer wiersza, wartość = dokument
+        doc_mapping = {}
         def update_list():
             list_widget.clear()
-            items.clear()
+            doc_mapping.clear()
+            row = 0
             selected_level = int(level_combo.currentText().split()[1])
             documents = list(game_history.replays_collection.find({"level": selected_level}))
-            # Sortuj dokumenty według znacznika czasu (najpierw najnowsze)
-            documents = sorted(documents, key=lambda doc: doc.get("moves", [{}])[0].get("timestamp", 0), reverse=True)
-            for doc in documents:
-                ts = doc.get("moves", [{}])[0].get("timestamp", 0)
-                try:
-                    time_str = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
-                except Exception:
-                    time_str = "Brak daty"
-                id_short = str(doc["_id"])[:8]
-                display_text = f"{time_str} - {id_short}"
-                list_widget.addItem(display_text)
-                items.append(doc)
+            quicksaves = sorted([doc for doc in documents if doc.get("is_quicksave")],
+                                key=lambda doc: doc.get("moves", [{}])[0].get("timestamp", 0), reverse=True)
+            regular = sorted([doc for doc in documents if not doc.get("is_quicksave")],
+                             key=lambda doc: doc.get("moves", [{}])[0].get("timestamp", 0), reverse=True)
+            if quicksaves:
+                header = QListWidgetItem("=== Quick Saves ===")
+                header.setFlags(header.flags() & ~Qt.ItemIsSelectable)
+                list_widget.addItem(header)
+                row += 1
+                for doc in quicksaves:
+                    ts = doc.get("moves", [{}])[0].get("timestamp", 0)
+                    try:
+                        time_str = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        time_str = "Brak daty"
+                    id_short = str(doc["_id"])[:8]
+                    display_text = f"[Quick] {time_str} - {id_short}"
+                    list_item = QListWidgetItem(display_text)
+                    list_widget.addItem(list_item)
+                    doc_mapping[row] = doc
+                    row += 1
+            if regular:
+                header = QListWidgetItem("=== Regular Replays ===")
+                header.setFlags(header.flags() & ~Qt.ItemIsSelectable)
+                list_widget.addItem(header)
+                row += 1
+                for doc in regular:
+                    ts = doc.get("moves", [{}])[0].get("timestamp", 0)
+                    try:
+                        time_str = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        time_str = "Brak daty"
+                    id_short = str(doc["_id"])[:8]
+                    display_text = f"[Replay] {time_str} - {id_short}"
+                    list_item = QListWidgetItem(display_text)
+                    list_widget.addItem(list_item)
+                    doc_mapping[row] = doc
+                    row += 1
         update_list()
         level_combo.currentIndexChanged.connect(update_list)
         buttons_layout = QHBoxLayout()
@@ -209,11 +238,11 @@ class GameWindow(QMainWindow):
         buttons_layout.addWidget(cancel_button)
         layout.addLayout(buttons_layout)
         selected_doc = [None]
-
         def on_ok():
             idx = list_widget.currentRow()
-            if idx >= 0:
-                selected_doc[0] = items[idx]
+            # Upewnij się, że kliknięty wiersz jest w mapie (czyli nie jest nagłówkiem)
+            if idx in doc_mapping:
+                selected_doc[0] = doc_mapping[idx]
                 dialog.accept()
         ok_button.clicked.connect(on_ok)
         cancel_button.clicked.connect(dialog.reject)
