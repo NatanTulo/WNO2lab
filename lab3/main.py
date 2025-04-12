@@ -196,6 +196,9 @@ class GameWindow(QMainWindow):
             remote_ip = self.menu_scene.ip_lineedit.text().strip()
             port_text = self.menu_scene.port_lineedit.text().strip()
             
+            # Wykrywamy automatycznie, czy to IPv6
+            self.use_ipv6 = ":" in remote_ip and not remote_ip.startswith("127.")
+            
             if not remote_ip or not port_text:
                 QMessageBox.critical(self, "Błąd połączenia", 
                                     "Pola IP lub Port są puste.")
@@ -212,7 +215,7 @@ class GameWindow(QMainWindow):
                 
                 # Inicjalizacja serwera nasłuchującego przed próbą połączenia
                 self.start_network_listener(remote_port)
-                local_ip = get_local_ip()
+                local_ip = get_local_ip(self.use_ipv6)
                 
                 # Przygotowujemy podstawowe ustawienia gry sieciowej
                 self.game_scene.is_multiplayer = True
@@ -581,16 +584,31 @@ class GameWindow(QMainWindow):
                 self.logger.log(f"Uruchomiono nasłuchiwanie TCP/IP na porcie {port}.")
 
     def network_listener(self, port):
-        server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Określ rodzaj socketu na podstawie konfiguracji
+        if hasattr(self, 'use_ipv6') and self.use_ipv6:
+            server_sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            # Opcja do obsługi zarówno IPv4 jak i IPv6 na jednym sockecie
+            try:
+                server_sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+            except Exception as e:
+                if self.logger:
+                    self.logger.log(f"Ostrzeżenie: Nie można skonfigurować socketu do obsługi dual-stack: {e}")
+            bind_address = ("::", port)
+        else:
+            server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            bind_address = ("0.0.0.0", port)
+        
         try:
             # Umożliwiamy ponowne użycie adresu i portu
             server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            server_sock.bind(("0.0.0.0", port))
+            server_sock.bind(bind_address)
             server_sock.settimeout(0.5)  # Dodajemy timeout dla lepszej obsługi
             server_sock.listen(5)
+            
             if self.logger:
-                self.logger.log(f"Nasłuchiwanie uruchomione na porcie {port}")
-                
+                ip_version = "IPv6" if hasattr(self, 'use_ipv6') and self.use_ipv6 else "IPv4"
+                self.logger.log(f"Nasłuchiwanie {ip_version} uruchomione na porcie {port}")
+                    
             buffer_size = 4096  # Zwiększamy buffer dla większych wiadomości
             
             while True:
@@ -759,6 +777,15 @@ class GameWindow(QMainWindow):
 
     def send_network_message(self, ip, port, message):
         try:
+            # Automatycznie wykryj czy to IPv6 na podstawie obecności znaków ':' w adresie
+            use_ipv6 = ":" in ip and not ip.startswith("127.")
+            
+            # Wybierz odpowiedni typ socketu
+            if use_ipv6:
+                sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            else:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            
             # Upewniamy się, że wysyłamy poprawną rolę - gracz inicjujący jest player, odpowiadający jest enemy
             if "set_role" in message and hasattr(self, 'game_scene') and self.game_scene:
                 if getattr(self.game_scene, 'is_connection_initiator', False):
@@ -783,17 +810,28 @@ class GameWindow(QMainWindow):
             is_snapshot = message.startswith("snapshot_")
             timeout_value = 5 if is_snapshot else (2 if priority_msg else 3)
             
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(timeout_value)  # Dłuższy timeout dla snapshotów
             
             # Dodajemy ponowne próby dla krytycznych wiadomości
             retries = 3 if is_snapshot else (2 if priority_msg else 1)
             retry_count = 0
             
+            # Sprawdź czy to adres IPv6 z interfejsem (format adres%interfejs)
+            if use_ipv6 and "%" in ip:
+                # Obsługa adresu link-local z identyfikatorem interfejsu
+                ip_parts = ip.split("%")
+                ip = ip_parts[0]
+                # Jeśli system tego potrzebuje, można ustawić scopeid
+                # Ale w Pythonie zwykle nie jest to wymagane dla połączeń TCP
+
             success = False
             while retry_count <= retries and not success:
                 try:
-                    sock.connect((ip, port))
+                    if use_ipv6:
+                        sock.connect((ip, port))
+                    else:
+                        sock.connect((ip, port))
+                    
                     sock.sendall(message.encode("utf-8"))
                     
                     # Dla heartbeat czekamy na odpowiedź
@@ -851,12 +889,26 @@ class GameWindow(QMainWindow):
                 sock.close()
 
     def send_network_message_with_confirmation(self, ip, port, message, max_retries=3):
+        # Automatycznie wykryj czy to IPv6 na podstawie obecności znaków ':' w adresie
+        use_ipv6 = ":" in ip and not ip.startswith("127.")
+        
         """Wysyła wiadomość sieciową i czeka na potwierdzenie lub zakończenie prób"""
         for retry in range(max_retries):
             try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                if use_ipv6:
+                    sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+                else: 
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                
                 sock.settimeout(2.0)  # Krótki timeout dla szybkiej reakcji
-                sock.connect((ip, port))
+                
+                # Sprawdź czy to adres IPv6 z interfejsem
+                if use_ipv6 and "%" in ip:
+                    connect_ip = ip.split("%")[0]
+                else:
+                    connect_ip = ip
+                    
+                sock.connect((connect_ip, port))
                 sock.sendall(message.encode("utf-8"))
                 
                 # Próbujemy odczytać odpowiedź
@@ -955,6 +1007,9 @@ class GameWindow(QMainWindow):
 
     def send_heartbeat_with_sync(self, ip, port):
         """Wysyła heartbeat wraz z aktualnym stanem gry dla lepszej synchronizacji"""
+        # Automatycznie rozpoznaj typ adresu
+        use_ipv6 = ":" in ip and not ip.startswith("127.")
+        
         if hasattr(self, 'game_scene') and self.game_scene:
             # Regularnie wysyłamy pełny snapshot stanu gry z heartbeat
             try:
@@ -984,8 +1039,23 @@ class GameWindow(QMainWindow):
             # Zwykły heartbeat bez danych synchronizacyjnych
             self.send_network_message(ip, port, "heartbeat")
 
-def get_local_ip():
+def get_local_ip(use_ipv6=False):
     import socket
+    
+    if use_ipv6:
+        # Próba uzyskania adresu IPv6
+        try:
+            s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+            # Adres Google DNS IPv6, ale nie musi być osiągalny
+            s.connect(("2001:4860:4860::8888", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except Exception as e:
+            # Jeśli nie udało się uzyskać adresu IPv6, próbujemy fall back na IPv4
+            pass
+    
+    # Domyślna metoda IPv4
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         # adres nie musi być osiągalny
