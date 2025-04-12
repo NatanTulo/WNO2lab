@@ -350,10 +350,10 @@ class GameWindow(QMainWindow):
                 
                 # Żądanie pełnej synchronizacji stanu po ustanowieniu połączenia
                 if hasattr(self.game_scene, "network_send_callback") and self.game_scene.network_send_callback:
-                    # Prośba o pełny stan gry od partnera
-                    self.game_scene.network_send_callback("request_full_sync")
+                    # Zamiast prośby, wysyłamy od razu pełny stan gry
+                    self.game_scene.send_game_state_snapshot()
                     if self.logger:
-                        self.logger.log("Wysłano prośbę o pełną synchronizację stanu gry")
+                        self.logger.log("Wysłano pełną synchronizację stanu gry")
                 
                 # Informujemy w logach
                 if self.logger:
@@ -567,20 +567,33 @@ class GameWindow(QMainWindow):
             if self.logger:
                 self.logger.log(f"Nasłuchiwanie uruchomione na porcie {port}")
                 
+            buffer_size = 4096  # Zwiększamy buffer dla większych wiadomości
+            
             while True:
                 try:
                     conn, addr = server_sock.accept()
                     try:
-                        data = conn.recv(1024).decode("utf-8")
+                        # Zwiększamy bufor dla większych wiadomości
+                        data = b""
+                        while True:
+                            chunk = conn.recv(buffer_size)
+                            if not chunk:
+                                break
+                            data += chunk
+                            if len(chunk) < buffer_size:
+                                break
+                        
                         if data:
+                            decoded_data = data.decode("utf-8")
+                            
                             # Aktualizujemy czas ostatniego heartbeat
-                            if "heartbeat" in data:
+                            if "heartbeat" in decoded_data:
                                 self.last_heartbeat_received = time.time()
                                 
                                 # Sprawdzamy czy heartbeat zawiera dane synchronizacyjne
-                                if ";time:" in data:
+                                if ";time:" in decoded_data:
                                     try:
-                                        time_part = data.split(";time:")[1].split(";")[0]
+                                        time_part = decoded_data.split(";time:")[1].split(";")[0]
                                         time_value = int(time_part)
                                         
                                         # Aktualizujemy czas tylko jeśli drugi gracz jest w swojej turze
@@ -600,7 +613,7 @@ class GameWindow(QMainWindow):
                                     pass
                             
                             # Jeśli otrzymamy żądanie połączenia, odpowiadamy potwierdzeniem
-                            if "connection_request" in data:
+                            if "connection_request" in decoded_data:
                                 if self.logger:
                                     self.logger.log(f"Otrzymano żądanie połączenia z {addr}")
                                 try:
@@ -625,7 +638,7 @@ class GameWindow(QMainWindow):
                                         self.logger.log(f"Błąd wysyłania potwierdzenia połączenia: {e}")
                             
                             # Obsługa żądania pełnej synchronizacji stanu gry
-                            if "request_full_sync" in data:
+                            if "request_full_sync" in decoded_data:
                                 if self.logger:
                                     self.logger.log(f"Otrzymano żądanie pełnej synchronizacji od {addr}")
                                 
@@ -646,9 +659,9 @@ class GameWindow(QMainWindow):
                                         self.logger.log("Wysłano pełny stan gry do partnera")
                             
                             # Obsługa synchronizacji czasu
-                            if data.startswith("sync_time") and ";" in data:
+                            if decoded_data.startswith("sync_time") and ";" in decoded_data:
                                 try:
-                                    time_value = int(data.split(";")[1])
+                                    time_value = int(decoded_data.split(";")[1])
                                     if hasattr(self, 'game_scene') and self.game_scene:
                                         self.game_scene.round_time_remaining = time_value
                                         if self.logger:
@@ -658,9 +671,9 @@ class GameWindow(QMainWindow):
                                         self.logger.log(f"Błąd synchronizacji czasu: {e}")
                             
                             # Obsługa synchronizacji komórek
-                            if data.startswith("sync_cell") and len(data.split(";")) >= 4:
+                            if decoded_data.startswith("sync_cell") and len(decoded_data.split(";")) >= 4:
                                 try:
-                                    parts = data.split(";")
+                                    parts = decoded_data.split(";")
                                     cell_index = int(parts[1])
                                     cell_type = parts[2]
                                     cell_points = int(parts[3])
@@ -680,20 +693,23 @@ class GameWindow(QMainWindow):
                             
                             # Najwyższy priorytet dla komunikatów o przełączaniu tur
                             priority_msg = False
-                            if "switch_turn" in data:
+                            if "switch_turn" in decoded_data:
                                 priority_msg = True
                                 # Odpowiadamy na komunikat by druga strona miała potwierdzenie
                                 try:
                                     conn.sendall("received".encode("utf-8"))
                                 except:
                                     pass
-                                
-                            if self.logger and not data.startswith("update_turn_time") and not data.startswith("heartbeat"):
-                                self.logger.log(f"Odebrano wiadomość z {addr}: {data}")
-                                
+                            
+                            if self.logger and not decoded_data.startswith("update_turn_time") and not decoded_data.startswith("heartbeat") and not decoded_data.startswith("snapshot_"):
+                                if len(decoded_data) > 100:
+                                    self.logger.log(f"Odebrano wiadomość z {addr}: {decoded_data[:100]}...")
+                                else:
+                                    self.logger.log(f"Odebrano wiadomość z {addr}: {decoded_data}")
+                            
                             # Przekazujemy odebraną wiadomość do sceny gry przez handlera
                             if self.game_scene:
-                                self.handler.request_process_message(data)
+                                self.handler.request_process_message(decoded_data)
                     except Exception as e:
                         if self.logger:
                             self.logger.log(f"Błąd podczas przetwarzania otrzymanej wiadomości: {e}")
@@ -738,12 +754,16 @@ class GameWindow(QMainWindow):
             priority_msg = False
             if "switch_turn" in message or "heartbeat" in message:
                 priority_msg = True
-                
+            
+            # Zwiększamy timeout dla większych wiadomości
+            is_snapshot = message.startswith("snapshot_")
+            timeout_value = 5 if is_snapshot else (2 if priority_msg else 3)
+            
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2 if priority_msg else 3)  # Szybszy timeout dla szybszej detekcji problemów
+            sock.settimeout(timeout_value)  # Dłuższy timeout dla snapshotów
             
             # Dodajemy ponowne próby dla krytycznych wiadomości
-            retries = 2 if priority_msg else 1
+            retries = 3 if is_snapshot else (2 if priority_msg else 1)
             retry_count = 0
             
             success = False
@@ -779,17 +799,17 @@ class GameWindow(QMainWindow):
                             # Brak potwierdzenia, ale to nie musi oznaczać problemu
                             pass
                             
-                    if self.logger and not message.startswith("update_turn_time") and not message.startswith("heartbeat"):
-                        self.logger.log(f"Wysłano wiadomość do {ip}:{port}: {message}")
+                    if self.logger and not message.startswith("update_turn_time") and not message.startswith("heartbeat") and not message.startswith("snapshot_"):
+                        self.logger.log(f"Wysłano wiadomość do {ip}:{port}: {message[:50]}..." if len(message) > 50 else f"Wysłano wiadomość do {ip}:{port}: {message}")
                     success = True
                 except Exception as e:
                     retry_count += 1
                     if retry_count <= retries:
-                        if self.logger and not message.startswith("heartbeat"):
+                        if self.logger and not message.startswith("heartbeat") and not message.startswith("snapshot_"):
                             self.logger.log(f"Ponawiam wysłanie wiadomości ({retry_count}/{retries+1})")
-                        time.sleep(0.1 * retry_count)
+                        time.sleep(0.2 * retry_count)  # Zwiększony odstęp między próbami
                     else:
-                        if self.logger and not message.startswith("heartbeat"):
+                        if self.logger and not message.startswith("heartbeat") and not message.startswith("snapshot_"):
                             self.logger.log(f"Nie udało się wysłać wiadomości po {retries+1} próbach: {e}")
                         # Po wyczerpaniu prób wysłania ważnej wiadomości, sprawdzamy status połączenia
                         if hasattr(self, 'game_scene') and self.game_scene and hasattr(self.game_scene, 'is_multiplayer'):
@@ -878,16 +898,30 @@ class GameWindow(QMainWindow):
     def send_heartbeat_with_sync(self, ip, port):
         """Wysyła heartbeat wraz z aktualnym stanem gry dla lepszej synchronizacji"""
         if hasattr(self, 'game_scene') and self.game_scene:
-            # Dodajemy informacje o czasie do końca tury
-            time_remaining = self.game_scene.round_time_remaining if hasattr(self.game_scene, 'round_time_remaining') else 0
-            
-            # Jeżeli jesteśmy w turze, to nasza wartość czasu jest autorytatywna
-            if hasattr(self.game_scene, 'current_turn') and hasattr(self.game_scene, 'multiplayer_role'):
-                if self.game_scene.current_turn == self.game_scene.multiplayer_role:
-                    self.send_network_message(ip, port, f"heartbeat;time:{time_remaining}")
+            # Regularnie wysyłamy pełny snapshot stanu gry z heartbeat
+            try:
+                # Co 10 sekund wysyłamy pełną synchronizację (co 5 heartbeatów przy interwale 2s)
+                if not hasattr(self, '_last_full_sync_time'):
+                    self._last_full_sync_time = 0
+                
+                current_time = time.time()
+                if current_time - self._last_full_sync_time > 10:
+                    self._last_full_sync_time = current_time
+                    self.game_scene.send_game_state_snapshot()
                 else:
-                    # Jeśli nie jesteśmy w turze, wysyłamy zwykły heartbeat
-                    self.send_network_message(ip, port, "heartbeat")
+                    # Dodajemy informacje o czasie do końca tury
+                    time_remaining = self.game_scene.round_time_remaining if hasattr(self.game_scene, 'round_time_remaining') else 0
+                    
+                    # Jeżeli jesteśmy w turze, to nasza wartość czasu jest autorytatywna
+                    if hasattr(self.game_scene, 'current_turn') and hasattr(self.game_scene, 'multiplayer_role'):
+                        if self.game_scene.current_turn == self.game_scene.multiplayer_role:
+                            self.send_network_message(ip, port, f"heartbeat;time:{time_remaining}")
+                        else:
+                            # Jeśli nie jesteśmy w turze, wysyłamy zwykły heartbeat
+                            self.send_network_message(ip, port, "heartbeat")
+            except Exception as e:
+                if self.logger:
+                    self.logger.log(f"Błąd podczas wysyłania heartbeat z synchronizacją: {e}")
         else:
             # Zwykły heartbeat bez danych synchronizacyjnych
             self.send_network_message(ip, port, "heartbeat")

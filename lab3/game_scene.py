@@ -63,6 +63,7 @@ class GameScene(QGraphicsScene):
         self.enemy_timer = None
         self.move_history = []
         self.last_state_record = 0
+        self.hover_connection = None  # Dodana zmienna do śledzenia mostu pod kursorem
 
     def drawBackground(self, painter, rect):
         gradient = QLinearGradient(0, 0, 0, self.height())
@@ -176,7 +177,7 @@ class GameScene(QGraphicsScene):
             if conn.source_cell == target and conn.target_cell == source and conn.connection_type != conn_type:
                 connection.conflict = True
                 conn.conflict = True
-                break
+                return
         if not hasattr(connection, 'conflict'):
             connection.conflict = False
         source.connections.append(connection)
@@ -203,6 +204,47 @@ class GameScene(QGraphicsScene):
 
     def process_network_message(self, message):
         """Analizuje odebrane dane i aktualizuje stan gry."""
+        if message.startswith("snapshot_full;") or message.startswith("snapshot_part;"):
+            try:
+                parts = message.strip().split(";", 3 if message.startswith("snapshot_part;") else 1)
+                
+                if message.startswith("snapshot_full;"):
+                    json_data = parts[1]
+                    import json
+                    snapshot = json.loads(json_data)
+                    self.apply_game_state_snapshot(snapshot)
+                    return
+                else:  # Obsługa części snapshotu
+                    part_number = int(parts[1])
+                    total_parts = int(parts[2])
+                    content = parts[3]
+                    
+                    # Tworzymy atrybut dla przechowywania części snapshotu
+                    if not hasattr(self, '_snapshot_parts'):
+                        self._snapshot_parts = {}
+                    
+                    # Zapisujemy część
+                    self._snapshot_parts[part_number] = content
+                    
+                    # Sprawdzamy czy mamy wszystkie części
+                    if len(self._snapshot_parts) == total_parts:
+                        # Łączymy części
+                        combined_json = "".join(self._snapshot_parts[i+1] for i in range(total_parts))
+                        # Resetujemy części
+                        self._snapshot_parts = {}
+                        
+                        # Parsujemy i stosujemy
+                        import json
+                        snapshot = json.loads(combined_json)
+                        self.apply_game_state_snapshot(snapshot)
+                        
+                        if self.logger:
+                            self.logger.log(f"GameScene: Połączono {total_parts} części snapshotu gry")
+                    return
+            except Exception as e:
+                if self.logger:
+                    self.logger.log(f"GameScene: Błąd podczas przetwarzania snapshotu: {e}")
+                
         parts = message.strip().split(";")
         if parts[0] == "create_bridge" and len(parts) == 6:
             try:
@@ -358,6 +400,45 @@ class GameScene(QGraphicsScene):
             except Exception as e:
                 if self.logger:
                     self.logger.log(f"GameScene: Błąd synchronizacji komórki: {e}")
+        # Dodajemy obsługę usuwania mostów przez sieć
+        elif parts[0] == "remove_bridge" and len(parts) >= 5:
+            try:
+                source_x = float(parts[1])
+                source_y = float(parts[2])
+                target_x = float(parts[3])
+                target_y = float(parts[4])
+                
+                # Znajdź most do usunięcia
+                for conn in list(self.connections):
+                    sx, sy = conn.source_cell.x, conn.source_cell.y
+                    tx, ty = conn.target_cell.x, conn.target_cell.y
+                    
+                    # Sprawdź obie orientacje mostu (A->B lub B->A)
+                    if ((abs(sx - source_x) < 10 and abs(sy - source_y) < 10 and 
+                         abs(tx - target_x) < 10 and abs(ty - target_y) < 10) or
+                        (abs(sx - target_x) < 10 and abs(sy - target_y) < 10 and 
+                         abs(tx - source_x) < 10 and abs(ty - source_y) < 10)):
+                        
+                        # Usuń most z list
+                        if conn in conn.source_cell.connections:
+                            conn.source_cell.connections.remove(conn)
+                        if conn in conn.target_cell.connections:
+                            conn.target_cell.connections.remove(conn)
+                        self.connections.remove(conn)
+                        
+                        # Zapisz informację o usunięciu mostu w historii
+                        self.move_history.append({
+                            "timestamp": time.time(),
+                            "description": f"Usunięto most między ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) a ({conn.target_cell.x:.0f}, {conn.target_cell.y:.0f})"
+                        })
+                        
+                        if self.logger:
+                            self.logger.log(f"GameScene: Usunięto most przez komunikat sieciowy między ({source_x},{source_y}) a ({target_x},{target_y})")
+                        break
+                
+            except Exception as e:
+                if self.logger:
+                    self.logger.log(f"GameScene: Błąd przetwarzania wiadomości remove_bridge: {e}")
 
     def update_game(self):
         for conn in list(self.connections):
@@ -709,74 +790,138 @@ class GameScene(QGraphicsScene):
             self.drag_current_pos = event.scenePos()
             self.update()
         else:
-            buttons = event.buttons()
-            if buttons & Qt.RightButton and self.single_player:
-                return super().mouseMoveEvent(event)
-            if buttons & Qt.LeftButton:
-                connection_filter = "player"
-            elif buttons & Qt.RightButton:
-                connection_filter = "enemy"
-            else:
-                return super().mouseMoveEvent(event)
+            # Znajdź most pod kursorem do podświetlenia
+            # (Zawsze sprawdzaj, nawet jeśli nie wciskamy przycisku)
             P = event.scenePos()
+            old_hover_connection = self.hover_connection
+            self.hover_connection = None
+            
+            # Znajdź najbliższy most pod kursorem
+            min_distance = 15.0  # Zwiększony próg wykrywania z 5 na 15 pikseli
             for conn in self.connections:
-                if conn.connection_type == connection_filter:
-                    if self.turn_based_mode and conn.connection_type != self.current_turn:
-                        continue
+                if (self.turn_based_mode and self.current_turn != conn.connection_type and 
+                    hasattr(self, 'is_multiplayer') and self.is_multiplayer):
+                    continue  # Pomijamy mosty, których nie możemy usunąć w trybie sieciowym
+                
+                A = QPointF(conn.source_cell.x, conn.source_cell.y)
+                B = QPointF(conn.target_cell.x, conn.target_cell.y)
+                AB = QPointF(B.x() - A.x(), B.y() - A.y())
+                AP = QPointF(P.x() - A.x(), P.y() - A.y())
+                ab2 = AB.x() ** 2 + AB.y() ** 2
+                if ab2 == 0:
+                    continue
+                
+                t = (AP.x() * AB.x() + AP.y() * AB.y()) / ab2
+                if t < 0 or t > 1:
+                    continue
+                    
+                Qx = A.x() + t * AB.x()
+                Qy = A.y() + t * AB.y()
+                dist = math.hypot(P.x() - Qx, P.y() - Qy)
+                
+                if dist < min_distance:
+                    min_distance = dist
+                    self.hover_connection = conn
+            
+            # Aktualizuj widok, jeśli zmienił się podświetlony most
+            if old_hover_connection != self.hover_connection:
+                self.update()
+            
+            buttons = event.buttons()
+            # Sprawdź, czy usuwamy most poprzez przeciągnięcie
+            if buttons & Qt.LeftButton or buttons & Qt.RightButton:
+                if buttons & Qt.RightButton and self.single_player:
+                    return super().mouseMoveEvent(event)
+                    
+                if buttons & Qt.LeftButton:
+                    connection_filter = "player"
+                elif buttons & Qt.RightButton:
+                    connection_filter = "enemy"
+                else:
+                    return super().mouseMoveEvent(event)
+                
+                # Używamy już znalezionego mostu pod kursorem
+                if self.hover_connection and self.hover_connection.connection_type == connection_filter:
+                    conn = self.hover_connection
+                    
+                    # Dodatkowe sprawdzenie dla trybu sieciowego
+                    if (hasattr(self, 'is_multiplayer') and self.is_multiplayer and 
+                        self.turn_based_mode and conn.connection_type != self.multiplayer_role):
+                        if self.logger:
+                            self.logger.log(f"Nie można usunąć mostu przeciwnika w swojej turze w trybie sieciowym")
+                        return super().mouseMoveEvent(event)
+                    
+                    # Może być potrzebne do obliczenia podziału punktów
+                    P = event.scenePos()
                     A = QPointF(conn.source_cell.x, conn.source_cell.y)
                     B = QPointF(conn.target_cell.x, conn.target_cell.y)
                     AB = QPointF(B.x() - A.x(), B.y() - A.y())
                     AP = QPointF(P.x() - A.x(), P.y() - A.y())
                     ab2 = AB.x() ** 2 + AB.y() ** 2
-                    if ab2 == 0:
-                        continue
                     t = (AP.x() * AB.x() + AP.y() * AB.y()) / ab2
-                    if t < 0 or t > 1:
-                        continue
-                    Qx = A.x() + t * AB.x()
-                    Qy = A.y() + t * AB.y()
-                    if math.hypot(P.x() - Qx, P.y() - Qy) < 5:
-                        self.move_history.append({
-                            "timestamp": time.time(),
-                            "description": f"Usunięto most między ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) a ({conn.target_cell.x:.0f}, {conn.target_cell.y:.0f})"
-                        })
-                        if conn in self.connections:
-                            self.connections.remove(conn)
-                        if conn in conn.source_cell.connections:
-                            conn.source_cell.connections.remove(conn)
-                        if conn in conn.target_cell.connections:
-                            conn.target_cell.connections.remove(conn)
-                        cost = getattr(conn, "cost", 0)
-                        source_points = round(t * cost)
-                        target_points = cost - source_points
-                        if conn.connection_type == "player":
-                            if conn.target_cell.cell_type != "player":
-                                conn.source_cell.points += source_points
-                                conn.target_cell.points -= target_points
-                                if conn.target_cell.points <= 0:
-                                    conn.target_cell.cell_type = "player"
-                                    conn.target_cell.points = abs(conn.target_cell.points)
-                            else:
-                                conn.source_cell.points = min(conn.source_cell.points + source_points, config.MAX_CELL_POINTS)
-                                conn.target_cell.points = min(conn.target_cell.points + target_points, config.MAX_CELL_POINTS)
-                        elif conn.connection_type == "enemy":
-                            if conn.target_cell.cell_type != "enemy":
-                                conn.source_cell.points += source_points
-                                conn.target_cell.points -= target_points
-                                if conn.target_cell.points <= 0:
-                                    conn.target_cell.cell_type = "enemy"
-                                    conn.target_cell.points = abs(conn.target_cell.points)
-                            else:
-                                conn.source_cell.points = min(conn.source_cell.points + source_points, config.MAX_CELL_POINTS)
-                                conn.target_cell.points = min(conn.target_cell.points + target_points, config.MAX_CELL_POINTS)
-                        conn.source_cell.strength = (conn.source_cell.points // 10) + 1
-                        conn.target_cell.strength = (conn.target_cell.points // 10) + 1
-                        conn.source_cell.update()
-                        conn.target_cell.update()
-                        if self.turn_based_mode:
-                            self.switch_turn()
-                        break
-            self.update()
+                    if t < 0: t = 0
+                    if t > 1: t = 1
+                    
+                    # Zapisz informację o usunięciu mostu
+                    self.move_history.append({
+                        "timestamp": time.time(),
+                        "description": f"Usunięto most między ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) a ({conn.target_cell.x:.0f}, {conn.target_cell.y:.0f})"
+                    })
+                    
+                    # Usuń most z list
+                    if conn in self.connections:
+                        self.connections.remove(conn)
+                    if conn in conn.source_cell.connections:
+                        conn.source_cell.connections.remove(conn)
+                    if conn in conn.target_cell.connections:
+                        conn.target_cell.connections.remove(conn)
+                    
+                    # Oblicz zwrot punktów
+                    cost = getattr(conn, "cost", 0)
+                    source_points = round(t * cost)
+                    target_points = cost - source_points
+                    
+                    # Zwróć punkty odpowiednio komórkom
+                    if conn.connection_type == "player":
+                        if conn.target_cell.cell_type != "player":
+                            conn.source_cell.points += source_points
+                            conn.target_cell.points -= target_points
+                            if conn.target_cell.points <= 0:
+                                conn.target_cell.cell_type = "player"
+                                conn.target_cell.points = abs(conn.target_cell.points)
+                        else:
+                            conn.source_cell.points = min(conn.source_cell.points + source_points, config.MAX_CELL_POINTS)
+                            conn.target_cell.points = min(conn.target_cell.points + target_points, config.MAX_CELL_POINTS)
+                    elif conn.connection_type == "enemy":
+                        if conn.target_cell.cell_type != "enemy":
+                            conn.source_cell.points += source_points
+                            conn.target_cell.points -= target_points
+                            if conn.target_cell.points <= 0:
+                                conn.target_cell.cell_type = "enemy"
+                                conn.target_cell.points = abs(conn.target_cell.points)
+                        else:
+                            conn.source_cell.points = min(conn.source_cell.points + source_points, config.MAX_CELL_POINTS)
+                            conn.target_cell.points = min(conn.target_cell.points + target_points, config.MAX_CELL_POINTS)
+                    
+                    conn.source_cell.strength = (conn.source_cell.points // config.POINTS_PER_STRENGTH) + 1
+                    conn.target_cell.strength = (conn.target_cell.points // config.POINTS_PER_STRENGTH) + 1
+                    conn.source_cell.update()
+                    conn.target_cell.update()
+                    
+                    # Wyślij informację o usunięciu mostu przez sieć
+                    if hasattr(self, "network_send_callback") and self.network_send_callback:
+                        msg = f"remove_bridge;{conn.source_cell.x};{conn.source_cell.y};{conn.target_cell.x};{conn.target_cell.y}"
+                        self.network_send_callback(msg)
+                        if self.logger:
+                            self.logger.log(f"GameScene: Wysłano informację o usunięciu mostu: {msg}")
+                    
+                    # W trybie turowym przełączamy turę po usunięciu mostu
+                    if self.turn_based_mode:
+                        self.switch_turn()
+                    
+                    # Aktulizuj aktualnie wskazywany most, bo usunęliśmy właśnie ten
+                    self.hover_connection = None
+        
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
@@ -1008,6 +1153,17 @@ class GameScene(QGraphicsScene):
         for conn in self.connections:
             source = QPointF(conn.source_cell.x, conn.source_cell.y)
             target = QPointF(conn.target_cell.x, conn.target_cell.y)
+            
+            # Podświetlenie mostu pod kursorem
+            if conn == self.hover_connection:
+                # Rysuj grubszą, jaśniejszą linię dla podświetlonego mostu
+                if conn.connection_type == "player":
+                    painter.setPen(QPen(config.COLOR_CONN_PLAYER.lighter(150), 5))
+                else:
+                    painter.setPen(QPen(config.COLOR_CONN_ENEMY.lighter(150), 5))
+                painter.drawLine(source, target)
+            
+            # Normalne rysowanie mostu
             if hasattr(conn, 'conflict') and conn.conflict:
                 mid_point = QPointF((source.x() + target.x()) / 2, (source.y() + target.y()) / 2)
                 painter.setPen(QPen(config.COLOR_CONN_CONFLICT_LEFT, 3))
@@ -1361,10 +1517,9 @@ class GameScene(QGraphicsScene):
                     if self.round_time_remaining % 2 == 0 or self.round_time_remaining <= 5:
                         self.network_send_callback(f"update_turn_time;{self.round_time_remaining}")
                         
-                        # Dodajemy synchronizację stanu komórek co 5 sekund
-                        if self.round_time_remaining % 5 == 0:
-                            for i, cell in enumerate(self.cells):
-                                self.network_send_callback(f"sync_cell;{i};{cell.cell_type};{cell.points}")
+                    # Wysyłamy pełny snapshot co 5 sekund dla synchronizacji
+                    if self.round_time_remaining % 5 == 0:
+                        self.send_game_state_snapshot()
             
         # KLUCZOWA ZMIANA - osobno obsługujemy przypadek gdy czas się skończył
         if self.round_time_remaining <= 0:
@@ -1411,18 +1566,14 @@ class GameScene(QGraphicsScene):
                 
                 # Wysyłamy komunikat do przeciwnika o przełączeniu tury
                 if hasattr(self, "network_send_callback") and self.network_send_callback:
-                    # Wysyłamy komunikat 3 razy dla pewności, że dotrze
-                    for _ in range(3):
-                        self.network_send_callback("switch_turn")
-                        import time
-                        time.sleep(0.05)  # Krótkie oczekiwanie między wysłaniami
+                    # Wysyłamy komunikat o przełączeniu tury
+                    self.network_send_callback("switch_turn")
                     
-                    # Dodatkowo wysyłamy aktualny stan komórek
-                    for i, cell in enumerate(self.cells):
-                        self.network_send_callback(f"sync_cell;{i};{cell.cell_type};{cell.points}")
+                    # Wysyłamy pełny snapshot stanu gry
+                    self.send_game_state_snapshot()
                     
                     if self.logger:
-                        self.logger.log("GameScene: Wysłano żądanie przełączenia tury i synchronizację komórek")
+                        self.logger.log("GameScene: Wysłano żądanie przełączenia tury i synchronizację stanu")
             else:
                 if self.logger:
                     self.logger.log(f"GameScene: Próbowano przełączyć turę gdy nie jest aktywna - ignoruję")
@@ -1609,3 +1760,139 @@ class GameScene(QGraphicsScene):
         self.timer.start(16)
         self.points_timer.start(2000)
         return True
+
+    def create_game_state_snapshot(self):
+        """
+        Tworzy snapshot aktualnego stanu gry, który może być przesłany
+        w formacie podobnym do tego używanego w zapisie powtórek.
+        """
+        snapshot = {
+            "cells": [
+                {
+                    "index": i,
+                    "x": cell.x,
+                    "y": cell.y,
+                    "type": cell.cell_type,
+                    "points": cell.points,
+                    "frozen": cell.frozen
+                } for i, cell in enumerate(self.cells)
+            ],
+            "connections": [
+                {
+                    "source_index": self.cells.index(conn.source_cell),
+                    "target_index": self.cells.index(conn.target_cell),
+                    "type": conn.connection_type,
+                    "cost": getattr(conn, "cost", 0)
+                } for conn in self.connections
+            ],
+            "current_turn": self.current_turn,
+            "round_time_remaining": self.round_time_remaining
+        }
+        return snapshot
+
+    def send_game_state_snapshot(self):
+        """
+        Wysyła pełny snapshot stanu gry do drugiego gracza
+        """
+        if not hasattr(self, "network_send_callback") or not self.network_send_callback:
+            return
+        
+        try:
+            snapshot = self.create_game_state_snapshot()
+            # Konwertujemy snapshot do formatu JSON
+            import json
+            snapshot_json = json.dumps(snapshot)
+            
+            # Wysyłamy snapshot w częściach, jeśli jest duży
+            if len(snapshot_json) > 1000:
+                chunks = [snapshot_json[i:i+1000] for i in range(0, len(snapshot_json), 1000)]
+                for i, chunk in enumerate(chunks):
+                    # Wysyłamy fragmenty z informacją o numeracji
+                    self.network_send_callback(f"snapshot_part;{i+1};{len(chunks)};{chunk}")
+            else:
+                self.network_send_callback(f"snapshot_full;{snapshot_json}")
+                
+            if self.logger:
+                self.logger.log(f"GameScene: Wysłano snapshot stanu gry o rozmiarze {len(snapshot_json)}")
+        except Exception as e:
+            if self.logger:
+                self.logger.log(f"GameScene: Błąd podczas wysyłania snapshotu: {e}")
+
+    def apply_game_state_snapshot(self, snapshot):
+        """
+        Stosuje otrzymany snapshot stanu gry
+        """
+        try:
+            # Synchronizujemy komórki
+            for cell_data in snapshot.get("cells", []):
+                idx = cell_data.get("index", -1)
+                if 0 <= idx < len(self.cells):
+                    cell = self.cells[idx]
+                    cell.cell_type = cell_data.get("type", cell.cell_type)
+                    cell.points = cell_data.get("points", cell.points)
+                    cell.frozen = cell_data.get("frozen", False)
+                    cell.strength = (cell.points // config.POINTS_PER_STRENGTH) + 1
+                    cell.update()
+            
+            # Synchronizujemy połączenia - usuwamy te, których nie ma w snapshocie
+            connection_pairs = []
+            for conn_data in snapshot.get("connections", []):
+                source_idx = conn_data.get("source_index", -1)
+                target_idx = conn_data.get("target_index", -1)
+                if 0 <= source_idx < len(self.cells) and 0 <= target_idx < len(self.cells):
+                    connection_pairs.append((source_idx, target_idx))
+            
+            # Usuwamy nieaktualne połączenia
+            for conn in list(self.connections):
+                source_idx = self.cells.index(conn.source_cell)
+                target_idx = self.cells.index(conn.target_cell)
+                
+                if (source_idx, target_idx) not in connection_pairs and (target_idx, source_idx) not in connection_pairs:
+                    if conn in conn.source_cell.connections:
+                        conn.source_cell.connections.remove(conn)
+                    if conn in conn.target_cell.connections:
+                        conn.target_cell.connections.remove(conn)
+                    self.connections.remove(conn)
+            
+            # Dodajemy nowe połączenia
+            for conn_data in snapshot.get("connections", []):
+                source_idx = conn_data.get("source_index", -1)
+                target_idx = conn_data.get("target_index", -1)
+                conn_type = conn_data.get("type", "neutral")
+                cost = conn_data.get("cost", 0)
+                
+                if 0 <= source_idx < len(self.cells) and 0 <= target_idx < len(self.cells):
+                    source = self.cells[source_idx]
+                    target = self.cells[target_idx]
+                    
+                    # Sprawdzamy czy połączenie już istnieje
+                    exists = False
+                    for conn in self.connections:
+                        if ((conn.source_cell == source and conn.target_cell == target) or 
+                            (conn.source_cell == target and conn.target_cell == source)) and conn.connection_type == conn_type:
+                            exists = True
+                            break
+                    
+                    # Jeśli nie istnieje, tworzymy nowe
+                    if not exists:
+                        source._skip_network = True  # Oznaczamy, by uniknąć wysłania wiadomości
+                        try:
+                            connection = self.create_connection(source, target, conn_type)
+                            connection.cost = cost
+                        finally:
+                            delattr(source, '_skip_network')
+            
+            # Aktualizujemy stan tury i czas
+            if "current_turn" in snapshot:
+                self.current_turn = snapshot.get("current_turn")
+            if "round_time_remaining" in snapshot:
+                self.round_time_remaining = snapshot.get("round_time_remaining")
+                
+            if self.logger:
+                self.logger.log("GameScene: Zastosowano snapshot stanu gry")
+                
+            # Wymuszamy aktualizację UI
+            self.update()
+        except Exception as e:
+            if self.logger:
+                self.logger.log(f"GameScene: Błąd podczas stosowania snapshotu: {e}")
