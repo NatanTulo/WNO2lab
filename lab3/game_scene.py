@@ -245,6 +245,38 @@ class GameScene(QGraphicsScene):
                 if self.logger:
                     self.logger.log(f"GameScene: Błąd podczas przetwarzania snapshotu: {e}")
                 
+        elif message.startswith("game_over;"):
+            # Obsługa wiadomości o zakończeniu gry
+            parts = message.strip().split(";")
+            if len(parts) >= 2:
+                winner = parts[1]
+                if self.logger:
+                    self.logger.log(f"GameScene: Otrzymano informację o zakończeniu gry, zwycięzca: {winner}")
+                
+                # Obliczamy czy to my wygraliśmy czy przeciwnik
+                victory = (winner == self.multiplayer_role)
+                
+                # Ustawiamy tekst wyniku i zatrzymujemy grę
+                final_result = "Wygrana!" if victory else "Przegrana!"
+                self.game_over_text = final_result
+                self.timer.stop()
+                self.points_timer.stop()
+                self.stop_all_timers()
+                
+                # Aktualizujemy widok
+                self.update()
+
+                # Zapisujemy stan końcowy meczu w historii
+                self.move_history.append({
+                    "timestamp": time.time(),
+                    "description": f"Gra zakończona: {final_result}"
+                })
+                
+                # Zapisujemy historię gry tak samo jak w metodzie game_over
+                self.save_game_history()
+                
+                # Pokażemy przycisk powrotu do menu
+                QTimer.singleShot(2000, self.show_return_button)
         parts = message.strip().split(";")
         if parts[0] == "create_bridge" and len(parts) == 6:
             try:
@@ -474,7 +506,7 @@ class GameScene(QGraphicsScene):
                             if conn.target_cell.points <= 0:
                                 captured = conn.target_cell
                                 if self.logger:
-                                    self.logger.log(f"DEBUG: Przechwytywanie komórki ({captured.x:.0f}, {captured.y:.0f}). Punkty przed przejęciem: {captured.points}, typ docelowy: {conn.connection_type}.")
+                                    self.logger.log(f"DEBUG: Przechwytywanie komórki ({captured.x:.0f}, {captured.y:.0f}). Punkty przed przejęciem: {captured.points, conn.connection_type}.")
                                 captured.cell_type = conn.connection_type
                                 captured.points = 1
                                 if self.logger:
@@ -833,12 +865,18 @@ class GameScene(QGraphicsScene):
                 if buttons & Qt.RightButton and self.single_player:
                     return super().mouseMoveEvent(event)
                     
-                if buttons & Qt.LeftButton:
-                    connection_filter = "player"
-                elif buttons & Qt.RightButton:
-                    connection_filter = "enemy"
+                # W trybie sieciowym, pozwalamy na usuwanie mostów lewym i prawym przyciskiem
+                if hasattr(self, 'is_multiplayer') and self.is_multiplayer:
+                    # Sprawdzamy tylko czy typ mostu zgadza się z rolą gracza
+                    connection_filter = self.multiplayer_role
                 else:
-                    return super().mouseMoveEvent(event)
+                    # W trybie lokalnym, zachowujemy oryginalne zachowanie
+                    if buttons & Qt.LeftButton:
+                        connection_filter = "player"
+                    elif buttons & Qt.RightButton:
+                        connection_filter = "enemy"
+                    else:
+                        return super().mouseMoveEvent(event)
                 
                 # Używamy już znalezionego mostu pod kursorem
                 if self.hover_connection and self.hover_connection.connection_type == connection_filter:
@@ -848,7 +886,7 @@ class GameScene(QGraphicsScene):
                     if (hasattr(self, 'is_multiplayer') and self.is_multiplayer and 
                         self.turn_based_mode and conn.connection_type != self.multiplayer_role):
                         if self.logger:
-                            self.logger.log(f"Nie można usunąć mostu przeciwnika w swojej turze w trybie sieciowym")
+                            self.logger.log(f"Nie można usunąć mostu w turze przeciwnika")
                         return super().mouseMoveEvent(event)
                     
                     # Może być potrzebne do obliczenia podziału punktów
@@ -1048,20 +1086,20 @@ class GameScene(QGraphicsScene):
             "timestamp": time.time(),
             "description": f"Status po ogłoszeniu wyniku: {final_status}"
         })
-        if self.move_history and "timestamp" in self.move_history[0]:
-            timestamp = datetime.datetime.fromtimestamp(self.move_history[0]["timestamp"]).strftime("%Y%m%d_%H%M%S")
-        else:
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        replays_dir = "replays"
-        if not os.path.exists(replays_dir):
-            os.makedirs(replays_dir)
-        xml_filename = os.path.join(replays_dir, f"replay_level{self.current_level}_{timestamp}.xml")
-        json_filename = os.path.join(replays_dir, f"replay_level{self.current_level}_{timestamp}.json")
-        game_history.save_game_history(self, xml_filename)
-        game_history.save_game_history_json(self, json_filename)
-        mongodb_id = game_history.save_game_history_mongodb(self)
-        if self.logger:
-            self.logger.log(f"Replay zapisany do MongoDB z id: {mongodb_id}")
+        
+        # Dodajemy synchronizację końcowego stanu gry w trybie multiplayer
+        if hasattr(self, 'is_multiplayer') and self.is_multiplayer and hasattr(self, "network_send_callback"):
+            # Wysyłamy specjalną wiadomość informującą o końcu gry i zwycięzcy
+            winner = "player" if victory and self.multiplayer_role == "player" else "enemy"
+            self.network_send_callback(f"game_over;{winner}")
+            
+            # Wysyłamy ostateczny stan gry
+            self.send_game_state_snapshot()
+            
+            if self.logger:
+                self.logger.log(f"GameScene: Wysłano informację o zakończeniu gry, zwycięzca: {winner}")
+        
+        self.save_game_history()
         QTimer.singleShot(2000, self.show_return_button)
 
     def show_return_button(self):
@@ -1372,6 +1410,11 @@ class GameScene(QGraphicsScene):
                 
         if self.logger:
             self.logger.log("GameScene: Wszystkie timery zatrzymane.")
+
+        # Zachowujemy tekst z rolą - dodajemy sprawdzenie czy istnieje w scenie
+        if hasattr(self, 'role_info') and self.role_info and self.role_info.scene() == self:
+            # Upewniamy się, że tekst z rolą jest na wierzchu
+            self.role_info.setZValue(1000)  # Wysoki Z-index zapewnia wyświetlanie na wierzchu
             
     def keyPressEvent(self, event):
         if event.key() == config.KEY_ESCAPE:
@@ -1514,11 +1557,11 @@ class GameScene(QGraphicsScene):
             if hasattr(self, 'is_multiplayer') and self.is_multiplayer and self.turn_based_mode:
                 if self.current_turn == self.multiplayer_role and hasattr(self, "network_send_callback"):
                     # Zwiększamy częstotliwość aktualizacji czasu dla lepszej synchronizacji
-                    if self.round_time_remaining % 2 == 0 or self.round_time_remaining <= 5:
-                        self.network_send_callback(f"update_turn_time;{self.round_time_remaining}")
+                    # Wysyłamy aktualizację czasu co sekundę, zamiast co dwie sekundy
+                    self.network_send_callback(f"update_turn_time;{self.round_time_remaining}")
                         
-                    # Wysyłamy pełny snapshot co 5 sekund dla synchronizacji
-                    if self.round_time_remaining % 5 == 0:
+                    # Wysyłamy pełny snapshot częściej - co 3 sekundy zamiast co 5
+                    if self.round_time_remaining % 3 == 0:
                         self.send_game_state_snapshot()
             
         # KLUCZOWA ZMIANA - osobno obsługujemy przypadek gdy czas się skończył
@@ -1782,7 +1825,8 @@ class GameScene(QGraphicsScene):
                     "source_index": self.cells.index(conn.source_cell),
                     "target_index": self.cells.index(conn.target_cell),
                     "type": conn.connection_type,
-                    "cost": getattr(conn, "cost", 0)
+                    "cost": getattr(conn, "cost", 0),
+                    "dots": conn.dots  # Dodajemy informacje o kropkach na moście
                 } for conn in self.connections
             ],
             "current_turn": self.current_turn,
@@ -1860,25 +1904,30 @@ class GameScene(QGraphicsScene):
                 target_idx = conn_data.get("target_index", -1)
                 conn_type = conn_data.get("type", "neutral")
                 cost = conn_data.get("cost", 0)
+                dots = conn_data.get("dots", [])
                 
                 if 0 <= source_idx < len(self.cells) and 0 <= target_idx < len(self.cells):
                     source = self.cells[source_idx]
                     target = self.cells[target_idx]
                     
                     # Sprawdzamy czy połączenie już istnieje
-                    exists = False
+                    existing_conn = None
                     for conn in self.connections:
                         if ((conn.source_cell == source and conn.target_cell == target) or 
                             (conn.source_cell == target and conn.target_cell == source)) and conn.connection_type == conn_type:
-                            exists = True
+                            existing_conn = conn
                             break
                     
+                    # Jeśli istnieje, aktualizujemy stan kropek
+                    if existing_conn:
+                        existing_conn.dots = dots
                     # Jeśli nie istnieje, tworzymy nowe
-                    if not exists:
+                    else:
                         source._skip_network = True  # Oznaczamy, by uniknąć wysłania wiadomości
                         try:
                             connection = self.create_connection(source, target, conn_type)
                             connection.cost = cost
+                            connection.dots = dots  # Ustawiamy kropki na moście
                         finally:
                             delattr(source, '_skip_network')
             
@@ -1896,3 +1945,26 @@ class GameScene(QGraphicsScene):
         except Exception as e:
             if self.logger:
                 self.logger.log(f"GameScene: Błąd podczas stosowania snapshotu: {e}")
+
+    def save_game_history(self):
+        """Zapisuje historię gry do plików i MongoDB"""
+        # Ta metoda wykonuje zapis historii, który jest duplikowany w metodzie game_over
+        # i w obsłudze wiadomości game_over
+        if self.move_history and "timestamp" in self.move_history[0]:
+            timestamp = datetime.datetime.fromtimestamp(self.move_history[0]["timestamp"]).strftime("%Y%m%d_%H%M%S")
+        else:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        replays_dir = "replays"
+        if not os.path.exists(replays_dir):
+            os.makedirs(replays_dir)
+            
+        xml_filename = os.path.join(replays_dir, f"replay_level{self.current_level}_{timestamp}.xml")
+        json_filename = os.path.join(replays_dir, f"replay_level{self.current_level}_{timestamp}.json")
+        
+        game_history.save_game_history(self, xml_filename)
+        game_history.save_game_history_json(self, json_filename)
+        mongodb_id = game_history.save_game_history_mongodb(self)
+        
+        if self.logger:
+            self.logger.log(f"Replay zapisany do MongoDB z id: {mongodb_id}")

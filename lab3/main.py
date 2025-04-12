@@ -111,6 +111,15 @@ class GameWindow(QMainWindow):
             self.log_dock.hide()
 
     def show_menu(self):
+        # Przechowujemy informację o roli przed zamknięciem sceny
+        saved_role = None
+        if self.game_scene and hasattr(self.game_scene, 'multiplayer_role'):
+            saved_role = self.game_scene.multiplayer_role
+        
+        # Zatrzymujemy timer sprawdzania roli, jeśli istnieje
+        if hasattr(self, 'role_check_timer') and self.role_check_timer:
+            self.role_check_timer.stop()
+            
         if self.game_scene:
             # Zatrzymanie wszystkich timerów gry
             self.game_scene.timer.stop()
@@ -144,6 +153,10 @@ class GameWindow(QMainWindow):
                 self.logger.log("GameWindow: Wszystkie timery zatrzymane, przejście do menu.")
 
         self.view.setScene(self.menu_scene)
+        
+        # Przywracamy informację o roli dla przyszłych gier
+        if saved_role and hasattr(self, 'menu_scene'):
+            self.menu_scene.last_used_role = saved_role
 
     def start_game(self, level_id):
         self.game_scene = GameScene()
@@ -311,13 +324,19 @@ class GameWindow(QMainWindow):
                 # Ustawiamy flagę aby uniknąć wielokrotnego wykonania
                 self.connection_setup_completed = True
                 
+                # Dodajemy status roli jako zwykły tekst w grze - na stałe
+                # Upewniamy się, że ma przypisaną rolę
+                if not hasattr(self.game_scene, 'multiplayer_role'):
+                    self.game_scene.multiplayer_role = "player" if getattr(self.game_scene, 'is_connection_initiator', True) else "enemy"
+                    
+                role_text = "PLAYER" if self.game_scene.multiplayer_role == "player" else "ENEMY"
+                
                 # Sprawdzamy czy tekst roli już istnieje i usuwamy go jeśli tak
                 if hasattr(self.game_scene, 'role_info') and self.game_scene.role_info:
                     self.game_scene.removeItem(self.game_scene.role_info)
                     self.game_scene.role_info = None
                 
-                # Dodajemy status roli jako zwykły tekst w grze - na stałe
-                role_text = "PLAYER" if self.game_scene.multiplayer_role == "player" else "ENEMY"
+                # Tworzymy nowy tekst roli
                 role_info = QGraphicsTextItem(f"Twoja rola: {role_text}")
                 role_info.setDefaultTextColor(Qt.white)
                 role_info.setFont(QFont("Arial", 16))
@@ -358,6 +377,11 @@ class GameWindow(QMainWindow):
                 # Informujemy w logach
                 if self.logger:
                     self.logger.log("Połączenie skonfigurowane, gra rozpoczęta.")
+                
+                # Dodajemy timer do regularnego sprawdzania czy rola jest wyświetlana
+                self.role_check_timer = QTimer()
+                self.role_check_timer.timeout.connect(self.ensure_role_display)
+                self.role_check_timer.start(500)  # Sprawdzanie co 500ms
 
     def remove_role_info(self):
         """Usuwa informację o roli po kilku sekundach"""
@@ -864,10 +888,44 @@ class GameWindow(QMainWindow):
     # Dodajmy funkcję pośredniczącą dla bezpiecznego przekazywania wiadomości do sceny gry
     def process_game_message(self, data):
         if self.game_scene:
+            # Jeśli to wiadomość o roli, upewnijmy się, że rola jest wyświetlana
+            if data.startswith("set_role;") and ";" in data:
+                parts = data.strip().split(";")
+                if len(parts) >= 2:
+                    role = parts[1].strip()
+                    if role in ["player", "enemy"]:
+                        # Upewniamy się, że po ustawieniu roli jest ona od razu wyświetlana
+                        QTimer.singleShot(100, lambda: self.ensure_role_display(role))
+                        
+            # Przekazujemy wiadomość do przetworzenia
             self.game_scene.process_network_message(data)
         else:
             if self.logger:
                 self.logger.log("Otrzymano wiadomość sieciową, ale brak aktywnej sceny gry")
+
+    def ensure_role_display(self, role=None):
+        """Upewnia się, że rola gracza jest wyświetlana"""
+        if hasattr(self, 'game_scene') and self.game_scene:
+            if role:
+                self.game_scene.multiplayer_role = role
+                
+            # Jeśli w trakcie aktywnej gry nie jest wyświetlana rola, dodajmy ją
+            if not hasattr(self.game_scene, 'role_info') or not self.game_scene.role_info or not self.game_scene.role_info.scene():
+                # Jeśli rola nie jest ustawiona, przydzielamy domyślną na podstawie inicjatora
+                if not hasattr(self.game_scene, 'multiplayer_role'):
+                    self.game_scene.multiplayer_role = "player" if getattr(self.game_scene, 'is_connection_initiator', True) else "enemy"
+                
+                role_text = "PLAYER" if self.game_scene.multiplayer_role == "player" else "ENEMY"
+                role_info = QGraphicsTextItem(f"Twoja rola: {role_text}")
+                role_info.setDefaultTextColor(Qt.white)
+                role_info.setFont(QFont("Arial", 16))
+                role_rect = role_info.boundingRect()
+                role_info.setPos((self.game_scene.width() - role_rect.width()) / 2, self.game_scene.height()-40.0)
+                self.game_scene.addItem(role_info)
+                self.game_scene.role_info = role_info
+                
+                if self.logger:
+                    self.logger.log(f"Dodano brakujący wskaźnik roli: {role_text}")
 
     def handle_connection_established(self):
         """Metoda wywoływana w wątku głównym po nawiązaniu połączenia"""
@@ -900,12 +958,12 @@ class GameWindow(QMainWindow):
         if hasattr(self, 'game_scene') and self.game_scene:
             # Regularnie wysyłamy pełny snapshot stanu gry z heartbeat
             try:
-                # Co 10 sekund wysyłamy pełną synchronizację (co 5 heartbeatów przy interwale 2s)
+                # Zmniejszamy czas między pełnymi synchronizacjami z 10 do 5 sekund
                 if not hasattr(self, '_last_full_sync_time'):
                     self._last_full_sync_time = 0
                 
                 current_time = time.time()
-                if current_time - self._last_full_sync_time > 10:
+                if current_time - self._last_full_sync_time > 5:  # Zmniejszono z 10 na 5 sekund
                     self._last_full_sync_time = current_time
                     self.game_scene.send_game_state_snapshot()
                 else:
