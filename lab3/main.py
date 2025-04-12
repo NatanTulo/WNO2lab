@@ -3,6 +3,8 @@ import os
 import json
 import tempfile
 import datetime
+import socket
+import threading
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
@@ -76,6 +78,7 @@ class GameWindow(QMainWindow):
         self.show_menu()
 
         self.logger.log("Aplikacja uruchomiona.")
+        self.network_listener_started = False  # nowa flaga dla TCP/IP
 
     def toggle_log_dock(self, visible):
         if visible:
@@ -120,6 +123,21 @@ class GameWindow(QMainWindow):
             self.game_scene.start_turn_timer()
         self.game_scene.timer.start(16)
         self.game_scene.points_timer.start(2000)
+
+        # Nowe zmiany dla gry sieciowej:
+        if self.menu_scene.game_mode == "gra sieciowa":
+            try:
+                remote_ip = self.menu_scene.ip_lineedit.text().strip()
+                remote_port = int(self.menu_scene.port_lineedit.text().strip())
+                # Uruchamiamy serwer nasłuchujący na zadanym porcie
+                self.start_network_listener(remote_port)
+                # Pobieramy właściwy lokalny adres IP
+                local_ip = get_local_ip()
+                message = f"Połączono gracza z adresu {local_ip}"
+                self.send_network_message(remote_ip, remote_port, message)
+            except Exception as e:
+                if self.logger:
+                    self.logger.log(f"Błąd konfiguracji sieciowej: {e}")
 
     def start_editor(self, level_id):
         self.editor_scene = LevelEditorScene(level_id)
@@ -269,6 +287,58 @@ class GameWindow(QMainWindow):
         self.playback_scene.logger = self.logger
         self.view.setScene(self.playback_scene)
         self.playback_scene.start_playback()
+
+    def start_network_listener(self, port):
+        if not self.network_listener_started:
+            thread = threading.Thread(target=self.network_listener, args=(port,), daemon=True)
+            thread.start()
+            self.network_listener_started = True
+            if self.logger:
+                self.logger.log(f"Uruchomiono nasłuchiwanie TCP/IP na porcie {port}.")
+
+    def network_listener(self, port):
+        server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            # Zmiana: nasłuchuj na wszystkich interfejsach, ustawiając adres "0.0.0.0"
+            server_sock.bind(("0.0.0.0", port))
+            server_sock.listen(5)
+            while True:
+                conn, addr = server_sock.accept()
+                data = conn.recv(1024).decode("utf-8")
+                if data and self.logger:
+                    self.logger.log(f"Odebrano wiadomość z {addr}: {data}")
+                conn.close()
+        except Exception as e:
+            if self.logger:
+                self.logger.log(f"Błąd nasłuchiwania TCP/IP: {e}")
+        finally:
+            server_sock.close()
+
+    def send_network_message(self, ip, port, message):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(5)
+            sock.connect((ip, port))
+            sock.sendall(message.encode("utf-8"))
+            sock.close()
+            if self.logger:
+                self.logger.log(f"Wysłano wiadomość do {ip}:{port}: {message}")
+        except Exception as e:
+            if self.logger:
+                self.logger.log(f"Błąd wysyłania wiadomości do {ip}:{port}: {e}")
+
+def get_local_ip():
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # adres nie musi być osiągalny
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = "127.0.0.1"
+    finally:
+        s.close()
+    return ip
 
 def main():
     app = QApplication(sys.argv)

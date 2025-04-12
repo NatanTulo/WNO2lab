@@ -22,4 +22,6 @@ class Logger:
 
     def _update_text_edit(self):
         if self.text_edit:
-            self.text_edit.setPlainText("\n".join(self.lines))
+            from PyQt5.QtCore import QMetaObject, Q_ARG, Qt
+            QMetaObject.invokeMethod(self.text_edit, "setPlainText", Qt.QueuedConnection,
+                                       Q_ARG(str, "\n".join(self.lines)))
