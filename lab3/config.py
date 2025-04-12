@@ -7,6 +7,7 @@ WINDOW_HEIGHT = 720
 # Ustawienia komórek
 DEFAULT_CELL_RADIUS = 30
 POINTS_PER_STRENGTH = 10
+MAX_CELL_POINTS = 50  # Maksymalna liczba punktów komórki
 
 # Kolory komórek
 COLOR_PLAYER = QColor(0, 200, 100)
