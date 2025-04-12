@@ -53,6 +53,14 @@ class SwitchButton(QGraphicsItem):
             self.callback(self._state)
         event.accept()
 
+    # Nowa metoda - umożliwia ustawienie stanu przełącznika programowo
+    def setState(self, state):
+        if self._state != state:
+            self._state = state
+            self.update()
+            if self.callback:
+                self.callback(self._state)
+
 class GameModeRadioButton(QGraphicsItemGroup):
     def __init__(self, mode_text, mode_value, x, y, selected=False, parent=None):
         super().__init__(parent)
@@ -335,11 +343,22 @@ class MenuScene(QGraphicsScene):
                 self._ip_proxy.setVisible(True)
             if self._port_proxy:
                 self._port_proxy.setVisible(True)
+            if not hasattr(self, 'prev_turn_based'):  # zapamiętujemy poprzedni stan
+                self.prev_turn_based = self.turn_based
+            self.turn_based = True
+            # Ustawiamy przełącznik tylko, gdy stan się zmienił
+            if self.switch._state != True:
+                self.switch.setState(True)
         else:
             if self._ip_proxy:
                 self._ip_proxy.setVisible(False)
             if self._port_proxy:
                 self._port_proxy.setVisible(False)
+            if hasattr(self, 'prev_turn_based'):  # przywracamy zapisany stan
+                self.turn_based = self.prev_turn_based
+                del self.prev_turn_based
+            if self.switch._state != self.turn_based:
+                self.switch.setState(self.turn_based)
 
     def drawBackground(self, painter, rect):
         gradient = QLinearGradient(0, 0, 0, self.height())

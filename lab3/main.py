@@ -79,6 +79,7 @@ class GameWindow(QMainWindow):
 
         self.logger.log("Aplikacja uruchomiona.")
         self.network_listener_started = False  # nowa flaga dla TCP/IP
+        self.previous_turn_based_state = None  # zapamiętuje pierwotny stan trybu turowego
 
     def toggle_log_dock(self, visible):
         if visible:
@@ -89,8 +90,36 @@ class GameWindow(QMainWindow):
 
     def show_menu(self):
         if self.game_scene:
+            # Zatrzymanie wszystkich timerów gry
             self.game_scene.timer.stop()
             self.game_scene.points_timer.stop()
+            
+            # Zatrzymanie timera tur
+            if hasattr(self.game_scene, 'turn_timer') and self.game_scene.turn_timer:
+                self.game_scene.turn_timer.stop()
+                try:
+                    self.game_scene.turn_timer.timeout.disconnect()
+                except (TypeError, RuntimeError):
+                    pass  # Ignoruj błąd jeśli nie ma podłączonych sygnałów
+            
+            # Zatrzymanie timera przeciwnika
+            if hasattr(self.game_scene, 'enemy_timer') and self.game_scene.enemy_timer:
+                self.game_scene.enemy_timer.stop()
+                try:
+                    self.game_scene.enemy_timer.timeout.disconnect()
+                except (TypeError, RuntimeError):
+                    pass
+            
+            # Zatrzymanie timera podpowiedzi
+            if hasattr(self.game_scene, 'hint_timer') and self.game_scene.hint_timer:
+                self.game_scene.hint_timer.stop()
+                try:
+                    self.game_scene.hint_timer.timeout.disconnect()
+                except (TypeError, RuntimeError):
+                    pass
+            
+            if self.logger:
+                self.logger.log("GameWindow: Wszystkie timery zatrzymane, przejście do menu.")
 
         self.view.setScene(self.menu_scene)
 
@@ -116,28 +145,52 @@ class GameWindow(QMainWindow):
         if self.menu_scene.game_mode == "1 gracz":
             self.game_scene.single_player = True
             self.game_scene.start_enemy_timer()
-        else:
-            self.game_scene.single_player = False
-        if self.menu_scene.turn_based:
-            self.game_scene.turn_based_mode = True
-            self.game_scene.start_turn_timer()
-        self.game_scene.timer.start(16)
-        self.game_scene.points_timer.start(2000)
-
-        # Nowe zmiany dla gry sieciowej:
-        if self.menu_scene.game_mode == "gra sieciowa":
+            # Przy innych trybach przywracamy stan z przełącznika
+            if self.previous_turn_based_state is not None:
+                self.game_scene.turn_based_mode = self.previous_turn_based_state
+                self.previous_turn_based_state = None
+            else:
+                self.game_scene.turn_based_mode = self.menu_scene.turn_based
+        elif self.menu_scene.game_mode == "gra sieciowa":
             try:
                 remote_ip = self.menu_scene.ip_lineedit.text().strip()
-                remote_port = int(self.menu_scene.port_lineedit.text().strip())
-                # Uruchamiamy serwer nasłuchujący na zadanym porcie
+                port_text = self.menu_scene.port_lineedit.text().strip()
+                if not remote_ip or not port_text:
+                    raise ValueError("Pola IP lub Port są puste.")
+                remote_port = int(port_text)
                 self.start_network_listener(remote_port)
-                # Pobieramy właściwy lokalny adres IP
                 local_ip = get_local_ip()
                 message = f"Połączono gracza z adresu {local_ip}"
                 self.send_network_message(remote_ip, remote_port, message)
             except Exception as e:
                 if self.logger:
                     self.logger.log(f"Błąd konfiguracji sieciowej: {e}")
+                self.show_menu()
+                return
+            # Ustawiamy lokalnie rolę gracza na "player" i informujemy przeciwnika
+            self.game_scene.is_multiplayer = True
+            self.game_scene.multiplayer_role = "player"
+            self.send_network_message(remote_ip, remote_port, "set_role;enemy")
+            # Zapamiętujemy stan trybu turowego wybrany przez użytkownika
+            if self.previous_turn_based_state is None:
+                self.previous_turn_based_state = self.menu_scene.turn_based
+            self.game_scene.turn_based_mode = True
+            self.game_scene.single_player = False
+            import random
+            if self.logger:
+                self.logger.log(f"Multiplayer role assigned: {self.game_scene.multiplayer_role}")
+            # Ustaw callback wysyłający aktualizacje stanu gry
+            self.game_scene.network_send_callback = lambda msg: self.send_network_message(remote_ip, remote_port, msg)
+        else:
+            # Przypadek dla trybu 2 graczy lokalnie
+            if self.previous_turn_based_state is not None:
+                self.game_scene.turn_based_mode = self.previous_turn_based_state
+                self.previous_turn_based_state = None
+            else:
+                self.game_scene.turn_based_mode = self.menu_scene.turn_based
+            self.game_scene.single_player = False
+        self.game_scene.timer.start(16)
+        self.game_scene.points_timer.start(2000)
 
     def start_editor(self, level_id):
         self.editor_scene = LevelEditorScene(level_id)
@@ -305,8 +358,12 @@ class GameWindow(QMainWindow):
             while True:
                 conn, addr = server_sock.accept()
                 data = conn.recv(1024).decode("utf-8")
-                if data and self.logger:
-                    self.logger.log(f"Odebrano wiadomość z {addr}: {data}")
+                if data:
+                    if self.logger:
+                        self.logger.log(f"Odebrano wiadomość z {addr}: {data}")
+                    # Przekazujemy odebraną wiadomość do sceny gry
+                    if self.game_scene:
+                        self.game_scene.process_network_message(data)
                 conn.close()
         except Exception as e:
             if self.logger:

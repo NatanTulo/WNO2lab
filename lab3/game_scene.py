@@ -49,10 +49,11 @@ class GameScene(QGraphicsScene):
         self.hint_blink_count = 0
 
         self.turn_based_mode = False
-        self.current_turn = None
+        self.current_turn = "player"  # Inicjalizacja z wartością domyślną zamiast None
         self.turn_duration = config.TURN_DURATION_SECONDS
         self.round_time_remaining = self.turn_duration
         self.turn_timer = QTimer()
+        self.turn_timer.setInterval(1000)  # Ustawienie interwału na 1 sekundę
 
         self.logger = None
         self.powerup_active = None
@@ -131,6 +132,9 @@ class GameScene(QGraphicsScene):
                     cell.x += offset_x
                     cell.y += offset_y
                     cell.update()
+                    
+        if self.turn_based_mode:
+            self.start_turn_timer()  # Inicjuj timer, aby ustawić start tury
 
     def load_level_data(self, level_number):
         """Load level data from file"""
@@ -184,7 +188,49 @@ class GameScene(QGraphicsScene):
             "timestamp": time.time(),
             "description": f"Utworzono most między ({source.x:.0f}, {source.y:.0f}) a ({target.x:.0f}, {target.y:.0f}) o koszcie {connection.cost}"
         })
+        # Jeśli gra działa w trybie multiplayer, wyślij aktualizację do drugiego gracza
+        if hasattr(self, "network_send_callback") and self.network_send_callback:
+            msg = f"create_bridge;{source.x};{source.y};{target.x};{target.y};{cost}"
+            self.network_send_callback(msg)
         return connection
+
+    def process_network_message(self, message):
+        """Analizuje odebrane dane i aktualizuje stan gry."""
+        parts = message.strip().split(";")
+        if parts[0] == "create_bridge" and len(parts) == 6:
+            try:
+                source_x = float(parts[1])
+                source_y = float(parts[2])
+                target_x = float(parts[3])
+                target_y = float(parts[4])
+                cost = int(parts[5])
+                source_cell = None
+                target_cell = None
+                # Znajdujemy komórki w pobliżu przekazanych współrzędnych
+                for cell in self.cells:
+                    if abs(cell.x - source_x) < 5 and abs(cell.y - source_y) < 5:
+                        source_cell = cell
+                    if abs(cell.x - target_x) < 5 and abs(cell.y - target_y) < 5:
+                        target_cell = cell
+                if source_cell and target_cell:
+                    exists = any(((conn.source_cell == source_cell and conn.target_cell == target_cell) or 
+                                  (conn.source_cell == target_cell and conn.target_cell == source_cell))
+                                  for conn in self.connections)
+                    if not exists:
+                        self.create_connection(source_cell, target_cell, source_cell.cell_type, cost)
+                else:
+                    if self.logger:
+                        self.logger.log("GameScene: Nie znaleziono komórek dla aktualizacji create_bridge.")
+            except Exception as e:
+                if self.logger:
+                    self.logger.log(f"GameScene: Błąd przetwarzania wiadomości create_bridge: {e}")
+        elif parts[0] == "set_role" and len(parts) == 2:
+            role = parts[1].strip()
+            # Ustawiamy rolę zgodnie z komunikatem
+            self.multiplayer_role = role
+            if self.logger:
+                self.logger.log(f"GameScene: Ustawiono role multiplayer: {self.multiplayer_role}")
+        # ...existing code for innych komunikatów...
 
     def update_game(self):
         for conn in list(self.connections):
@@ -307,6 +353,7 @@ class GameScene(QGraphicsScene):
             if cell == self.drag_start_cell:
                 continue
 
+            # Sprawdzamy czy istnieje już połączenie tego samego typu co drag_start_cell
             exists = any(
                 (((conn.source_cell == self.drag_start_cell and conn.target_cell == cell) or
                   (conn.source_cell == cell and conn.target_cell == self.drag_start_cell))
@@ -328,9 +375,29 @@ class GameScene(QGraphicsScene):
         self.update()
 
     def mousePressEvent(self, event):
+        # Dla trybu multiplayer traktujemy każdy przycisk jako lewy
+        actual_button = Qt.LeftButton if hasattr(self, 'is_multiplayer') and self.is_multiplayer else event.button()
+
+        # Jeżeli tryb turowy i multiplayer – wykonywanie ruchu tylko w odpowiedniej turze
+        if hasattr(self, 'is_multiplayer') and self.is_multiplayer:
+            if self.turn_based_mode and self.current_turn != self.multiplayer_role:
+                if self.logger:
+                    self.logger.log(f"GameScene: Teraz tura {self.current_turn}, nie można wykonać ruchu.")
+                event.ignore()
+                return
+
         if event.button() == Qt.RightButton and self.single_player:
             event.accept()
             return
+
+        # Sprawdzenie czy w trybie turowym odpowiedni gracz wykonuje ruch
+        if self.turn_based_mode:
+            if (actual_button == Qt.LeftButton and self.current_turn != "player") or \
+               (actual_button == Qt.RightButton and self.current_turn != "enemy"):
+                if self.logger:
+                    self.logger.log(f"GameScene: Teraz tura {self.current_turn}, nie można wykonać ruchu.")
+                event.ignore()
+                return
 
         if self.powerup_active is not None:
             clicked_item = self.itemAt(event.scenePos(), QTransform())
@@ -479,13 +546,14 @@ class GameScene(QGraphicsScene):
             cell.setHighlighted(False)
         self.reachable_cells = []
 
-        if event.button() == Qt.LeftButton:
+        if actual_button == Qt.LeftButton:
             if isinstance(clicked_item, CellUnit) and clicked_item.cell_type == "player":
                 self.drag_start_cell = clicked_item
                 self.calculate_reachable_cells()
             else:
                 self.drag_start_cell = None
-        elif event.button() == Qt.RightButton:
+        # Dodajemy obsługę prawego przycisku myszy dla trybu 2 graczy (nie single_player)
+        elif actual_button == Qt.RightButton and not self.single_player:
             if isinstance(clicked_item, CellUnit) and clicked_item.cell_type == "enemy":
                 self.drag_start_cell = clicked_item
                 self.calculate_reachable_cells()
@@ -578,8 +646,17 @@ class GameScene(QGraphicsScene):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        """Na zakończenie przeciągania sprawdza, czy zwolniono przycisk nad inną komórką tego samego typu.
-           Dla LPM mosty tworzy komórka gracza, a dla PPM – tymczasowo mosty przeciwnika."""
+        # W trybie multiplayer zawsze traktujemy ruch jako lewy
+        actual_button = Qt.LeftButton if hasattr(self, 'is_multiplayer') and self.is_multiplayer else event.button()
+
+        # Jeśli tryb turowy multiplayer – wykonywanie ruchu tylko, gdy tura zgadza się z lokalną rolą
+        if hasattr(self, 'is_multiplayer') and self.is_multiplayer:
+            if self.turn_based_mode and self.current_turn != self.multiplayer_role:
+                self.drag_start_cell = None
+                self.drag_current_pos = None
+                self.update()
+                return
+
         for cell in self.reachable_cells:
             cell.setHighlighted(False)
         self.reachable_cells = []
@@ -594,12 +671,17 @@ class GameScene(QGraphicsScene):
             return
 
         release_item = self.itemAt(event.scenePos(), QTransform())
+        
+        # Sprawdzenie czy w trybie turowym odpowiedni gracz wykonuje ruch
         if self.turn_based_mode:
-            if event.button() == Qt.LeftButton and self.current_turn != "player":
+            if (actual_button == Qt.LeftButton and self.current_turn != "player") or \
+               (actual_button == Qt.RightButton and self.current_turn != "enemy"):
+                self.drag_start_cell = None
+                self.drag_current_pos = None
+                self.update()
                 return
-            if event.button() == Qt.RightButton and self.current_turn != "enemy":
-                return
-        if event.button() == Qt.LeftButton:
+            
+        if actual_button == Qt.LeftButton:
             if isinstance(release_item, CellUnit) and release_item != self.drag_start_cell:
                 dx = release_item.x - self.drag_start_cell.x
                 dy = release_item.y - self.drag_start_cell.y
@@ -614,9 +696,12 @@ class GameScene(QGraphicsScene):
                         self.drag_start_cell.strength = (self.drag_start_cell.points // config.POINTS_PER_STRENGTH) + 1
                         self.drag_start_cell.update()
                         new_conn = self.create_connection(self.drag_start_cell, release_item, "player", cost)
-                        if self.turn_based_mode:
-                            self.switch_turn()
-        elif event.button() == Qt.RightButton:
+                        
+                        # Przełączamy turę tylko jeśli most został faktycznie utworzony
+                        if self.turn_based_mode and new_conn is not None:
+                            self.switch_turn()  # natychmiastowe przełączenie tury po wykonanym ruchu
+        # Dodanie obsługi prawego przycisku myszy dla komórek przeciwnika
+        elif actual_button == Qt.RightButton and not self.single_player:
             if isinstance(release_item, CellUnit) and release_item != self.drag_start_cell:
                 dx = release_item.x - self.drag_start_cell.x
                 dy = release_item.y - self.drag_start_cell.y
@@ -631,8 +716,11 @@ class GameScene(QGraphicsScene):
                         self.drag_start_cell.strength = (self.drag_start_cell.points // config.POINTS_PER_STRENGTH) + 1
                         self.drag_start_cell.update()
                         new_conn = self.create_connection(self.drag_start_cell, release_item, "enemy", cost)
-                        if self.turn_based_mode:
+                        
+                        # Przełączamy turę tylko jeśli most został faktycznie utworzony
+                        if self.turn_based_mode and new_conn is not None:
                             self.switch_turn()
+                        
         self.drag_start_cell = None
         self.drag_current_pos = None
         self.update()
@@ -739,12 +827,22 @@ class GameScene(QGraphicsScene):
         })
 
     def drawForeground(self, painter, rect):
-        if self.turn_based_mode and self.current_turn:
-            info_text = f"Runda: {self.current_turn.upper()} - Pozostało: {self.round_time_remaining}s"
+        # Rysowanie informacji o turze w górnej części ekranu zawsze, gdy tryb turowy jest aktywny
+        if self.turn_based_mode:
+            if hasattr(self, 'is_multiplayer') and self.is_multiplayer:
+                if self.current_turn == self.multiplayer_role:
+                    info_text = f"Twoja tura - Pozostało: {self.round_time_remaining}s"
+                else:
+                    info_text = f"Tura przeciwnika - Pozostało: {self.round_time_remaining}s"
+            else:
+                text_turn = self.current_turn.upper()  # Usunięto sprawdzanie czy self.current_turn is None
+                info_text = f"Runda: {text_turn} - Pozostało: {self.round_time_remaining}s"
             font = QFont(config.FONT_FAMILY, config.GAME_TURN_FONT_SIZE, QFont.Bold)
             painter.setFont(font)
             painter.setPen(QPen(Qt.white))
-            painter.drawText(rect.adjusted(10, 10, -10, -10), Qt.AlignTop | Qt.AlignHCenter, info_text)
+            turn_rect = QRectF(rect.left(), rect.top(), rect.width(), 50)
+            painter.drawText(turn_rect, Qt.AlignCenter, info_text)
+            
         if self.drag_start_cell and self.drag_current_pos:
             if self.turn_based_mode and self.drag_start_cell.cell_type != self.current_turn:
                 pass
@@ -945,7 +1043,48 @@ class GameScene(QGraphicsScene):
         self.powerup_label.setPos(scene_center - label_width/2, 10)
         self.addItem(self.powerup_label)
 
+    def stop_all_timers(self):
+        """Zatrzymuje wszystkie timery aktywne w grze"""
+        if self.timer:
+            self.timer.stop()
+            
+        if self.points_timer:
+            self.points_timer.stop()
+        
+        if hasattr(self, 'turn_timer') and self.turn_timer:
+            self.turn_timer.stop()
+            try:
+                self.turn_timer.timeout.disconnect()
+            except (TypeError, RuntimeError):
+                pass  # Ignoruj błąd jeśli nie ma podłączonych sygnałów
+                
+        if self.enemy_timer:
+            self.enemy_timer.stop()
+            try:
+                self.enemy_timer.timeout.disconnect()
+            except (TypeError, RuntimeError):
+                pass
+                
+        if self.hint_timer:
+            self.hint_timer.stop()
+            try:
+                self.hint_timer.timeout.disconnect()
+            except (TypeError, RuntimeError):
+                pass
+                
+        if self.logger:
+            self.logger.log("GameScene: Wszystkie timery zatrzymane.")
+            
     def keyPressEvent(self, event):
+        if event.key() == config.KEY_ESCAPE:
+            if self.logger:
+                self.logger.log("GameScene: Gracz przerwał rozgrywkę.")
+            self.stop_all_timers()  # Użyj nowej metody zamiast zatrzymywać tylko wybrane timery
+
+            if self.views() and self.views()[0].parent():
+                self.views()[0].parent().show_menu()
+            event.accept()
+            return
         if event.key() == config.KEY_HINT:
             self.show_hint()
             event.accept()
@@ -956,16 +1095,6 @@ class GameScene(QGraphicsScene):
             return
         if event.key() == config.KEY_QUICKLOAD:
             self.quickload()
-            event.accept()
-            return
-        if event.key() == config.KEY_ESCAPE:
-            if self.logger:
-                self.logger.log("GameScene: Gracz przerwał rozgrywkę.")
-            self.timer.stop()
-            self.points_timer.stop()
-
-            if self.views() and self.views()[0].parent():
-                self.views()[0].parent().show_menu()
             event.accept()
             return
 
@@ -1014,26 +1143,69 @@ class GameScene(QGraphicsScene):
             super().keyPressEvent(event)
 
     def start_turn_timer(self):
+        # Restartujemy timer dla trybu turowego
         self.current_turn = "player"
         self.round_time_remaining = self.turn_duration
+        
+        # Całkowicie zatrzymujemy i rozłączamy timer przed ponownym użyciem
+        self.turn_timer.stop()
+        try:
+            self.turn_timer.timeout.disconnect()
+        except TypeError:
+            # Ignorujemy błąd jeśli nie ma podłączonych sygnałów
+            pass
+        
+        # Podłączamy funkcję i uruchamiamy timer z odpowiednim interwałem
         self.turn_timer.timeout.connect(self.update_turn_timer)
-        self.turn_timer.start(config.TURN_TIMER_INTERVAL_MS)
+        self.turn_timer.start(1000)  # Aktualizacja co 1 sekundę
+        
+        if self.logger:
+            self.logger.log(f"GameScene: Start timera tury, bieżąca tura: {self.current_turn}, czas: {self.round_time_remaining}s.")
+        
         self.update()
 
     def update_turn_timer(self):
-        self.round_time_remaining -= 1
-        if self.round_time_remaining <= 0:
-            self.switch_turn()
+        # Odliczanie czasu tury
+        if self.round_time_remaining > 0:
+            self.round_time_remaining -= 1
+            if self.round_time_remaining <= 0:
+                if self.logger:
+                    self.logger.log(f"GameScene: Koniec czasu tury dla {self.current_turn}.")
+                self.switch_turn()  # jeśli czas się skończył, przełącz turę
         self.update()
 
     def switch_turn(self):
+        # Całkowicie zatrzymujemy i rozłączamy timer przed ponownym użyciem
+        self.turn_timer.stop()
+        
+        try:
+            self.turn_timer.timeout.disconnect()
+        except TypeError:
+            # Ignorujemy błąd jeśli nie ma podłączonych sygnałów
+            pass
+        
+        # Zmiana tury
         if self.current_turn == "player":
             self.current_turn = "enemy"
+            # W trybie jednego gracza uruchamiamy timer AI gdy tura przeciwnika
+            if self.single_player and self.enemy_timer:
+                self.enemy_timer.start(3000)
         else:
             self.current_turn = "player"
+            # W trybie jednego gracza zatrzymujemy timer AI gdy tura gracza
+            if self.single_player and self.enemy_timer:
+                self.enemy_timer.stop()
+            
+        # Reset czasu tury
         self.round_time_remaining = self.turn_duration
+        
         if self.logger:
-            self.logger.log(f"GameScene: Zmiana tury, teraz: {self.current_turn}.")
+            self.logger.log(f"GameScene: Zmiana tury, teraz: {self.current_turn}, czas: {self.round_time_remaining}s.")
+        
+        # Ponowne uruchomienie timera po zmianie tury
+        self.turn_timer.timeout.connect(self.update_turn_timer)
+        self.turn_timer.start(1000)
+        
         self.update()
 
     def start_enemy_timer(self):
@@ -1042,19 +1214,34 @@ class GameScene(QGraphicsScene):
             self.enemy_timer.stop()
         self.enemy_timer = QTimer()
         self.enemy_timer.timeout.connect(self.enemy_move)
-        self.enemy_timer.start(3000)
+        
+        # W trybie turowym uruchamiamy timer tylko gdy tura jest przeciwnika
+        if not self.turn_based_mode or (self.turn_based_mode and self.current_turn == "enemy"):
+            self.enemy_timer.start(3000)
 
     def enemy_move(self):
         """Metoda wykonująca ruch przeciwnika przy użyciu AI"""
         if not self.single_player:
             return
+            
+        # W trybie turowym sprawdzamy, czy aktualna tura jest przeciwnika
+        if self.turn_based_mode and self.current_turn != "enemy":
+            return
+            
         best_move = self.game_ai.analyze_best_move(cell_type="enemy")
         if best_move:
             source, target, cost = best_move
             if source.points >= cost:
                 source.points -= cost
                 source.strength = (source.points // config.POINTS_PER_STRENGTH) + 1
-                self.create_connection(source, target, "enemy", cost)
+                new_conn = self.create_connection(source, target, "enemy", cost)
+                
+                # Jeśli jesteśmy w trybie turowym, przełączamy turę po wykonaniu ruchu
+                if self.turn_based_mode and new_conn is not None:
+                    if self.enemy_timer:
+                        self.enemy_timer.stop()  # Zatrzymujemy timer przeciwnika żeby nie wykonał więcej ruchów
+                    self.switch_turn()  # Przełączamy turę na gracza
+                    
         self.update()
 
     def quicksave(self):
