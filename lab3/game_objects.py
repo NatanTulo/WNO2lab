@@ -124,7 +124,7 @@ class CellUnit(QGraphicsItem):
         """Dodaje punkt do komórki oraz aktualizuje siłę"""
         if self.frozen:
             return
-        if self.points < config.MAX_CELL_POINTS:  # Sprawdzenie czy osiągnięto maksimum
+        if self.points < config.MAX_CELL_POINTS:                                       
             self.points += 1
             self.strength = (self.points // config.POINTS_PER_STRENGTH) + 1
             self.update()

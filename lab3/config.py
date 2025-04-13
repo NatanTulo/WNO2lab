@@ -7,7 +7,7 @@ WINDOW_HEIGHT = 720
 # Ustawienia komórek
 DEFAULT_CELL_RADIUS = 30
 POINTS_PER_STRENGTH = 10
-MAX_CELL_POINTS = 50  # Maksymalna liczba punktów komórki
+MAX_CELL_POINTS = 50 
 
 # Kolory komórek
 COLOR_PLAYER = QColor(0, 200, 100)
@@ -22,7 +22,7 @@ COLOR_BG_BOTTOM = QColor(100, 0, 150)
 COLOR_CONN_PLAYER = QColor(0, 100, 0)
 COLOR_CONN_ENEMY = QColor(139, 0, 0)
 COLOR_CONN_CONFLICT_LEFT = QColor(0, 255, 0)
-COLOR_CONN_CONFLICT_RIGHT = QColor(139, 0, 0)  # taki sam jak COLOR_CONN_ENEMY
+COLOR_CONN_CONFLICT_RIGHT = QColor(139, 0, 0)
 COLOR_DOT_PLAYER = QColor(144, 238, 144)
 COLOR_DOT_ENEMY = QColor(255, 99, 71)
 COLOR_HINT_PRIMARY = QColor(255, 215, 0)
@@ -74,19 +74,19 @@ POWERUP_NEW_CELL = "stawiający"
 NEW_CELL_COPY_RANGE_FACTOR = 5
 
 # Stałe pozycjonowania elementów menu
-MENU_TITLE_Y_POSITION = 50                              # tytuł gry
-MENU_SWITCH_LABEL_Y_POSITION = 120                      # etykieta "Tryb turowy"
-MENU_SWITCH_Y_POSITION = 150                            # pozycja przełącznika
-MENU_LEVEL_TITLE_Y_POSITION = 200                       # tytuł wyboru poziomu
-MENU_LEVEL_START_Y_POSITION = 250                       # początkowa pozycja przycisków poziomów
-MENU_MODE_TITLE_Y_OFFSET = 10                           # offset od START_Y dla tytułu trybu gry
-MENU_RADIO_FIRST_Y_OFFSET = 50                          # od poziomu START_Y dla pierwszej grupy radio
-MENU_RADIO_SECOND_Y_OFFSET = 25                         # dodatkowy offset dla drugiej grupy radio
-MENU_IP_Y_OFFSET = 30                                   # offset Y dla pola IP względem radio_y2
-MENU_PORT_Y_OFFSET = 70                                 # offset Y dla pola Port względem radio_y2
-MENU_IP_X_OFFSET = 0                                    # margines od prawej krawędzi
-MENU_REPLAY_TITLE_Y_OFFSET = 115                        # odległość od dołu dla tytułu replay
-MENU_REPLAY_BUTTON_Y_OFFSET = 50                        # odległość od dołu dla przycisku replay
+MENU_TITLE_Y_POSITION = 50
+MENU_SWITCH_LABEL_Y_POSITION = 120
+MENU_SWITCH_Y_POSITION = 150
+MENU_LEVEL_TITLE_Y_POSITION = 200
+MENU_LEVEL_START_Y_POSITION = 250
+MENU_MODE_TITLE_Y_OFFSET = 10
+MENU_RADIO_FIRST_Y_OFFSET = 50
+MENU_RADIO_SECOND_Y_OFFSET = 25
+MENU_IP_Y_OFFSET = 30
+MENU_PORT_Y_OFFSET = 70
+MENU_IP_X_OFFSET = 0
+MENU_REPLAY_TITLE_Y_OFFSET = 115
+MENU_REPLAY_BUTTON_Y_OFFSET = 50
 
 # Stałe skrótów klawiszowych
 KEY_HINT =  Qt.Key_H

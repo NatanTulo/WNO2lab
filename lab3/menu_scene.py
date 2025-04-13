@@ -3,12 +3,12 @@ import os
 
 from PyQt5.QtCore import Qt, QRectF, pyqtSignal, QRegExp
 from PyQt5.QtGui import (
-    QColor, QBrush, QPen, QFont, QLinearGradient, 
+    QColor, QBrush, QPen, QFont, QLinearGradient,
     QPixmap, QPainterPath, QRegExpValidator, QIntValidator
 )
 from PyQt5.QtWidgets import (
-    QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup, 
-    QGraphicsPixmapItem, QGraphicsItem, QGraphicsEllipseItem, QLineEdit, 
+    QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItemGroup,
+    QGraphicsPixmapItem, QGraphicsItem, QGraphicsEllipseItem, QLineEdit,
     QGraphicsProxyWidget, QPushButton
 )
 
@@ -53,7 +53,6 @@ class SwitchButton(QGraphicsItem):
             self.callback(self._state)
         event.accept()
 
-    # Nowa metoda - umożliwia ustawienie stanu przełącznika programowo
     def setState(self, state):
         if self._state != state:
             self._state = state
@@ -196,7 +195,6 @@ class MenuScene(QGraphicsScene):
 
         self.ip_lineedit = QLineEdit()
         self.ip_lineedit.setPlaceholderText("Adres IP (IPv4 lub IPv6)")
-        # Zmodyfikowany regex akceptujący zarówno adresy IPv4 jak i IPv6
         ip_regex = QRegExp(r"^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$|^(([a-fA-F0-9]{1,4}:){7,7}[a-fA-F0-9]{1,4}|([a-fA-F0-9]{1,4}:){1,7}:|([a-fA-F0-9]{1,4}:){1,6}:[a-fA-F0-9]{1,4}|([a-fA-F0-9]{1,4}:){1,5}(:[a-fA-F0-9]{1,4}){1,2}|([a-fA-F0-9]{1,4}:){1,4}(:[a-fA-F0-9]{1,4}){1,3}|([a-fA-F0-9]{1,4}:){1,3}(:[a-fA-F0-9]{1,4}){1,4}|([a-fA-F0-9]{1,4}:){1,2}(:[a-fA-F0-9]{1,4}){1,5}|[a-fA-F0-9]{1,4}:((:[a-fA-F0-9]{1,4}){1,6})|:((:[a-fA-F0-9]{1,4}){1,7}|:)|fe80:(:[a-fA-F0-9]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([a-fA-F0-9]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$")
         ip_validator = QRegExpValidator(ip_regex)
         self.ip_lineedit.setValidator(ip_validator)
@@ -344,10 +342,9 @@ class MenuScene(QGraphicsScene):
                 self._ip_proxy.setVisible(True)
             if self._port_proxy:
                 self._port_proxy.setVisible(True)
-            if not hasattr(self, 'prev_turn_based'):  # zapamiętujemy poprzedni stan
+            if not hasattr(self, 'prev_turn_based'):                                
                 self.prev_turn_based = self.turn_based
             self.turn_based = True
-            # Ustawiamy przełącznik tylko, gdy stan się zmienił
             if self.switch._state != True:
                 self.switch.setState(True)
         else:
@@ -355,7 +352,7 @@ class MenuScene(QGraphicsScene):
                 self._ip_proxy.setVisible(False)
             if self._port_proxy:
                 self._port_proxy.setVisible(False)
-            if hasattr(self, 'prev_turn_based'):  # przywracamy zapisany stan
+            if hasattr(self, 'prev_turn_based'):                             
                 self.turn_based = self.prev_turn_based
                 del self.prev_turn_based
             if self.switch._state != self.turn_based:

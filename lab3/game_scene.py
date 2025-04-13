@@ -7,8 +7,8 @@ import datetime
 from PyQt5.QtCore import Qt, QTimer, QPointF, QRectF
 from PyQt5.QtGui import QCursor, QColor, QLinearGradient, QPen, QFont, QTransform
 from PyQt5.QtWidgets import (
-    QGraphicsScene, QGraphicsDropShadowEffect, QGraphicsItem, QMenu, 
-    QMessageBox, QGraphicsTextItem, QDialog, QVBoxLayout, QHBoxLayout, 
+    QGraphicsScene, QGraphicsDropShadowEffect, QGraphicsItem, QMenu,
+    QMessageBox, QGraphicsTextItem, QDialog, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QListWidget
 )
 
@@ -49,11 +49,11 @@ class GameScene(QGraphicsScene):
         self.hint_blink_count = 0
 
         self.turn_based_mode = False
-        self.current_turn = "player"  # Inicjalizacja z wartością domyślną zamiast None
+        self.current_turn = "player"                                                   
         self.turn_duration = config.TURN_DURATION_SECONDS
         self.round_time_remaining = self.turn_duration
         self.turn_timer = QTimer()
-        self.turn_timer.setInterval(1000)  # Ustawienie interwału na 1 sekundę
+        self.turn_timer.setInterval(1000)                                     
 
         self.logger = None
         self.powerup_active = None
@@ -63,7 +63,7 @@ class GameScene(QGraphicsScene):
         self.enemy_timer = None
         self.move_history = []
         self.last_state_record = 0
-        self.hover_connection = None  # Dodana zmienna do śledzenia mostu pod kursorem
+        self.hover_connection = None                                                  
 
     def drawBackground(self, painter, rect):
         gradient = QLinearGradient(0, 0, 0, self.height())
@@ -133,9 +133,9 @@ class GameScene(QGraphicsScene):
                     cell.x += offset_x
                     cell.y += offset_y
                     cell.update()
-                    
+
         if self.turn_based_mode:
-            self.start_turn_timer()  # Inicjuj timer, aby ustawić start tury
+            self.start_turn_timer()                                         
 
     def load_level_data(self, level_number):
         """Load level data from file"""
@@ -189,17 +189,15 @@ class GameScene(QGraphicsScene):
             "timestamp": time.time(),
             "description": f"Utworzono most między ({source.x:.0f}, {source.y:.0f}) a ({target.x:.0f}, {target.y:.0f}) o koszcie {connection.cost}"
         })
-        # Jeśli gra działa w trybie multiplayer, wyślij aktualizację do drugiego gracza
-        # Dodajemy dodatkowy warunek, by uniknąć rekurencyjnego wysyłania wiadomości
         if hasattr(self, "network_send_callback") and self.network_send_callback and not hasattr(source, '_skip_network'):
-            source._skip_network = True  # Oznaczamy komórkę jako przetwarzaną, by uniknąć ponownego wysłania
+            source._skip_network = True                                                                      
             try:
                 msg = f"create_bridge;{source.x};{source.y};{target.x};{target.y};{cost}"
                 self.network_send_callback(msg)
                 if self.logger:
                     self.logger.log(f"GameScene: Wysłano informację o utworzeniu mostu: {msg}")
             finally:
-                delattr(source, '_skip_network')  # Usuwamy tymczasowy atrybut
+                delattr(source, '_skip_network')                              
         return connection
 
     def process_network_message(self, message):
@@ -207,75 +205,60 @@ class GameScene(QGraphicsScene):
         if message.startswith("snapshot_full;") or message.startswith("snapshot_part;"):
             try:
                 parts = message.strip().split(";", 3 if message.startswith("snapshot_part;") else 1)
-                
+
                 if message.startswith("snapshot_full;"):
                     json_data = parts[1]
-                    import json
                     snapshot = json.loads(json_data)
                     self.apply_game_state_snapshot(snapshot)
                     return
-                else:  # Obsługa części snapshotu
+                else:                            
                     part_number = int(parts[1])
                     total_parts = int(parts[2])
                     content = parts[3]
-                    
-                    # Tworzymy atrybut dla przechowywania części snapshotu
+
                     if not hasattr(self, '_snapshot_parts'):
                         self._snapshot_parts = {}
-                    
-                    # Zapisujemy część
+
                     self._snapshot_parts[part_number] = content
-                    
-                    # Sprawdzamy czy mamy wszystkie części
+
                     if len(self._snapshot_parts) == total_parts:
-                        # Łączymy części
                         combined_json = "".join(self._snapshot_parts[i+1] for i in range(total_parts))
-                        # Resetujemy części
                         self._snapshot_parts = {}
-                        
-                        # Parsujemy i stosujemy
-                        import json
+
                         snapshot = json.loads(combined_json)
                         self.apply_game_state_snapshot(snapshot)
-                        
+
                         if self.logger:
                             self.logger.log(f"GameScene: Połączono {total_parts} części snapshotu gry")
                     return
             except Exception as e:
                 if self.logger:
                     self.logger.log(f"GameScene: Błąd podczas przetwarzania snapshotu: {e}")
-                
+
         elif message.startswith("game_over;"):
-            # Obsługa wiadomości o zakończeniu gry
             parts = message.strip().split(";")
             if len(parts) >= 2:
                 winner = parts[1]
                 if self.logger:
                     self.logger.log(f"GameScene: Otrzymano informację o zakończeniu gry, zwycięzca: {winner}")
-                
-                # Obliczamy czy to my wygraliśmy czy przeciwnik
+
                 victory = (winner == self.multiplayer_role)
-                
-                # Ustawiamy tekst wyniku i zatrzymujemy grę
+
                 final_result = "Wygrana!" if victory else "Przegrana!"
                 self.game_over_text = final_result
                 self.timer.stop()
                 self.points_timer.stop()
                 self.stop_all_timers()
-                
-                # Aktualizujemy widok
+
                 self.update()
 
-                # Zapisujemy stan końcowy meczu w historii
                 self.move_history.append({
                     "timestamp": time.time(),
                     "description": f"Gra zakończona: {final_result}"
                 })
-                
-                # Zapisujemy historię gry tak samo jak w metodzie game_over
+
                 self.save_game_history()
-                
-                # Pokażemy przycisk powrotu do menu
+
                 QTimer.singleShot(2000, self.show_return_button)
         parts = message.strip().split(";")
         if parts[0] == "create_bridge" and len(parts) == 6:
@@ -287,31 +270,26 @@ class GameScene(QGraphicsScene):
                 cost = int(parts[5])
                 source_cell = None
                 target_cell = None
-                # Znajdujemy komórki w pobliżu przekazanych współrzędnych - zwiększamy tolerancję
                 for cell in self.cells:
                     if abs(cell.x - source_x) < 10 and abs(cell.y - source_y) < 10:
                         source_cell = cell
                     if abs(cell.x - target_x) < 10 and abs(cell.y - target_y) < 10:
                         target_cell = cell
-                
+
                 if source_cell and target_cell:
-                    # Sprawdzamy czy połączenie już istnieje
-                    exists = any(((conn.source_cell == source_cell and conn.target_cell == target_cell) or 
+                    exists = any(((conn.source_cell == source_cell and conn.target_cell == target_cell) or
                                   (conn.source_cell == target_cell and conn.target_cell == source_cell))
                                   for conn in self.connections)
-                    
+
                     if not exists:
-                        # Określamy typ połączenia na podstawie typu komórki źródłowej
                         conn_type = source_cell.cell_type
-                        
-                        # Odejmujemy punkty tylko jeśli to nowe połączenie
+
                         source_cell.points -= cost
                         source_cell.strength = (source_cell.points // config.POINTS_PER_STRENGTH) + 1
                         source_cell.update()
-                        
-                        # Tworzymy połączenie z określonym typem
+
                         self.create_connection(source_cell, target_cell, conn_type, cost)
-                        
+
                         if self.logger:
                             self.logger.log(f"GameScene: Utworzono most sieciowy między {conn_type} komórkami.")
                     else:
@@ -329,7 +307,6 @@ class GameScene(QGraphicsScene):
         elif parts[0] == "update_turn_time" and len(parts) == 2:
             try:
                 time_remaining = int(parts[1])
-                # Aktualizujemy czas tury tylko jeśli to tura przeciwnika
                 if self.current_turn != self.multiplayer_role:
                     self.round_time_remaining = time_remaining
                     if self.logger:
@@ -339,48 +316,39 @@ class GameScene(QGraphicsScene):
                 if self.logger:
                     self.logger.log(f"GameScene: Błąd przetwarzania wiadomości update_turn_time: {e}")
         elif parts[0] == "switch_turn" and len(parts) >= 1:
-            # Otrzymano żądanie przełączenia tury
             if self.turn_based_mode:
                 if self.logger:
                     self.logger.log(f"GameScene: Otrzymano żądanie przełączenia tury. Aktualna tura: {self.current_turn}, rola: {self.multiplayer_role}")
-                
-                # KLUCZOWA POPRAWKA: Zawsze ustawiamy swoją turę jako aktywną gdy odbierzemy komunikat switch_turn
+
                 self.current_turn = self.multiplayer_role
-                
-                # Resetujemy czas tury na pełną wartość
+
                 self.round_time_remaining = self.turn_duration
-                
-                # Zatrzymujemy i resetujemy timer
+
                 self.turn_timer.stop()
                 try:
                     self.turn_timer.timeout.disconnect()
                 except TypeError:
                     pass
-                
-                # Wysyłamy potwierdzenie przełączenia tury
+
                 if hasattr(self, "network_send_callback") and self.network_send_callback:
                     self.network_send_callback(f"turn_confirm;{self.turn_duration}")
                     if self.logger:
                         self.logger.log(f"GameScene: Wysłano potwierdzenie przełączenia tury")
-                
-                # Ponownie uruchamiamy timer
+
                 self.turn_timer.timeout.connect(self.update_turn_timer)
                 self.turn_timer.start(1000)
-                
+
                 if self.logger:
                     self.logger.log(f"GameScene: Tura przełączona na {self.current_turn}, timer zresetowany")
-                
+
                 self.update()
         elif parts[0] == "turn_confirm" and len(parts) >= 2:
             try:
-                # Otrzymano potwierdzenie przełączenia tury, z informacją o czasie
                 if self.turn_based_mode:
-                    # Upewniamy się że nie jesteśmy teraz aktywni
                     if self.current_turn == self.multiplayer_role:
                         if self.logger:
                             self.logger.log(f"GameScene: BŁĄD - otrzymano potwierdzenie przełączenia tury, ale nadal jest nasza tura")
                     else:
-                        # Synchronizujemy pozostały czas
                         sync_time = int(parts[1])
                         if self.round_time_remaining != sync_time:
                             self.round_time_remaining = sync_time
@@ -392,10 +360,7 @@ class GameScene(QGraphicsScene):
                     self.logger.log(f"GameScene: Błąd przetwarzania potwierdzenia tury: {e}")
         elif parts[0] == "set_role" and len(parts) == 2:
             role = parts[1].strip()
-            # Ustawiamy rolę zgodnie z komunikatem
             if role in ["player", "enemy"]:
-                # Sprawdzamy czy zmiana roli jest uprawniona
-                # Jeśli gracz jest inicjatorem, to musi być zawsze player
                 if hasattr(self, 'is_connection_initiator'):
                     if self.is_connection_initiator and role != "player":
                         if self.logger:
@@ -405,23 +370,21 @@ class GameScene(QGraphicsScene):
                         if self.logger:
                             self.logger.log(f"GameScene: Odrzucono próbę zmiany roli z enemy na {role} dla odbiorcy")
                         return
-                
+
                 self.multiplayer_role = role
                 if self.logger:
                     self.logger.log(f"GameScene: Ustawiono rolę multiplayer: {self.multiplayer_role}")
             else:
                 if self.logger:
                     self.logger.log(f"GameScene: Otrzymano nieprawidłową rolę: {role}")
-        # Dodanie obsługi synchronizacji punktów z innym urządzeniem
         elif parts[0] == "sync_cell" and len(parts) >= 4:
             try:
                 cell_index = int(parts[1])
                 cell_type = parts[2]
                 cell_points = int(parts[3])
-                
+
                 if 0 <= cell_index < len(self.cells):
                     cell = self.cells[cell_index]
-                    # Aktualizujemy tylko komórki które nie są przechwycone
                     if cell.cell_type == "neutral" or cell.cell_type == cell_type:
                         cell.cell_type = cell_type
                         cell.points = cell_points
@@ -432,42 +395,37 @@ class GameScene(QGraphicsScene):
             except Exception as e:
                 if self.logger:
                     self.logger.log(f"GameScene: Błąd synchronizacji komórki: {e}")
-        # Dodajemy obsługę usuwania mostów przez sieć
         elif parts[0] == "remove_bridge" and len(parts) >= 5:
             try:
                 source_x = float(parts[1])
                 source_y = float(parts[2])
                 target_x = float(parts[3])
                 target_y = float(parts[4])
-                
-                # Znajdź most do usunięcia
+
                 for conn in list(self.connections):
                     sx, sy = conn.source_cell.x, conn.source_cell.y
                     tx, ty = conn.target_cell.x, conn.target_cell.y
-                    
-                    # Sprawdź obie orientacje mostu (A->B lub B->A)
-                    if ((abs(sx - source_x) < 10 and abs(sy - source_y) < 10 and 
+
+                    if ((abs(sx - source_x) < 10 and abs(sy - source_y) < 10 and
                          abs(tx - target_x) < 10 and abs(ty - target_y) < 10) or
-                        (abs(sx - target_x) < 10 and abs(sy - target_y) < 10 and 
+                        (abs(sx - target_x) < 10 and abs(sy - target_y) < 10 and
                          abs(tx - source_x) < 10 and abs(ty - source_y) < 10)):
-                        
-                        # Usuń most z list
+
                         if conn in conn.source_cell.connections:
                             conn.source_cell.connections.remove(conn)
                         if conn in conn.target_cell.connections:
                             conn.target_cell.connections.remove(conn)
                         self.connections.remove(conn)
-                        
-                        # Zapisz informację o usunięciu mostu w historii
+
                         self.move_history.append({
                             "timestamp": time.time(),
                             "description": f"Usunięto most między ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) a ({conn.target_cell.x:.0f}, {conn.target_cell.y:.0f})"
                         })
-                        
+
                         if self.logger:
                             self.logger.log(f"GameScene: Usunięto most przez komunikat sieciowy między ({source_x},{source_y}) a ({target_x},{target_y})")
                         break
-                
+
             except Exception as e:
                 if self.logger:
                     self.logger.log(f"GameScene: Błąd przetwarzania wiadomości remove_bridge: {e}")
@@ -499,7 +457,7 @@ class GameScene(QGraphicsScene):
                     conn.dots[i] += 0.016
                     if conn.dots[i] >= 1.0:
                         if conn.connection_type == conn.target_cell.cell_type:
-                            if conn.target_cell.points < config.MAX_CELL_POINTS:  # Sprawdzenie limitu punktów
+                            if conn.target_cell.points < config.MAX_CELL_POINTS:                              
                                 conn.target_cell.points += 1
                         else:
                             conn.target_cell.points -= 1
@@ -593,7 +551,6 @@ class GameScene(QGraphicsScene):
             if cell == self.drag_start_cell:
                 continue
 
-            # Sprawdzamy czy istnieje już połączenie tego samego typu co drag_start_cell
             exists = any(
                 (((conn.source_cell == self.drag_start_cell and conn.target_cell == cell) or
                   (conn.source_cell == cell and conn.target_cell == self.drag_start_cell))
@@ -615,19 +572,16 @@ class GameScene(QGraphicsScene):
         self.update()
 
     def mousePressEvent(self, event):
-        # Prawidłowe mapowanie przycisków w trybie sieciowym
         if hasattr(self, 'is_multiplayer') and self.is_multiplayer:
             if self.multiplayer_role == "player":
-                actual_button = Qt.LeftButton  # Gracz zawsze używa lewego przycisku
-            else:  # gdy multiplayer_role == "enemy"
-                actual_button = Qt.RightButton  # Przeciwnik zawsze używa prawego przycisku
+                actual_button = Qt.LeftButton                                       
+            else:                                   
+                actual_button = Qt.RightButton                                             
         else:
             actual_button = event.button()
 
-        # Jeżeli tryb turowy i multiplayer – wykonywanie ruchu tylko w odpowiedniej turze
         if hasattr(self, 'is_multiplayer') and self.is_multiplayer:
             if self.turn_based_mode and self.current_turn != self.multiplayer_role:
-                # Dodatkowy log dla lepszego debugowania
                 if self.logger:
                     self.logger.log(f"GameScene: Tura zablokowana - teraz {self.current_turn}, twoja rola {self.multiplayer_role}")
                 event.ignore()
@@ -637,9 +591,8 @@ class GameScene(QGraphicsScene):
             event.accept()
             return
 
-        # Sprawdzenie czy w trybie turowym odpowiedni gracz wykonuje ruch
         if self.turn_based_mode:
-            if (actual_button == Qt.LeftButton and self.current_turn != "player") or \
+            if (actual_button == Qt.LeftButton and self.current_turn != "player") or\
                (actual_button == Qt.RightButton and self.current_turn != "enemy"):
                 if self.logger:
                     self.logger.log(f"GameScene: Teraz tura {self.current_turn}, nie można wykonać ruchu.")
@@ -799,7 +752,6 @@ class GameScene(QGraphicsScene):
                 self.calculate_reachable_cells()
             else:
                 self.drag_start_cell = None
-        # Dodajemy obsługę prawego przycisku myszy dla trybu 2 graczy (nie single_player)
         elif actual_button == Qt.RightButton and not self.single_player:
             if isinstance(clicked_item, CellUnit) and clicked_item.cell_type == "enemy":
                 self.drag_start_cell = clicked_item
@@ -822,19 +774,16 @@ class GameScene(QGraphicsScene):
             self.drag_current_pos = event.scenePos()
             self.update()
         else:
-            # Znajdź most pod kursorem do podświetlenia
-            # (Zawsze sprawdzaj, nawet jeśli nie wciskamy przycisku)
             P = event.scenePos()
             old_hover_connection = self.hover_connection
             self.hover_connection = None
-            
-            # Znajdź najbliższy most pod kursorem
-            min_distance = 15.0  # Zwiększony próg wykrywania z 5 na 15 pikseli
+
+            min_distance = 15.0                                                
             for conn in self.connections:
-                if (self.turn_based_mode and self.current_turn != conn.connection_type and 
+                if (self.turn_based_mode and self.current_turn != conn.connection_type and
                     hasattr(self, 'is_multiplayer') and self.is_multiplayer):
-                    continue  # Pomijamy mosty, których nie możemy usunąć w trybie sieciowym
-                
+                    continue                                                                
+
                 A = QPointF(conn.source_cell.x, conn.source_cell.y)
                 B = QPointF(conn.target_cell.x, conn.target_cell.y)
                 AB = QPointF(B.x() - A.x(), B.y() - A.y())
@@ -842,54 +791,46 @@ class GameScene(QGraphicsScene):
                 ab2 = AB.x() ** 2 + AB.y() ** 2
                 if ab2 == 0:
                     continue
-                
+
                 t = (AP.x() * AB.x() + AP.y() * AB.y()) / ab2
                 if t < 0 or t > 1:
                     continue
-                    
+
                 Qx = A.x() + t * AB.x()
                 Qy = A.y() + t * AB.y()
                 dist = math.hypot(P.x() - Qx, P.y() - Qy)
-                
+
                 if dist < min_distance:
                     min_distance = dist
                     self.hover_connection = conn
-            
-            # Aktualizuj widok, jeśli zmienił się podświetlony most
+
             if old_hover_connection != self.hover_connection:
                 self.update()
-            
+
             buttons = event.buttons()
-            # Sprawdź, czy usuwamy most poprzez przeciągnięcie
             if buttons & Qt.LeftButton or buttons & Qt.RightButton:
                 if buttons & Qt.RightButton and self.single_player:
                     return super().mouseMoveEvent(event)
-                    
-                # W trybie sieciowym, pozwalamy na usuwanie mostów lewym i prawym przyciskiem
+
                 if hasattr(self, 'is_multiplayer') and self.is_multiplayer:
-                    # Sprawdzamy tylko czy typ mostu zgadza się z rolą gracza
                     connection_filter = self.multiplayer_role
                 else:
-                    # W trybie lokalnym, zachowujemy oryginalne zachowanie
                     if buttons & Qt.LeftButton:
                         connection_filter = "player"
                     elif buttons & Qt.RightButton:
                         connection_filter = "enemy"
                     else:
                         return super().mouseMoveEvent(event)
-                
-                # Używamy już znalezionego mostu pod kursorem
+
                 if self.hover_connection and self.hover_connection.connection_type == connection_filter:
                     conn = self.hover_connection
-                    
-                    # Dodatkowe sprawdzenie dla trybu sieciowego
-                    if (hasattr(self, 'is_multiplayer') and self.is_multiplayer and 
+
+                    if (hasattr(self, 'is_multiplayer') and self.is_multiplayer and
                         self.turn_based_mode and conn.connection_type != self.multiplayer_role):
                         if self.logger:
                             self.logger.log(f"Nie można usunąć mostu w turze przeciwnika")
                         return super().mouseMoveEvent(event)
-                    
-                    # Może być potrzebne do obliczenia podziału punktów
+
                     P = event.scenePos()
                     A = QPointF(conn.source_cell.x, conn.source_cell.y)
                     B = QPointF(conn.target_cell.x, conn.target_cell.y)
@@ -899,27 +840,23 @@ class GameScene(QGraphicsScene):
                     t = (AP.x() * AB.x() + AP.y() * AB.y()) / ab2
                     if t < 0: t = 0
                     if t > 1: t = 1
-                    
-                    # Zapisz informację o usunięciu mostu
+
                     self.move_history.append({
                         "timestamp": time.time(),
                         "description": f"Usunięto most między ({conn.source_cell.x:.0f}, {conn.source_cell.y:.0f}) a ({conn.target_cell.x:.0f}, {conn.target_cell.y:.0f})"
                     })
-                    
-                    # Usuń most z list
+
                     if conn in self.connections:
                         self.connections.remove(conn)
                     if conn in conn.source_cell.connections:
                         conn.source_cell.connections.remove(conn)
                     if conn in conn.target_cell.connections:
                         conn.target_cell.connections.remove(conn)
-                    
-                    # Oblicz zwrot punktów
+
                     cost = getattr(conn, "cost", 0)
                     source_points = round(t * cost)
                     target_points = cost - source_points
-                    
-                    # Zwróć punkty odpowiednio komórkom
+
                     if conn.connection_type == "player":
                         if conn.target_cell.cell_type != "player":
                             conn.source_cell.points += source_points
@@ -940,39 +877,34 @@ class GameScene(QGraphicsScene):
                         else:
                             conn.source_cell.points = min(conn.source_cell.points + source_points, config.MAX_CELL_POINTS)
                             conn.target_cell.points = min(conn.target_cell.points + target_points, config.MAX_CELL_POINTS)
-                    
+
                     conn.source_cell.strength = (conn.source_cell.points // config.POINTS_PER_STRENGTH) + 1
                     conn.target_cell.strength = (conn.target_cell.points // config.POINTS_PER_STRENGTH) + 1
                     conn.source_cell.update()
                     conn.target_cell.update()
-                    
-                    # Wyślij informację o usunięciu mostu przez sieć
+
                     if hasattr(self, "network_send_callback") and self.network_send_callback:
                         msg = f"remove_bridge;{conn.source_cell.x};{conn.source_cell.y};{conn.target_cell.x};{conn.target_cell.y}"
                         self.network_send_callback(msg)
                         if self.logger:
                             self.logger.log(f"GameScene: Wysłano informację o usunięciu mostu: {msg}")
-                    
-                    # W trybie turowym przełączamy turę po usunięciu mostu
+
                     if self.turn_based_mode:
                         self.switch_turn()
-                    
-                    # Aktulizuj aktualnie wskazywany most, bo usunęliśmy właśnie ten
+
                     self.hover_connection = None
-        
+
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        # Prawidłowe mapowanie przycisków w trybie sieciowym
         if hasattr(self, 'is_multiplayer') and self.is_multiplayer:
             if self.multiplayer_role == "player":
                 actual_button = Qt.LeftButton
-            else:  # gdy multiplayer_role == "enemy"
+            else:                                   
                 actual_button = Qt.RightButton
         else:
             actual_button = event.button()
 
-        # Jeśli tryb turowy multiplayer – wykonywanie ruchu tylko, gdy tura zgadza się z lokalną rolą
         if hasattr(self, 'is_multiplayer') and self.is_multiplayer:
             if self.turn_based_mode and self.current_turn != self.multiplayer_role:
                 if self.logger:
@@ -996,16 +928,15 @@ class GameScene(QGraphicsScene):
             return
 
         release_item = self.itemAt(event.scenePos(), QTransform())
-        
-        # Sprawdzenie czy w trybie turowym odpowiedni gracz wykonuje ruch
+
         if self.turn_based_mode:
-            if (actual_button == Qt.LeftButton and self.current_turn != "player") or \
+            if (actual_button == Qt.LeftButton and self.current_turn != "player") or\
                (actual_button == Qt.RightButton and self.current_turn != "enemy"):
                 self.drag_start_cell = None
                 self.drag_current_pos = None
                 self.update()
                 return
-            
+
         if actual_button == Qt.LeftButton:
             if isinstance(release_item, CellUnit) and release_item != self.drag_start_cell:
                 dx = release_item.x - self.drag_start_cell.x
@@ -1021,11 +952,9 @@ class GameScene(QGraphicsScene):
                         self.drag_start_cell.strength = (self.drag_start_cell.points // config.POINTS_PER_STRENGTH) + 1
                         self.drag_start_cell.update()
                         new_conn = self.create_connection(self.drag_start_cell, release_item, "player", cost)
-                        
-                        # Przełączamy turę tylko jeśli most został faktycznie utworzony
+
                         if self.turn_based_mode and new_conn is not None:
-                            self.switch_turn()  # natychmiastowe przełączenie tury po wykonanym ruchu
-        # Dodanie obsługi prawego przycisku myszy dla komórek przeciwnika
+                            self.switch_turn()                                                       
         elif actual_button == Qt.RightButton and not self.single_player:
             if isinstance(release_item, CellUnit) and release_item != self.drag_start_cell:
                 dx = release_item.x - self.drag_start_cell.x
@@ -1041,11 +970,10 @@ class GameScene(QGraphicsScene):
                         self.drag_start_cell.strength = (self.drag_start_cell.points // config.POINTS_PER_STRENGTH) + 1
                         self.drag_start_cell.update()
                         new_conn = self.create_connection(self.drag_start_cell, release_item, "enemy", cost)
-                        
-                        # Przełączamy turę tylko jeśli most został faktycznie utworzony
+
                         if self.turn_based_mode and new_conn is not None:
                             self.switch_turn()
-                        
+
         self.drag_start_cell = None
         self.drag_current_pos = None
         self.update()
@@ -1086,19 +1014,16 @@ class GameScene(QGraphicsScene):
             "timestamp": time.time(),
             "description": f"Status po ogłoszeniu wyniku: {final_status}"
         })
-        
-        # Dodajemy synchronizację końcowego stanu gry w trybie multiplayer
+
         if hasattr(self, 'is_multiplayer') and self.is_multiplayer and hasattr(self, "network_send_callback"):
-            # Wysyłamy specjalną wiadomość informującą o końcu gry i zwycięzcy
             winner = "player" if victory and self.multiplayer_role == "player" else "enemy"
             self.network_send_callback(f"game_over;{winner}")
-            
-            # Wysyłamy ostateczny stan gry
+
             self.send_game_state_snapshot()
-            
+
             if self.logger:
                 self.logger.log(f"GameScene: Wysłano informację o zakończeniu gry, zwycięzca: {winner}")
-        
+
         self.save_game_history()
         QTimer.singleShot(2000, self.show_return_button)
 
@@ -1152,7 +1077,6 @@ class GameScene(QGraphicsScene):
         })
 
     def drawForeground(self, painter, rect):
-        # Rysowanie informacji o turze w górnej części ekranu zawsze, gdy tryb turowy jest aktywny
         if self.turn_based_mode:
             if hasattr(self, 'is_multiplayer') and self.is_multiplayer:
                 if self.current_turn == self.multiplayer_role:
@@ -1160,14 +1084,14 @@ class GameScene(QGraphicsScene):
                 else:
                     info_text = f"Tura przeciwnika - Pozostało: {self.round_time_remaining}s"
             else:
-                text_turn = self.current_turn.upper()  # Usunięto sprawdzanie czy self.current_turn is None
+                text_turn = self.current_turn.upper()                                                      
                 info_text = f"Runda: {text_turn} - Pozostało: {self.round_time_remaining}s"
             font = QFont(config.FONT_FAMILY, config.GAME_TURN_FONT_SIZE, QFont.Bold)
             painter.setFont(font)
             painter.setPen(QPen(Qt.white))
             turn_rect = QRectF(rect.left(), rect.top(), rect.width(), 50)
             painter.drawText(turn_rect, Qt.AlignCenter, info_text)
-            
+
         if self.drag_start_cell and self.drag_current_pos:
             if self.turn_based_mode and self.drag_start_cell.cell_type != self.current_turn:
                 pass
@@ -1191,17 +1115,14 @@ class GameScene(QGraphicsScene):
         for conn in self.connections:
             source = QPointF(conn.source_cell.x, conn.source_cell.y)
             target = QPointF(conn.target_cell.x, conn.target_cell.y)
-            
-            # Podświetlenie mostu pod kursorem
+
             if conn == self.hover_connection:
-                # Rysuj grubszą, jaśniejszą linię dla podświetlonego mostu
                 if conn.connection_type == "player":
                     painter.setPen(QPen(config.COLOR_CONN_PLAYER.lighter(150), 5))
                 else:
                     painter.setPen(QPen(config.COLOR_CONN_ENEMY.lighter(150), 5))
                 painter.drawLine(source, target)
-            
-            # Normalne rysowanie mostu
+
             if hasattr(conn, 'conflict') and conn.conflict:
                 mid_point = QPointF((source.x() + target.x()) / 2, (source.y() + target.y()) / 2)
                 painter.setPen(QPen(config.COLOR_CONN_CONFLICT_LEFT, 3))
@@ -1383,44 +1304,42 @@ class GameScene(QGraphicsScene):
         """Zatrzymuje wszystkie timery aktywne w grze"""
         if self.timer:
             self.timer.stop()
-            
+
         if self.points_timer:
             self.points_timer.stop()
-        
+
         if hasattr(self, 'turn_timer') and self.turn_timer:
             self.turn_timer.stop()
             try:
                 self.turn_timer.timeout.disconnect()
             except (TypeError, RuntimeError):
-                pass  # Ignoruj błąd jeśli nie ma podłączonych sygnałów
-                
+                pass                                                   
+
         if self.enemy_timer:
             self.enemy_timer.stop()
             try:
                 self.enemy_timer.timeout.disconnect()
             except (TypeError, RuntimeError):
                 pass
-                
+
         if self.hint_timer:
             self.hint_timer.stop()
             try:
                 self.hint_timer.timeout.disconnect()
             except (TypeError, RuntimeError):
                 pass
-                
+
         if self.logger:
             self.logger.log("GameScene: Wszystkie timery zatrzymane.")
 
-        # Zachowujemy tekst z rolą - dodajemy sprawdzenie czy istnieje w scenie
         if hasattr(self, 'role_info') and self.role_info and self.role_info.scene() == self:
-            # Upewniamy się, że tekst z rolą jest na wierzchu
-            self.role_info.setZValue(1000)  # Wysoki Z-index zapewnia wyświetlanie na wierzchu
-            
+            self.role_info.setZValue(1000)                                                    
+
     def keyPressEvent(self, event):
         if event.key() == config.KEY_ESCAPE:
             if self.logger:
                 self.logger.log("GameScene: Gracz przerwał rozgrywkę.")
-            self.stop_all_timers()  # Użyj nowej metody zamiast zatrzymywać tylko wybrane timery
+            self.stop_all_timers()                                                              
 
             if self.views() and self.views()[0].parent():
                 self.views()[0].parent().show_menu()
@@ -1486,57 +1405,47 @@ class GameScene(QGraphicsScene):
     def start_turn_timer(self):
         """Restartuje timer dla trybu turowego"""
         try:
-            # W trybie multiplayer pierwsza tura zależy od roli gracza
             if hasattr(self, 'is_multiplayer') and self.is_multiplayer:
-                # Definiujemy wspólną zasadę - zawsze zaczyna gracz "player"
                 self.current_turn = "player"
-                
-                # Zapewniamy że tylko jedna osoba ma rolę "player" a druga "enemy"
+
                 if hasattr(self, 'is_connection_initiator'):
                     if self.is_connection_initiator:
-                        # Inicjator jest zawsze "player"
                         self.multiplayer_role = "player"
                         if self.logger:
                             self.logger.log(f"GameScene: [Multiplayer] Jesteś inicjatorem - grasz jako 'player' - zaczynasz turę")
                     else:
-                        # Odbiorca jest zawsze "enemy"
                         self.multiplayer_role = "enemy"
                         if self.logger:
                             self.logger.log(f"GameScene: [Multiplayer] Jesteś odbiorcą - grasz jako 'enemy' - czekasz na swoją turę")
-                
+
                 if self.logger:
                     self.logger.log(f"GameScene: [Multiplayer] Inicjalizacja tury jako {self.current_turn} dla roli {self.multiplayer_role}")
             else:
-                # W trybie lokalnym zawsze zaczynamy od gracza
                 self.current_turn = "player"
-            
+
             self.round_time_remaining = self.turn_duration
-            
-            # Całkowicie zatrzymujemy i rozłączamy timer przed ponownym użyciem
+
             if self.turn_timer:
                 self.turn_timer.stop()
                 try:
                     self.turn_timer.timeout.disconnect()
                 except (TypeError, RuntimeError):
-                    # Ignorujemy błąd jeśli nie ma podłączonych sygnałów
                     if self.logger:
                         self.logger.log("GameScene: Brak podłączonych sygnałów do rozłączenia")
                     pass
-            
-            # Podłączamy funkcję i uruchamiamy timer z odpowiednim interwałem
+
             self.turn_timer.timeout.connect(self.update_turn_timer)
-            self.turn_timer.start(1000)  # Aktualizacja co 1 sekundę
-            
+            self.turn_timer.start(1000)                             
+
             if self.logger:
                 self.logger.log(f"GameScene: Start timera tury, bieżąca tura: {self.current_turn}, czas: {self.round_time_remaining}s.")
-            
+
             self.update()
-            
+
         except Exception as e:
             if self.logger:
                 self.logger.log(f"GameScene: Błąd podczas uruchamiania timera tury: {str(e)}")
-                
-            # Awaryjne uruchomienie timera
+
             try:
                 if hasattr(self, 'turn_timer') and self.turn_timer:
                     self.turn_timer.stop()
@@ -1549,100 +1458,78 @@ class GameScene(QGraphicsScene):
                     self.logger.log(f"GameScene: Krytyczny błąd timera: {str(e2)}")
 
     def update_turn_timer(self):
-        # Odliczanie czasu tury
         if self.round_time_remaining > 0:
             self.round_time_remaining -= 1
-            
-            # W trybie sieciowym wysyłamy aktualizacje czasu gdy jest nasza tura
+
             if hasattr(self, 'is_multiplayer') and self.is_multiplayer and self.turn_based_mode:
                 if self.current_turn == self.multiplayer_role and hasattr(self, "network_send_callback"):
-                    # Zwiększamy częstotliwość aktualizacji czasu dla lepszej synchronizacji
-                    # Wysyłamy aktualizację czasu co sekundę, zamiast co dwie sekundy
                     self.network_send_callback(f"update_turn_time;{self.round_time_remaining}")
-                        
-                    # Wysyłamy pełny snapshot częściej - co 3 sekundy zamiast co 5
+
                     if self.round_time_remaining % 3 == 0:
                         self.send_game_state_snapshot()
-            
-        # KLUCZOWA ZMIANA - osobno obsługujemy przypadek gdy czas się skończył
+
         if self.round_time_remaining <= 0:
             if self.logger:
                 self.logger.log(f"GameScene: Koniec czasu tury dla {self.current_turn}")
-            
-            # Zabezpieczenie przed utknięciem - wymuszamy wartość minimalną 0
+
             self.round_time_remaining = 0
-            
-            # Przełączamy turę tylko jeśli to nasza tura (ważne dla multiplayer)
+
             if hasattr(self, 'is_multiplayer') and self.is_multiplayer:
                 if self.current_turn == self.multiplayer_role:
                     if self.logger:
                         self.logger.log("GameScene: Przełączanie tury po końcu czasu (multiplayer)")
-                    self.switch_turn()  # jeśli to nasza tura, przełączamy
+                    self.switch_turn()                                    
             else:
-                # W trybie lokalnym zawsze przełączamy
                 self.switch_turn()
-        
+
         self.update()
 
     def switch_turn(self):
-        # Zatrzymujemy i rozłączamy timer przed ponownym użyciem
         self.turn_timer.stop()
-        
+
         try:
             self.turn_timer.timeout.disconnect()
         except TypeError:
-            # Ignorujemy błąd jeśli nie ma podłączonych sygnałów
             pass
-        
-        # W trybie multiplayer:
+
         if hasattr(self, 'is_multiplayer') and self.is_multiplayer and self.turn_based_mode:
             if self.current_turn == self.multiplayer_role:
-                # Zmiana tury na przeciwnika - przestajemy być aktywni
                 opposite_role = "player" if self.multiplayer_role == "enemy" else "enemy"
                 self.current_turn = opposite_role
-                
+
                 if self.logger:
                     self.logger.log(f"GameScene: [Multiplayer] Zmiana tury z {self.multiplayer_role} na {opposite_role}")
-                    
-                # Reset czasu tury do pełnej wartości
+
                 self.round_time_remaining = self.turn_duration
-                
-                # Wysyłamy komunikat do przeciwnika o przełączeniu tury
+
                 if hasattr(self, "network_send_callback") and self.network_send_callback:
-                    # Wysyłamy komunikat o przełączeniu tury
                     self.network_send_callback("switch_turn")
-                    
-                    # Wysyłamy pełny snapshot stanu gry
+
                     self.send_game_state_snapshot()
-                    
+
                     if self.logger:
                         self.logger.log("GameScene: Wysłano żądanie przełączenia tury i synchronizację stanu")
             else:
                 if self.logger:
                     self.logger.log(f"GameScene: Próbowano przełączyć turę gdy nie jest aktywna - ignoruję")
         else:
-            # Standardowa zmiana tury dla trybu lokalnego
             if self.current_turn == "player":
                 self.current_turn = "enemy"
-                # W trybie jednego gracza uruchamiamy timer AI gdy tura przeciwnika
                 if self.single_player and self.enemy_timer:
                     self.enemy_timer.start(3000)
             else:
                 self.current_turn = "player"
-                # W trybie jednego gracza zatrzymujemy timer AI gdy tura gracza
                 if self.single_player and self.enemy_timer:
                     self.enemy_timer.stop()
-                    
-            # Reset czasu tury
+
             self.round_time_remaining = self.turn_duration
-            
+
             if self.logger:
                 self.logger.log(f"GameScene: Zmiana tury, teraz: {self.current_turn}, czas: {self.round_time_remaining}s.")
-        
-        # Ponowne uruchomienie timera po zmianie tury
+
         self.turn_timer.timeout.connect(self.update_turn_timer)
         self.turn_timer.start(1000)
-        
+
         self.update()
 
     def start_enemy_timer(self):
@@ -1651,8 +1538,7 @@ class GameScene(QGraphicsScene):
             self.enemy_timer.stop()
         self.enemy_timer = QTimer()
         self.enemy_timer.timeout.connect(self.enemy_move)
-        
-        # W trybie turowym uruchamiamy timer tylko gdy tura jest przeciwnika
+
         if not self.turn_based_mode or (self.turn_based_mode and self.current_turn == "enemy"):
             self.enemy_timer.start(3000)
 
@@ -1660,11 +1546,10 @@ class GameScene(QGraphicsScene):
         """Metoda wykonująca ruch przeciwnika przy użyciu AI"""
         if not self.single_player:
             return
-            
-        # W trybie turowym sprawdzamy, czy aktualna tura jest przeciwnika
+
         if self.turn_based_mode and self.current_turn != "enemy":
             return
-            
+
         best_move = self.game_ai.analyze_best_move(cell_type="enemy")
         if best_move:
             source, target, cost = best_move
@@ -1672,13 +1557,12 @@ class GameScene(QGraphicsScene):
                 source.points -= cost
                 source.strength = (source.points // config.POINTS_PER_STRENGTH) + 1
                 new_conn = self.create_connection(source, target, "enemy", cost)
-                
-                # Jeśli jesteśmy w trybie turowym, przełączamy turę po wykonaniu ruchu
+
                 if self.turn_based_mode and new_conn is not None:
                     if self.enemy_timer:
-                        self.enemy_timer.stop()  # Zatrzymujemy timer przeciwnika żeby nie wykonał więcej ruchów
-                    self.switch_turn()  # Przełączamy turę na gracza
-                    
+                        self.enemy_timer.stop()                                                                 
+                    self.switch_turn()                              
+
         self.update()
 
     def quicksave(self):
@@ -1826,7 +1710,7 @@ class GameScene(QGraphicsScene):
                     "target_index": self.cells.index(conn.target_cell),
                     "type": conn.connection_type,
                     "cost": getattr(conn, "cost", 0),
-                    "dots": conn.dots  # Dodajemy informacje o kropkach na moście
+                    "dots": conn.dots                                            
                 } for conn in self.connections
             ],
             "current_turn": self.current_turn,
@@ -1840,22 +1724,18 @@ class GameScene(QGraphicsScene):
         """
         if not hasattr(self, "network_send_callback") or not self.network_send_callback:
             return
-        
+
         try:
             snapshot = self.create_game_state_snapshot()
-            # Konwertujemy snapshot do formatu JSON
-            import json
             snapshot_json = json.dumps(snapshot)
-            
-            # Wysyłamy snapshot w częściach, jeśli jest duży
+
             if len(snapshot_json) > 1000:
                 chunks = [snapshot_json[i:i+1000] for i in range(0, len(snapshot_json), 1000)]
                 for i, chunk in enumerate(chunks):
-                    # Wysyłamy fragmenty z informacją o numeracji
                     self.network_send_callback(f"snapshot_part;{i+1};{len(chunks)};{chunk}")
             else:
                 self.network_send_callback(f"snapshot_full;{snapshot_json}")
-                
+
             if self.logger:
                 self.logger.log(f"GameScene: Wysłano snapshot stanu gry o rozmiarze {len(snapshot_json)}")
         except Exception as e:
@@ -1867,7 +1747,6 @@ class GameScene(QGraphicsScene):
         Stosuje otrzymany snapshot stanu gry
         """
         try:
-            # Synchronizujemy komórki
             for cell_data in snapshot.get("cells", []):
                 idx = cell_data.get("index", -1)
                 if 0 <= idx < len(self.cells):
@@ -1877,70 +1756,62 @@ class GameScene(QGraphicsScene):
                     cell.frozen = cell_data.get("frozen", False)
                     cell.strength = (cell.points // config.POINTS_PER_STRENGTH) + 1
                     cell.update()
-            
-            # Synchronizujemy połączenia - usuwamy te, których nie ma w snapshocie
+
             connection_pairs = []
             for conn_data in snapshot.get("connections", []):
                 source_idx = conn_data.get("source_index", -1)
                 target_idx = conn_data.get("target_index", -1)
                 if 0 <= source_idx < len(self.cells) and 0 <= target_idx < len(self.cells):
                     connection_pairs.append((source_idx, target_idx))
-            
-            # Usuwamy nieaktualne połączenia
+
             for conn in list(self.connections):
                 source_idx = self.cells.index(conn.source_cell)
                 target_idx = self.cells.index(conn.target_cell)
-                
+
                 if (source_idx, target_idx) not in connection_pairs and (target_idx, source_idx) not in connection_pairs:
                     if conn in conn.source_cell.connections:
                         conn.source_cell.connections.remove(conn)
                     if conn in conn.target_cell.connections:
                         conn.target_cell.connections.remove(conn)
                     self.connections.remove(conn)
-            
-            # Dodajemy nowe połączenia
+
             for conn_data in snapshot.get("connections", []):
                 source_idx = conn_data.get("source_index", -1)
                 target_idx = conn_data.get("target_index", -1)
                 conn_type = conn_data.get("type", "neutral")
                 cost = conn_data.get("cost", 0)
                 dots = conn_data.get("dots", [])
-                
+
                 if 0 <= source_idx < len(self.cells) and 0 <= target_idx < len(self.cells):
                     source = self.cells[source_idx]
                     target = self.cells[target_idx]
-                    
-                    # Sprawdzamy czy połączenie już istnieje
+
                     existing_conn = None
                     for conn in self.connections:
-                        if ((conn.source_cell == source and conn.target_cell == target) or 
+                        if ((conn.source_cell == source and conn.target_cell == target) or
                             (conn.source_cell == target and conn.target_cell == source)) and conn.connection_type == conn_type:
                             existing_conn = conn
                             break
-                    
-                    # Jeśli istnieje, aktualizujemy stan kropek
+
                     if existing_conn:
                         existing_conn.dots = dots
-                    # Jeśli nie istnieje, tworzymy nowe
                     else:
-                        source._skip_network = True  # Oznaczamy, by uniknąć wysłania wiadomości
+                        source._skip_network = True                                             
                         try:
                             connection = self.create_connection(source, target, conn_type)
                             connection.cost = cost
-                            connection.dots = dots  # Ustawiamy kropki na moście
+                            connection.dots = dots                              
                         finally:
                             delattr(source, '_skip_network')
-            
-            # Aktualizujemy stan tury i czas
+
             if "current_turn" in snapshot:
                 self.current_turn = snapshot.get("current_turn")
             if "round_time_remaining" in snapshot:
                 self.round_time_remaining = snapshot.get("round_time_remaining")
-                
+
             if self.logger:
                 self.logger.log("GameScene: Zastosowano snapshot stanu gry")
-                
-            # Wymuszamy aktualizację UI
+
             self.update()
         except Exception as e:
             if self.logger:
@@ -1948,23 +1819,21 @@ class GameScene(QGraphicsScene):
 
     def save_game_history(self):
         """Zapisuje historię gry do plików i MongoDB"""
-        # Ta metoda wykonuje zapis historii, który jest duplikowany w metodzie game_over
-        # i w obsłudze wiadomości game_over
         if self.move_history and "timestamp" in self.move_history[0]:
             timestamp = datetime.datetime.fromtimestamp(self.move_history[0]["timestamp"]).strftime("%Y%m%d_%H%M%S")
         else:
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         replays_dir = "replays"
         if not os.path.exists(replays_dir):
             os.makedirs(replays_dir)
-            
+
         xml_filename = os.path.join(replays_dir, f"replay_level{self.current_level}_{timestamp}.xml")
         json_filename = os.path.join(replays_dir, f"replay_level{self.current_level}_{timestamp}.json")
-        
+
         game_history.save_game_history(self, xml_filename)
         game_history.save_game_history_json(self, json_filename)
         mongodb_id = game_history.save_game_history_mongodb(self)
-        
+
         if self.logger:
             self.logger.log(f"Replay zapisany do MongoDB z id: {mongodb_id}")
