@@ -2,6 +2,24 @@ import os, sys, glob
 import cv2
 import numpy as np
 from PIL import Image
+from icrawler.builtin import GoogleImageCrawler
+
+def analyze_images(paths):
+    """Prosta analiza: liczba i wymiary obrazów."""
+    print(f"[ANALYSIS] Pobrano {len(paths)} obrazów:")
+    for p in paths:
+        try:
+            im = Image.open(p)
+            print(f"  {os.path.basename(p)} – {im.size[0]}x{im.size[1]}")
+        except:
+            print(f"  [ERROR] nie można odczytać {p}")
+
+def fetch_images(query, out_dir, num=10):
+    """Pobiera num obrazów z Google Images korzystając z icrawler."""
+    crawler = GoogleImageCrawler(storage={'root_dir': out_dir})
+    crawler.crawl(keyword=query, max_num=num)
+    # zwróć listę pobranych plików
+    return [os.path.join(out_dir, f) for f in os.listdir(out_dir) if os.path.isfile(os.path.join(out_dir, f))]
 
 def process_image(path, out_dir, size=(256,256)):
     # wczytanie przez PIL (usuwa ICC profile)
@@ -101,19 +119,31 @@ def process_image(path, out_dir, size=(256,256)):
     Image.fromarray(rgba_pil).save(os.path.join(out_dir, name))
 
 def main():
-    if len(sys.argv) < 2:
-        print("Użycie: python main.py <katalog_z_obrazami>")
-        return
-    src = sys.argv[1]
-    out = os.path.join(src, "processed")
-    os.makedirs(out, exist_ok=True)
-    # tylko pliki regularne
-    files = [f for f in glob.glob(os.path.join(src, "*.*")) if os.path.isfile(f)]
-    for f in files:
-        try:
-            process_image(f, out)
-        except Exception as e:
-            print(f"[ERROR] podczas przetwarzania {f}: {e}")
+     if len(sys.argv) < 2:
+         print("Użycie: python main.py <katalog_z_obrazami> lub google:<zapytanie>")
+         return
+     arg = sys.argv[1]
+     if arg.startswith("google:"):
+         query = arg.split(":",1)[1]
+         raw_dir = os.path.join(os.getcwd(), f"google_{query.replace(' ','_')}_raw")
+         os.makedirs(raw_dir, exist_ok=True)
+         print(f"[INFO] Pobieranie 10 obrazów dla zapytania '{query}' …")
+         paths = fetch_images(query, raw_dir, 10)
+         if not paths:
+             print(f"[ERROR] Nie pobrano żadnych obrazów dla zapytania '{query}' – zakończenie.")
+             return
+         analyze_images(paths)
+         src = raw_dir
+     else:
+         src = arg
+     out = os.path.join(src, "processed")
+     os.makedirs(out, exist_ok=True)
+     files = [f for f in glob.glob(os.path.join(src, "*.*")) if os.path.isfile(f)]
+     for f in files:
+         try:
+             process_image(f, out)
+         except Exception as e:
+             print(f"[ERROR] podczas przetwarzania {f}: {e}")
 
 if __name__ == "__main__":
     main()
