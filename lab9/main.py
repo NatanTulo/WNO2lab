@@ -1,0 +1,109 @@
+import os, sys, glob
+import cv2
+import numpy as np
+from PIL import Image
+
+def process_image(path, out_dir, size=(256,256)):
+    # wczytanie przez PIL (usuwa ICC profile)
+    try:
+        pil_img = Image.open(path).convert('RGBA')
+    except Exception as e:
+        print(f"[WARNING] {path}: błąd PIL.open – {e}")
+        return
+    data = np.array(pil_img)
+    img = data[..., [2,1,0,3]]  # RGBA->BGRA
+
+    # tworzenie maski: jeśli obraz ma przezroczyste tło, użyj kan. alfa, w przeciwnym razie Otsu
+    alpha_chan = img[...,3]
+    if (alpha_chan < 255).any():
+        mask_full = (alpha_chan > 0).astype(np.uint8) * 255
+    else:
+        gray = cv2.cvtColor(img[..., :3], cv2.COLOR_BGR2GRAY)
+        # Otsu + skalowanie progu, by zmniejszyć agresywność
+        ret, _ = cv2.threshold(gray, 0, 255, cv2.THRESH_OTSU)
+        thr = ret * 1.4
+        _, mask_full = cv2.threshold(gray, thr, 255, cv2.THRESH_BINARY_INV)
+    cnts, _ = cv2.findContours(mask_full, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not cnts:
+        print(f"[WARNING] {path}: brak wykrytych konturów")
+        return
+    c = max(cnts, key=cv2.contourArea)
+    x,y,w,h = cv2.boundingRect(c)
+    obj = cv2.bitwise_and(img, img, mask=mask_full)
+    roi = obj[y:y+h, x:x+w]
+    mask_crop = mask_full[y:y+h, x:x+w]
+    rgba = cv2.cvtColor(roi[..., :3], cv2.COLOR_BGR2BGRA)
+    rgba[...,3] = mask_crop
+
+    # padding przed rotacją, aby nie obcinać treści
+    h0, w0 = rgba.shape[:2]
+    diag = int(np.ceil(np.sqrt(h0*h0 + w0*w0)))
+    pad_v = (diag - h0) // 2
+    pad_h = (diag - w0) // 2
+    rgba = cv2.copyMakeBorder(rgba,
+                              pad_v, diag - h0 - pad_v,
+                              pad_h, diag - w0 - pad_h,
+                              cv2.BORDER_CONSTANT, value=(0,0,0,0))
+    mask_crop = cv2.copyMakeBorder(mask_crop,
+                                   pad_v, diag - h0 - pad_v,
+                                   pad_h, diag - w0 - pad_h,
+                                   cv2.BORDER_CONSTANT, value=0)
+
+    # obrót optymalny: minAreaRect, uwzględniając padding dla maksymalnej widoczności
+    c_roi = c - np.array([[x, y]], dtype=np.int32) + np.array([[pad_h, pad_v]], dtype=np.int32)
+    rect = cv2.minAreaRect(c_roi)
+    angle = rect[2]
+    w_rect, h_rect = rect[1]
+    if h_rect < w_rect:
+        angle += 90
+    center = rect[0]
+    M = cv2.getRotationMatrix2D(tuple(center), angle, 1.0)
+    h_img, w_img = rgba.shape[:2]
+    rgba = cv2.warpAffine(rgba, M, (w_img, h_img),
+                          borderMode=cv2.BORDER_CONSTANT, borderValue=(0,0,0,0))
+    mask_full = cv2.warpAffine(mask_crop, M, (w_img, h_img),
+                               flags=cv2.INTER_NEAREST)
+
+    # sprawdzenie, by 'rączka' była na dole
+    h2 = mask_full.shape[0] // 2
+    if np.count_nonzero(mask_full[h2:]) < np.count_nonzero(mask_full[:h2]):
+        rgba = cv2.flip(rgba, 0)
+        mask_full = cv2.flip(mask_full, 0)
+
+    # przycięcie z fallbackiem, gdy maska jest pusta
+    ys, xs = np.where(mask_full > 0)
+    if ys.size and xs.size:
+        y0,y1 = ys.min(), ys.max(); x0,x1 = xs.min(), xs.max()
+    else:
+        y0,y1 = 0, rgba.shape[0]-1; x0,x1 = 0, rgba.shape[1]-1
+    rgba = rgba[y0:y1+1, x0:x1+1]
+
+    # ostateczna korekta: rączka w dół po PCA (dokładne wyrównanie)
+    mask_c = rgba[...,3]
+    h2 = mask_c.shape[0] // 2
+    if np.count_nonzero(mask_c[h2:]) < np.count_nonzero(mask_c[:h2]):
+        rgba = cv2.flip(rgba, 0)
+
+    # zapis przetworzonego obrazu
+    name = os.path.splitext(os.path.basename(path))[0] + "_proc.png"
+    b,g,r,a = cv2.split(rgba)
+    rgba_pil = cv2.merge([r,g,b,a])
+    Image.fromarray(rgba_pil).save(os.path.join(out_dir, name))
+
+def main():
+    if len(sys.argv) < 2:
+        print("Użycie: python main.py <katalog_z_obrazami>")
+        return
+    src = sys.argv[1]
+    out = os.path.join(src, "processed")
+    os.makedirs(out, exist_ok=True)
+    # tylko pliki regularne
+    files = [f for f in glob.glob(os.path.join(src, "*.*")) if os.path.isfile(f)]
+    for f in files:
+        try:
+            process_image(f, out)
+        except Exception as e:
+            print(f"[ERROR] podczas przetwarzania {f}: {e}")
+
+if __name__ == "__main__":
+    main()
