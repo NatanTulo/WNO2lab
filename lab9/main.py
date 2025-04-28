@@ -19,20 +19,30 @@ def process_image(path, out_dir, size=(256,256)):
         mask_full = (alpha_chan > 0).astype(np.uint8) * 255
     else:
         gray = cv2.cvtColor(img[..., :3], cv2.COLOR_BGR2GRAY)
-        # Otsu + skalowanie progu, by zmniejszyć agresywność
-        ret, _ = cv2.threshold(gray, 0, 255, cv2.THRESH_OTSU)
-        thr = ret * 1.4
-        _, mask_full = cv2.threshold(gray, thr, 255, cv2.THRESH_BINARY_INV)
+        # adaptacyjne progowanie + morfologia
+        blur = cv2.GaussianBlur(gray, (5,5), 0)
+        mask_full = cv2.adaptiveThreshold(
+            blur, 255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY_INV,
+            11, 2
+        )
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5,5))
+        mask_full = cv2.morphologyEx(mask_full, cv2.MORPH_CLOSE, kernel, iterations=2)
     cnts, _ = cv2.findContours(mask_full, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not cnts:
         print(f"[WARNING] {path}: brak wykrytych konturów")
         return
     c = max(cnts, key=cv2.contourArea)
     x,y,w,h = cv2.boundingRect(c)
-    obj = cv2.bitwise_and(img, img, mask=mask_full)
-    roi = obj[y:y+h, x:x+w]
-    mask_crop = mask_full[y:y+h, x:x+w]
-    rgba = cv2.cvtColor(roi[..., :3], cv2.COLOR_BGR2BGRA)
+    # przygotuj maskę tylko z największym konturem, wypełnioną w środku
+    c_roi = c - np.array([[x, y]], dtype=np.int32)
+    mask_crop = np.zeros((h, w), dtype=np.uint8)
+    cv2.drawContours(mask_crop, [c_roi], -1, 255, -1)
+    # wytnij obszar i zastosuj maskę, zachowując oryginalne piksele
+    roi = img[y:y+h, x:x+w]
+    cropped = cv2.bitwise_and(roi, roi, mask=mask_crop)
+    rgba = cv2.cvtColor(cropped[..., :3], cv2.COLOR_BGR2BGRA)
     rgba[...,3] = mask_crop
 
     # padding przed rotacją, aby nie obcinać treści
