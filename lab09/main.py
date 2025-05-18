@@ -136,7 +136,9 @@ def main():
          src = raw_dir
      else:
          src = arg
-     out = os.path.join(src, "processed")
+     # Zmiana: używamy nazwy folderu wejściowego przy tworzeniu folderu wyjściowego
+     folder_name = os.path.basename(os.path.normpath(src))
+     out = os.path.join(os.getcwd(), "out", folder_name)
      os.makedirs(out, exist_ok=True)
      files = [f for f in glob.glob(os.path.join(src, "*.*")) if os.path.isfile(f)]
      for f in files:
