@@ -2,6 +2,7 @@ in/*
 out/*
 share/*
 dataset/*
-test/*
+test
 runs/*
 yolo*
+tool_detector*

@@ -17,7 +17,7 @@ from ultralytics import YOLO
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str,
-                        default='best3yolo11n.pt',
+                        default='best.pt', # Zmieniono domyślną wartość na bardziej generyczną
                         help="ścieżka do wytrenowanych wag")
     parser.add_argument('--test_dir', type=str,
                         default='test/',
@@ -25,9 +25,14 @@ if __name__ == "__main__":
     parser.add_argument('--device', type=str,
                         default='0' if torch.cuda.is_available() else 'cpu',
                         help="CUDA device id lub 'cpu'")
-    parser.add_argument('--num', type=int, default=9,    # <-- nowa domyślna wartość
+    parser.add_argument('--num', type=int, default=9,
                         help="liczba losowych obrazów do przetestowania")
+    # Usunięto argumenty --use_cam i --cam_layer
     args = parser.parse_args()
+
+    # Określ urządzenie do użycia
+    device = f"cuda:{args.device}" if args.device!='cpu' and torch.cuda.is_available() else 'cpu'
+    print(f"Używam urządzenia: {device}")
 
     # zbierz wszystkie obrazy testowe
     imgs = [os.path.join(args.test_dir, f) 
@@ -41,17 +46,35 @@ if __name__ == "__main__":
 
     # wczytaj model z wytrenowanymi wagami
     model = YOLO(args.weights)
+    # Wymuś model na określonym urządzeniu
+    model.to(device)
+    
+    # Usunięto inicjalizację Grad-CAM
+    # cam = None
+    # if args.use_cam:
+    #     ... (usunięty blok) ...
 
     # inferencja i przygotowanie obrazów z anotacjami
     annotated = []
     for img_path in sample:
         img = cv2.imread(img_path)
         h_img, w_img = img.shape[:2]
+        
+        # Standardowa inferencja
         results = model.predict(
             source=img_path,
-            device=f"cuda:{args.device}" if args.device!='cpu' else 'cpu',
+            device=device,
             verbose=False
         )
+        
+        # Usunięto logikę związaną z CAM
+        # cam_overlay_applied = False
+        # if args.use_cam and len(results[0].boxes) > 0:
+        #     ... (usunięty blok) ...
+        
+        # if not cam_overlay_applied and args.use_cam:
+        #     ... (usunięty blok) ...
+        
         boxes = results[0].boxes.xyxy.cpu().numpy().astype(int)
         classes = results[0].boxes.cls.cpu().numpy().astype(int)
         confs = results[0].boxes.conf.cpu().numpy()              # <-- pobierz confidence
@@ -98,8 +121,11 @@ if __name__ == "__main__":
     # przygotuj katalog zapisu
     os.makedirs('runs', exist_ok=True)
 
-    # znajdź pierwszą wolną nazwę pliku
+# znajdź pierwszą wolną nazwę pliku
     base = 'test_summary'
+    # Usunięto dodawanie '_cam' do nazwy pliku
+    # if args.use_cam:
+    #     base += '_cam'
     ext = '.jpg'
     idx = 0
     while True:

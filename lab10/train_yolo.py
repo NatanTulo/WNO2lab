@@ -18,7 +18,7 @@ if __name__ == "__main__":
                         help="ścieżka do pliku COCO JSON z adnotacjami")
     parser.add_argument('--use_coco', action='store_true',
                         help="użyj zamiast YAML adnotacji COCO")
-    parser.add_argument('--model', type=str, default='yolo11n.pt')  # zmieniono na istniejący plik
+    parser.add_argument('--model', type=str, default='yolov8n.pt')  # zmieniono na yolov8n.pt
     parser.add_argument('--device', type=str, default='0',
                         help="CUDA device id lub 'cpu'")
     parser.add_argument('--epochs', type=int, default=50)
@@ -26,6 +26,21 @@ if __name__ == "__main__":
     parser.add_argument('--imgsz', type=int, default=1024)
     parser.add_argument('--no_val', action='store_true',
                         help="wyłącz walidację, aby pominąć CPU-NMS w Train")
+    # Nowe parametry optymalizacyjne
+    parser.add_argument('--dropout', type=float, default=0.0,
+                        help="Współczynnik dropout (0.0-0.5)")
+    parser.add_argument('--weight_decay', type=float, default=0.0005,
+                        help="Regularyzacja L2 (weight decay)")
+    parser.add_argument('--hsv_h', type=float, default=0.015,
+                        help="Augmentacja HSV - odcień (hue)")
+    parser.add_argument('--hsv_s', type=float, default=0.7,
+                        help="Augmentacja HSV - nasycenie (saturation)")
+    parser.add_argument('--hsv_v', type=float, default=0.4,
+                        help="Augmentacja HSV - jasność (value)")
+    parser.add_argument('--mosaic', type=float, default=1.0,
+                        help="Prawdopodobieństwo augmentacji mozaikowej (0-1)")
+    parser.add_argument('--mixup', type=float, default=0.0,
+                        help="Prawdopodobieństwo augmentacji mixup (0-1)")
     args = parser.parse_args()
 
     # katalog skryptu
@@ -40,7 +55,7 @@ if __name__ == "__main__":
     # jeśli GPU dostępne i wybrane, użyj GPU, inaczej CPU
     device = f"cuda:{args.device}" if (args.device != 'cpu' and torch.cuda.is_available()) else 'cpu'
 
-    # trenowanie z podanym device
+    # trenowanie z podanym device i parametrami optymalizacyjnymi
     results = model.train(
         data=data_source,
         epochs=args.epochs,
@@ -49,7 +64,16 @@ if __name__ == "__main__":
         device=device,
         project=script_dir,
         name='tool_detector',
-        val=not args.no_val
+        val=not args.no_val,
+        # Parametry regularyzacyjne i augmentacyjne
+        dropout=args.dropout,           # Dropout w warstwach sieci
+        weight_decay=args.weight_decay, # Regularyzacja L2
+        hsv_h=args.hsv_h,               # Augmentacja - zmiana odcienia (hue)
+        hsv_s=args.hsv_s,               # Augmentacja - zmiana nasycenia (saturation)
+        hsv_v=args.hsv_v,               # Augmentacja - zmiana jasności (value)
+        mosaic=args.mosaic,             # Augmentacja mozaikowa (łączenie 4 obrazów)
+        mixup=args.mixup,               # Augmentacja mixup (mieszanie obrazów)
+        patience=10                     # Early stopping - cierpliwość
     )
 
     # wypisz metryki z DetMetrics.box

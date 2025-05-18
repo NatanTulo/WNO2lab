@@ -23,4 +23,6 @@ if __name__ == "__main__":
     num_images = 20
     for i in range(num_images):
         output_file_name = f"placeholder_image_{i+1}.jpg"
-        download_image(image_url_base, folder_path+"/"+output_file_name)
+        # Poprawiono łączenie ścieżek
+        full_output_path = os.path.join(folder_path, output_file_name)
+        download_image(image_url_base, full_output_path)
