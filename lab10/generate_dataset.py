@@ -1,9 +1,9 @@
-import albumentations as A
 import cv2
 import os
 import numpy as np
 import random
 from glob import glob
+import json  # <-- nowy import
 
 # Definicja ścieżek do folderów
 backgrounds_dir = 'in/backgrounds'
@@ -15,10 +15,11 @@ srub_dir = 'in/srub'
 output_base_dir = 'out'
 tool_categories = ['komb', 'miecz', 'srub']
 
-# Utworzenie folderów wyjściowych dla każdej kategorii
+# Utworzenie folderów wyjściowych dla każdej kategorii (synthetic, masks i yolo)
 for category in tool_categories:
     os.makedirs(os.path.join(output_base_dir, category, 'synthetic'), exist_ok=True)
     os.makedirs(os.path.join(output_base_dir, category, 'masks'), exist_ok=True)
+    os.makedirs(os.path.join(output_base_dir, category, 'yolo'), exist_ok=True)
 
 # Funkcja do wczytywania obrazów
 def load_images(directory):
@@ -77,6 +78,15 @@ for tool in srub_tools:
     tool_category_map[id(tool)] = 'srub'
 
 all_tools = komb_tools + miecz_tools + srub_tools
+
+# Inicjalizacja struktur dla COCO
+coco_images = []
+coco_annotations = []
+annotation_id = 1
+category_mapping = {"komb": 1, "miecz": 2, "srub": 3}
+categories = [{"id": 1, "name": "komb"},
+              {"id": 2, "name": "miecz"},
+              {"id": 3, "name": "srub"}]
 
 # Funkcja do nakładania narzędzia na tło
 def overlay_tool(background, tool, x, y):
@@ -202,8 +212,9 @@ for i in range(num_images):
             tool_img = random.choice(srub_tools).copy()
     else:
         # Dla pozostałych obrazów wybieramy losowo
-        tool_img = random.choice(all_tools).copy()
-        category = tool_category_map[id(tool_img)]
+        tool_original = random.choice(all_tools)
+        tool_img = tool_original.copy()
+        category = tool_category_map[id(tool_original)]
     
     # Zwiększamy licznik dla wybranej kategorii
     category_counters[category] += 1
@@ -244,20 +255,78 @@ for i in range(num_images):
     # Nałóż narzędzie na tło
     result_img, tool_mask = overlay_tool(bg_img, tool_aug, x, y)
     
-    # Zapisz syntetyczny obraz w odpowiednim folderze kategorii
-    output_path = os.path.join(output_base_dir, category, 'synthetic', f'synthetic_{category_counters[category]:04d}.jpg')
+    # Zapisz syntetyczny obraz
+    image_filename = f'synthetic_{category_counters[category]:04d}.jpg'
+    output_path = os.path.join(output_base_dir, category, 'synthetic', image_filename)
     cv2.imwrite(output_path, result_img)
     
-    # Zapisz maskę narzędzia w odpowiednim folderze kategorii
-    mask_path = os.path.join(output_base_dir, category, 'masks', f'mask_{category_counters[category]:04d}.png')
+    # Zapisz maskę narzędzia
+    mask_filename = f'mask_{category_counters[category]:04d}.png'
+    mask_path = os.path.join(output_base_dir, category, 'masks', mask_filename)
     cv2.imwrite(mask_path, tool_mask)
+
+    # Dodaj obraz do listy COCO
+    image_id = i + 1
+    coco_images.append({
+        "id": image_id,
+        "file_name": os.path.join(category, 'synthetic', image_filename),
+        "width": bg_w,
+        "height": bg_h
+    })
+    
+    # Wyznaczanie rzeczywistego bbox za pomocą maski
+    ys, xs = np.where(tool_mask > 0)
+    if xs.size and ys.size:
+        x1, x2 = int(xs.min()), int(xs.max())
+        y1, y2 = int(ys.min()), int(ys.max())
+    else:
+        # fallback na cały prostokąt narzędzia
+        x1, y1 = x, y
+        x2, y2 = x + tool_w - 1, y + tool_h - 1
+
+    w_box = x2 - x1 + 1
+    h_box = y2 - y1 + 1
+
+    # COCO annotation
+    bbox = [x1, y1, w_box, h_box]
+    segmentation = [[x1, y1, x2, y1, x2, y2, x1, y2]]
+    coco_annotations.append({
+        "id": annotation_id,
+        "image_id": image_id,
+        "category_id": category_mapping[category],
+        "bbox": bbox,
+        "segmentation": segmentation,
+        "area": w_box * h_box,
+        "iscrowd": 0
+    })
+    annotation_id += 1
+
+    # YOLO format (znormalizowane centroidy i wymiary)
+    x_center = (x1 + w_box / 2) / bg_w
+    y_center = (y1 + h_box / 2) / bg_h
+    width_norm = w_box / bg_w
+    height_norm = h_box / bg_h
+    yolo_line = f"{category_mapping[category]-1} {x_center:.6f} {y_center:.6f} {width_norm:.6f} {height_norm:.6f}"
+    yolo_filename = os.path.join(output_base_dir, category, 'yolo', image_filename.replace('.jpg', '.txt'))
+    with open(yolo_filename, "w") as f:
+        f.write(yolo_line)
     
     # Wyświetl informacje o postępie co 20 obrazów
     if (i + 1) % 20 == 0:
         print(f"Wygenerowano {i + 1}/{num_images} obrazów")
 
+# Po zakończeniu pętli zapisz plik JSON z adnotacjami w formacie COCO
+coco_output = {
+    "info": {},
+    "images": coco_images,
+    "annotations": coco_annotations,
+    "categories": categories
+}
+with open(os.path.join(output_base_dir, "annotations.json"), "w") as json_file:
+    json.dump(coco_output, json_file)
+
 # Wyświetl podsumowanie
-print(f"Wygenerowano {num_images} syntetycznych obrazów z maskami:")
+print(f"Wygenerowano {num_images} syntetycznych obrazów z maskami oraz adnotacjami COCO i YOLO:")
 for category, count in category_counters.items():
     print(f"- {category}: {count} obrazów")
 

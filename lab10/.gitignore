@@ -1,2 +1,6 @@
 in/*
 out/*
+share/*
+dataset/*
+test/*
+runs/*
