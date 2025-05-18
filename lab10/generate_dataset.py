@@ -4,6 +4,8 @@ import numpy as np
 import random
 from glob import glob
 import json  # <-- nowy import
+import sys  # <-- nowy import
+import argparse  # <-- nowy import
 
 # Definicja ścieżek do folderów
 backgrounds_dir = 'in/backgrounds'
@@ -184,6 +186,36 @@ def scale_image_with_alpha(image, scale_factor):
     new_h = int(h * scale_factor)
     new_w = int(w * scale_factor)
     return cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
+# parsowanie argumentów, dodanie trybu test-only
+parser = argparse.ArgumentParser()
+parser.add_argument('--test_only', action='store_true',
+                    help="wygeneruj tylko obrazy testowe bez masek i JSON")
+parser.add_argument('--test_count', type=int, default=200,
+                    help="liczba obrazów do wygenerowania w trybie test")
+parser.add_argument('--test_dir', type=str, default='test/',
+                    help="folder do zapisu obrazów testowych")
+args = parser.parse_args()
+
+if args.test_only:
+    os.makedirs(args.test_dir, exist_ok=True)
+    bgs = load_images(backgrounds_dir)
+    tools = []
+    for d in (komb_dir, miecz_dir, srub_dir):
+        tools += load_tools(d)
+    for i in range(args.test_count):
+        bg = random.choice(bgs).copy()
+        tool = random.choice(tools)
+        tool_sc = scale_image_with_alpha(tool, random.uniform(0.3,1.0))
+        tool_rt = rotate_image_with_alpha(tool_sc, random.uniform(0,360))
+        tool_f = ensure_proper_size(tool_rt, bg.shape[0], bg.shape[1])
+        h, w = bg.shape[:2]; th, tw = tool_f.shape[:2]
+        x = random.randint(0, max(0, w-tw)); y = random.randint(0, max(0, h-th))
+        img_out, _ = overlay_tool(bg, tool_f, x, y)
+        fn = os.path.join(args.test_dir, f'test_{i+1:03d}.jpg')
+        cv2.imwrite(fn, img_out)
+    print(f"Wygenerowano {args.test_count} obrazów testowych do {args.test_dir}")
+    sys.exit()
 
 # Generowanie syntetycznych obrazów
 num_images = 400

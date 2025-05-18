@@ -1,4 +1,5 @@
 import os, random, argparse
+import subprocess
 import torch
 import torchvision.ops                                  # <-- patch NMS jak wcześniej
 import cv2                                              # <-- nowy import
@@ -95,8 +96,7 @@ if __name__ == "__main__":
     grid = np.vstack(row_images)
 
     # przygotuj katalog zapisu
-    save_dir = os.path.join('runs', 'detect')
-    os.makedirs(save_dir, exist_ok=True)
+    os.makedirs('runs', exist_ok=True)
 
     # znajdź pierwszą wolną nazwę pliku
     base = 'test_summary'
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     idx = 0
     while True:
         fname = f"{base}{ext}" if idx == 0 else f"{base}_{idx}{ext}"
-        summary_path = os.path.join(save_dir, fname)
+        summary_path = os.path.join('runs', fname)
         if not os.path.exists(summary_path):
             break
         idx += 1
@@ -112,3 +112,8 @@ if __name__ == "__main__":
     # zapisz podsumowującą grafikę
     cv2.imwrite(summary_path, grid)
     print(f"Zapisano siatkę wyników do {summary_path}")
+    # otwórz wynikowy obraz w domyślnej aplikacji
+    try:
+        os.startfile(summary_path)
+    except AttributeError:
+        subprocess.run(['xdg-open', summary_path])

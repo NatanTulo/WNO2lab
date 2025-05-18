@@ -4,3 +4,4 @@ share/*
 dataset/*
 test/*
 runs/*
+yolo*

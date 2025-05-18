@@ -2,6 +2,7 @@ import argparse
 import torch
 import torchvision.ops  # importujemy by wypatchować NMS
 import numpy as np                # <-- nowy import
+import os
 from ultralytics import YOLO
 
 orig_nms = torchvision.ops.nms
@@ -17,13 +18,18 @@ if __name__ == "__main__":
                         help="ścieżka do pliku COCO JSON z adnotacjami")
     parser.add_argument('--use_coco', action='store_true',
                         help="użyj zamiast YAML adnotacji COCO")
-    parser.add_argument('--model', type=str, default='yolo11l.pt')  # zmieniono na istniejący plik
+    parser.add_argument('--model', type=str, default='yolo11n.pt')  # zmieniono na istniejący plik
     parser.add_argument('--device', type=str, default='0',
                         help="CUDA device id lub 'cpu'")
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--batch', type=int, default=16)
     parser.add_argument('--imgsz', type=int, default=1024)
+    parser.add_argument('--no_val', action='store_true',
+                        help="wyłącz walidację, aby pominąć CPU-NMS w Train")
     args = parser.parse_args()
+
+    # katalog skryptu
+    script_dir = os.path.dirname(os.path.abspath(__file__))
 
     # inicjalizacja modelu
     model = YOLO(args.model)
@@ -41,7 +47,9 @@ if __name__ == "__main__":
         batch=args.batch,
         imgsz=args.imgsz,
         device=device,
-        name='tool_detector'
+        project=script_dir,
+        name='tool_detector',
+        val=not args.no_val
     )
 
     # wypisz metryki z DetMetrics.box
