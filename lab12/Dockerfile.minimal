@@ -1,0 +1,30 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Minimalne zależności
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Konfiguracja pip
+ENV PIP_DEFAULT_TIMEOUT=300
+ENV PIP_RETRIES=5
+
+# Kopiowanie requirements
+COPY requirements.txt .
+
+# Instalacja zależności bez PyTorch najpierw
+RUN pip install flask flask-cors requests gunicorn numpy
+
+# Instalacja transformers (które zaciągnie torch automatycznie)
+RUN pip install transformers
+
+# Kopiowanie aplikacji
+COPY . .
+
+# Użytkownik
+RUN useradd app && chown -R app:app /app
+USER app
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]
