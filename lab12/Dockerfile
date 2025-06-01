@@ -33,9 +33,14 @@ RUN pip install transformers>=4.20.0 \
 # Kopiowanie kodu aplikacji
 COPY . .
 
+# Pre-download modelu przed przełączeniem na użytkownika app
+RUN python -c "from transformers import AutoTokenizer, AutoModelForTokenClassification; AutoTokenizer.from_pretrained('dslim/bert-base-NER'); AutoModelForTokenClassification.from_pretrained('dslim/bert-base-NER')" || echo "Model download skipped"
+
 # Utworzenie użytkownika nie-root dla bezpieczeństwa
 RUN useradd --create-home --shell /bin/bash app \
-    && chown -R app:app /app
+    && chown -R app:app /app \
+    && mkdir -p /home/app/.cache \
+    && chown -R app:app /home/app/.cache
 USER app
 
 # Expose portu
@@ -45,10 +50,11 @@ EXPOSE 5000
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV PYTHONPATH=/app
+ENV TRANSFORMERS_CACHE=/home/app/.cache
 
 # Healthcheck z curl
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
-# Komenda uruchomienia z Gunicorn dla produkcji
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "120", "--preload", "app:app"]
+# Komenda uruchomienia - usuwam preload i uruchamiam z jednym workerem
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "120", "app:app"]
