@@ -259,3 +259,15 @@ curl -X POST http://localhost:5000/ner \
   -H "Content-Type: application/json" \
   -d '{"text": "Elon Musk founded Tesla Motors."}'
 ```
+
+## Status realizacji (wg polecenia)
+
+| Zadanie | Punkty | Status | Uwagi |
+|---------|--------|--------|-------|
+| Funkcja modelu NER (CPU) zwracająca listę słowników | 1 | ✅ | `ner_model.py` |
+| Endpoint POST /ner (API) | 1 | ✅ | `app.py` |
+| Pliki `requirements.txt` + `Dockerfile` | 1 | ✅ | Obraz minimalny |
+| Uruchomienie w Docker z mapowaniem portu | 1 | ✅ | `run_docker.sh`, instrukcje |
+| Testy lokalne endpointu | 1 | ✅ | `test_docker_api.sh` |
+
+Razem: 5/5 pkt.

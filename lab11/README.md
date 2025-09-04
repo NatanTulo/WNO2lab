@@ -94,3 +94,14 @@ System TTS obsługuje języki dostępne w systemie operacyjnym:
 - Francuski (fr-FR)
 - Hiszpański (es-ES)
 - Inne języki w zależności od zainstalowanych głosów w systemie
+
+## Status realizacji (wg polecenia)
+
+| Funkcjonalność | Punkty | Status | Uwagi |
+|----------------|--------|--------|-------|
+| Speech-to-Text (rozpoznawanie mowy) | 1 | ✅ | Whisper (model auto language) |
+| Text-to-Speech (generowanie mowy) | 1 | ✅ | `pyttsx3` / interfejs w `main.py` |
+| Zliczanie poprawnych sygnałów (czas, głośność, spektrum) | 2 | ✅ | Kryteria w analizie jakości |
+| Wykrywanie słowa‑klucza | 1 | ✅ | Analiza transkryptu / wyszukiwanie |
+
+Razem (bazowe): 5 pkt.

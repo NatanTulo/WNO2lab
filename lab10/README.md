@@ -117,3 +117,19 @@ Projekt został przetestowany na systemie Windows. Dołożono starań, aby zapew
     -   macOS: Użycie skryptu tymczasowego z `open -a Terminal`
 
 W przypadku problemów z automatycznym otwieraniem okien terminala na systemach innych niż Windows, skrypty wypiszą w konsoli polecenie, które można uruchomić ręcznie.
+
+## Status realizacji (pod kątem polecenia)
+
+| Funkcjonalność | Punkty | Status | Uwagi |
+|----------------|--------|--------|-------|
+| Generacja 400 syntetycznych obrazów z 20 teł i narzędzi (augmentacja) | 2 | ✅ | `generate_dataset.py` (domyślnie 400) |
+| Skuteczność modelu > 60% (accuracy / mAP) | 2 | ⬜ | Wpisać po treningu (wyniki w `runs/`) |
+| Test pipeline na 4+ nowych obrazach | 1 | ✅ | `test_pipeline.py` (parametr liczby) |
+| Wizualizacja przebiegu uczenia w TensorBoard | +1 | ⬜ | Możliwość dodania callbacku / `tensorboard --logdir` |
+| ClearML eksperyment tracking | +2 | ⬜ | Nie zaimplementowano |
+| Regularizacja / metody generalizacji (Dropout, L1) | +1 | ⬜ | Parametry do uzupełnienia w treningu |
+| Wizualizacja architektury (Netron / eksport) | +1 | ⬜ | Można dodać eksport `onnx` |
+| Dodatkowe metryki: precision / recall / F1 w teście | +2 | ⬜ | Możliwe rozszerzenie `test_pipeline.py` |
+| CAM / wyjaśnialność (Grad-CAM / Simple CAM) | +4 | ✅ | `simple_grad_cam.py`, `batch_cam.py` |
+
+Legenda: ✅ wykonane, ❌ nie, ⬜ do uzupełnienia / niezweryfikowano.
